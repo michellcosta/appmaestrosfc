@@ -69,10 +69,4 @@ if (!open) return null;
 
 return createPortal(
 <div
-ref={overlayRef}
-className="fixed inset-0 z-50 flex items-end bg-black/50 backdrop-blur-[1px]"
-aria-hidden={!open}
-onMouseDown={(e) => {
-if (e.target === overlayRef.current) onClose();
-}}
 }
