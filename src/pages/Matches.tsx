@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ActionSheet } from '@/components/ActionSheet';
 import { withinRadius, type LatLng } from '@/services/location';
+import { cn } from '@/lib/utils'; // se não tiver, remova o uso de cn
 
 export default function MatchesPage() {
   const [showRouteSheet, setShowRouteSheet] = useState(false);
@@ -22,7 +23,7 @@ export default function MatchesPage() {
       </button>
 
       <ActionSheet
-        open={showRouteSheet}              // <- corrigido: era isOpen
+        open={showRouteSheet}              // <- corrigido (era isOpen)
         onClose={() => setShowRouteSheet(false)}
         title="Rotas"
       >
