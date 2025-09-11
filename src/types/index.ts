@@ -18,7 +18,7 @@ export type GoalEvent = {
   minute: number;
   ownGoal?: boolean;
   createdAt: string;
-  // opcionais usados na página Match:
+  // opcionais usados em Match.tsx:
   team?: TeamColor;
   authorName?: string;
   assistName?: string;
