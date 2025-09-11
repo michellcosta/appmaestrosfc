@@ -1,33 +1,38 @@
 import type { DiaristRequest } from '@/types';
 
-// janela de pagamento (ajuste se necessário)
-export const PAYMENT_WINDOW_MS = 15 * 60 * 1000; // 15 min
+export const PAYMENT_WINDOW_MS = 30 * 60 * 1000; // 30:00
 
-export function startPaymentWindow(r: DiaristRequest): DiaristRequest {
-  return { ...r, windowStartedAt: Date.now(), status: r.status ?? 'pending' };
+export function canShowPayButton(req: DiaristRequest): boolean {
+  return req.state === 'approved';
 }
 
-export function isPaymentWindowActive(r: DiaristRequest): boolean {
-  if (!r.windowStartedAt) return false;
-  return Date.now() - r.windowStartedAt < PAYMENT_WINDOW_MS;
+export function startPaymentWindow(req: DiaristRequest, now = Date.now()): DiaristRequest {
+  if (req.state !== 'approved') return req;
+  return { ...req, state: 'paying', paymentStartedAt: now };
 }
 
-export function canShowPayButton(r: DiaristRequest): boolean {
-  return r.status !== 'paid' && !isPaymentWindowActive(r);
+export function isPaymentWindowActive(req: DiaristRequest, now = Date.now()): boolean {
+  if (req.state !== 'paying' || !req.paymentStartedAt) return false;
+  return now - req.paymentStartedAt < PAYMENT_WINDOW_MS;
 }
 
-export function markPaid(r: DiaristRequest): DiaristRequest {
-  return { ...r, status: 'paid', updatedAt: new Date().toISOString() };
+export function markPaid(req: DiaristRequest, now = Date.now()): DiaristRequest {
+  if (req.state !== 'paying') return req;
+  return { ...req, state: 'paid', paidAt: now };
 }
 
-export function markFull(r: DiaristRequest): DiaristRequest {
-  return { ...r, status: 'full', updatedAt: new Date().toISOString() };
+export function markFull(req: DiaristRequest): DiaristRequest {
+  // used when match becomes full BEFORE user clicks "Gerar Pix — Copiar"
+  if (req.state === 'approved') return { ...req, state: 'full' };
+  return req;
 }
 
-// placeholder: creditar se janela expirou e ainda pending
-export function creditIfLate(r: DiaristRequest): DiaristRequest {
-  if (r.status === 'pending' && r.windowStartedAt && !isPaymentWindowActive(r)) {
-    return { ...r, updatedAt: new Date().toISOString() };
+export function creditIfLate(req: DiaristRequest, now = Date.now()): DiaristRequest {
+  // called after provider webhook confirms payment
+  // if window expired OR match got full in the meantime, convert to credit
+  const expired = req.paymentStartedAt ? (now - req.paymentStartedAt >= PAYMENT_WINDOW_MS) : false;
+  if (req.state === 'paying' && (expired || req.state === 'full')) {
+    return { ...req, state: 'credited', creditedAt: now };
   }
-  return r;
+  return req;
 }
