@@ -20,10 +20,10 @@ const pt = {
   } as const,
 };
 
-type RoleKey = keyof typeof colors; // 'owner' | 'admin' | ...
+type RoleKey = keyof typeof colors;
 
 export default function Profile() {
-  const role: string = 'admin'; // exemplo; troque pelo valor vindo do usuário
+  const role: string = 'admin'; // exemplo
   const roleKey = (role in colors ? role : 'aux') as RoleKey;
 
   return (
