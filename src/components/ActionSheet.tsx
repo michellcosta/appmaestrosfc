@@ -8,7 +8,7 @@ export type ActionSheetProps = {
   title?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  maxHeight?: number | string; // e.g. '80vh'
+  maxHeight?: number | string; // '80vh'
   initialFocusRef?: React.RefObject<HTMLElement>;
 };
 
@@ -35,9 +35,7 @@ export function ActionSheet({
       document.body.style.overflow = "";
       lastActive.current?.focus?.();
     }
-    return () => {
-      document.body.style.overflow = "";
-    };
+    return () => { document.body.style.overflow = ""; };
   }, [open, initialFocusRef]);
 
   useEffect(() => {
@@ -45,7 +43,6 @@ export function ActionSheet({
       if (!open) return;
       if (e.key === "Escape") onClose();
       if (e.key === "Tab") {
-        // focus trap simples
         const focusables = sheetRef.current?.querySelectorAll<HTMLElement>(
           'a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])'
         );
@@ -53,11 +50,9 @@ export function ActionSheet({
         const first = focusables[0];
         const last = focusables[focusables.length - 1];
         if (document.activeElement === last && !e.shiftKey) {
-          e.preventDefault();
-          first.focus();
+          e.preventDefault(); first.focus();
         } else if (document.activeElement === first && e.shiftKey) {
-          e.preventDefault();
-          last.focus();
+          e.preventDefault(); last.focus();
         }
       }
     }
@@ -72,9 +67,7 @@ export function ActionSheet({
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-end bg-black/50 backdrop-blur-[1px]"
       aria-hidden={!open}
-      onMouseDown={(e) => {
-        if (e.target === overlayRef.current) onClose();
-      }}
+      onMouseDown={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
       <div
         ref={sheetRef}
