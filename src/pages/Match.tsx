@@ -1,168 +1,123 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import React, { useMemo, useState } from 'react';
+import type { GoalEvent, Player, TeamColor } from '@/types';
 import { GoalModal } from '@/components/match/GoalModal';
-import type { GoalEvent, TeamColor, TiebreakerEvent, TiebreakerMethod } from '@/types';
-import { cn } from '@/lib/utils';
-
-// Helpers
-const formatMMSS = (sec: number) => {
-  const m = Math.floor(sec / 60).toString().padStart(2, '0');
-  const s = Math.floor(sec % 60).toString().padStart(2, '0');
-  return `${m}:${s}`;
-};
 
 const TEAMS: TeamColor[] = ['Preto', 'Verde', 'Cinza', 'Coletes'];
 
-export const Match: React.FC = () => {
-  const [scores, setScores] = useState<Record<TeamColor, number>>({
-    Preto: 0, Verde: 0, Cinza: 0, Coletes: 0
-  });
+const mockPlayers: Player[] = [
+  { id: 'p1', name: 'João', number: 9 },
+  { id: 'p2', name: 'Maria', number: 10 },
+  { id: 'p3', name: 'Ana', number: 7 },
+  { id: 'p4', name: 'Carlos', number: 5 },
+];
+
+function formatMMSS(sec: number) {
+  const s = Math.max(0, Math.floor(sec));
+  const mm = String(Math.floor(s / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  return `${mm}:${ss}`;
+}
+
+export default function MatchPage() {
   const [events, setEvents] = useState<GoalEvent[]>([]);
-  const [tiebreaker, setTiebreaker] = useState<TiebreakerEvent | null>(null);
+  const [clock, setClock] = useState<number>(0); // segundos
+  const [goalModal, setGoalModal] = useState<{ open: boolean; team: TeamColor }>({
+    open: false,
+    team: 'Preto',
+  });
 
-  const [running, setRunning] = useState(false);
-  const [duration, setDuration] = useState(10 * 60); // 10min (editável)
-  const [elapsed, setElapsed] = useState(0);
-  const timerRef = useRef<number | null>(null);
+  // só para exemplo: avança 10s
+  const tick10 = () => setClock((c) => c + 10);
 
-  const [goalModal, setGoalModal] = useState<{ open: boolean; team: TeamColor }>({ open: false, team: 'Preto' });
+  const abrirModal = (team: TeamColor) => setGoalModal({ open: true, team });
+  const fecharModal = () => setGoalModal((m) => ({ ...m, open: false }));
 
-  // Cronômetro
-  useEffect(() => {
-    if (!running) return;
-    timerRef.current = window.setInterval(() => setElapsed((e) => e + 1), 1000) as unknown as number;
-    return () => { if (timerRef.current) window.clearInterval(timerRef.current); };
-  }, [running]);
-
-  const handleStart = () => setRunning(true);
-  const handlePause = () => setRunning(false);
-  const handleReset = () => { setRunning(false); setElapsed(0); };
-
-  // + Gol
-  const openGoal = (team: TeamColor) => setGoalModal({ open: true, team });
-  const confirmGoal = (authorName: string, assistName?: string) => {
-    setScores((s) => ({ ...s, [goalModal.team]: s[goalModal.team] + 1 }));
-    setEvents((ev) => [
-      ...ev,
-      {
-        id: crypto.randomUUID(),
-        ts: elapsed,
-        team: goalModal.team,
-        authorId: 'n/a',
-        authorName,
-        assistId: assistName ? 'n/a' : undefined,
-        assistName,
-        byUserId: 'admin-or-aux', // TODO: pegar do auth
-      },
-    ]);
-    setGoalModal({ open: false, team: goalModal.team });
-  };
-
-  // Correção de gol (excluir último do time selecionado ou abrir UI de listagem)
-  const removeLastGoal = (team: TeamColor) => {
-    const idx = [...events].reverse().findIndex((e) => e.team === team);
-    if (idx === -1) return;
-    // posição real no array
-    const pos = events.length - 1 - idx;
-    const ev = events[pos];
-    const copy = [...events];
-    copy.splice(pos, 1);
-    setEvents(copy);
-    setScores((s) => ({ ...s, [team]: Math.max(0, s[team] - 1) }));
-    // TODO: auditoria com byUserId
-  };
-
-  // Desempate (cara/coroa ou roleta)
-  const doTiebreak = (method: TiebreakerMethod) => {
-    // Animação curta (poderia setar um estado visual)
-    const options: TeamColor[] = TEAMS; // em empate geral, escolher entre todos — ou filtrar os times empatados
-    const winner = options[Math.floor(Math.random() * options.length)];
-    const ev: TiebreakerEvent = {
-      id: crypto.randomUUID(),
-      method,
-      winner,
-      ts: elapsed,
-      byUserId: 'admin-or-aux',
+  const confirmarGol = (author: Player, assist?: Player) => {
+    const e: GoalEvent = {
+      id: crypto.randomUUID?.() ?? `id_${Math.random().toString(36).slice(2)}`,
+      scorerId: author.id,
+      assistId: assist?.id,
+      minute: Math.floor(clock / 60),
+      createdAt: new Date().toISOString(),
+      team: goalModal.team,
+      authorName: author.name,
+      assistName: assist?.name,
+      ts: clock,
     };
-    setTiebreaker(ev);
-    // TODO: persistir no backend
+    setEvents((prev) => [...prev, e]);
+    fecharModal();
   };
+
+  const ultimoGolDoTime = (team: TeamColor) => {
+    const idx = [...events].reverse().findIndex((e) => e.team === team);
+    if (idx === -1) return null;
+    return [...events].reverse()[idx];
+  };
+
+  const placar = useMemo(() => {
+    const score: Record<TeamColor, number> = {
+      Preto: 0, Verde: 0, Cinza: 0, Coletes: 0,
+      blue: 0, red: 0, green: 0, yellow: 0, purple: 0, orange: 0, gray: 0,
+    };
+    for (const e of events) {
+      if (e.team) score[e.team] = (score[e.team] ?? 0) + 1;
+    }
+    return score;
+  }, [events]);
 
   return (
-    <div className="p-4 space-y-6">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-outfit font-bold">Partida</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={handleReset}>Reset</Button>
-          {!running ? (
-            <Button onClick={handleStart}>Iniciar</Button>
-          ) : (
-            <Button variant="outline" onClick={handlePause}>Pausar</Button>
-          )}
-        </div>
-      </header>
+    <div className="max-w-3xl mx-auto p-4 space-y-4">
+      <h1 className="text-xl font-semibold">Partida</h1>
 
-      {/* Cronômetro */}
-      <Card className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">Tempo</div>
-          <div className="text-3xl font-bold">{formatMMSS(elapsed)} / {formatMMSS(duration)}</div>
-        </div>
-      </Card>
+      <div className="flex items-center gap-2">
+        <button className="px-3 py-2 rounded bg-slate-600 text-white" onClick={tick10}>
+          +10s
+        </button>
+        <div className="text-sm text-muted-foreground">Relógio: {formatMMSS(clock)}</div>
+      </div>
 
-      {/* Placar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         {TEAMS.map((t) => (
-          <Card key={t} className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="font-semibold">{t}</div>
-              <div className="text-2xl font-bold">{scores[t]}</div>
+          <button
+            key={t}
+            onClick={() => abrirModal(t)}
+            className="rounded-xl border p-3 hover:bg-muted/60 text-left"
+          >
+            <div className="font-semibold">{t}</div>
+            <div className="text-sm text-muted-foreground">
+              Gols: {placar[t] ?? 0}
+              {ultimoGolDoTime(t) ? (
+                <> — último: {formatMMSS(ultimoGolDoTime(t)!.ts ?? 0)}</>
+              ) : null}
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <Button size="sm" onClick={() => openGoal(t)}>+ Gol</Button>
-              <Button size="sm" variant="outline" onClick={() => removeLastGoal(t)}>Corrigir</Button>
-            </div>
-          </Card>
+          </button>
         ))}
       </div>
 
-      {/* Histórico */}
-      <Card className="p-4">
-        <div className="font-semibold mb-3">Histórico</div>
+      <div className="space-y-2">
+        <h2 className="font-semibold">Eventos</h2>
         {events.length === 0 ? (
-          <div className="text-sm text-muted-foreground">Sem eventos ainda</div>
+          <div className="text-sm text-muted-foreground">Sem gols ainda.</div>
         ) : (
-          <ul className="space-y-2 text-sm">
+          <ul className="space-y-1">
             {events.map((e) => (
-              <li key={e.id} className="flex items-center justify-between">
-                <span>
-                  ⚽ <b>{e.authorName}</b>
-                  {e.assistName ? <> (assist. {e.assistName})</> : null} — {e.team}
-                </span>
-                <span className="text-muted-foreground">{formatMMSS(e.ts)}</span>
+              <li key={e.id} className="text-sm">
+                ⚽ <b>{e.authorName ?? e.scorerId}</b>
+                {e.assistName ? <> (assist. {e.assistName})</> : null} — {e.team ?? '—'}
+                <span className="text-muted-foreground"> — {formatMMSS(e.ts ?? 0)}</span>
               </li>
             ))}
           </ul>
         )}
-        {tiebreaker && (
-          <div className="mt-3 text-sm">
-            Desempate: <b>{tiebreaker.method === 'cara_coroa' ? 'Cara ou Coroa' : 'Roleta'}</b> — vencedor <b>{tiebreaker.winner}</b>
-          </div>
-        )}
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <Button variant="secondary" onClick={() => doTiebreak('cara_coroa')}>Cara/Coroa</Button>
-          <Button variant="secondary" onClick={() => doTiebreak('roleta')}>Roleta</Button>
-        </div>
-      </Card>
+      </div>
 
-      {/* Modal + Gol */}
       <GoalModal
         open={goalModal.open}
         teamLabel={goalModal.team}
-        onClose={() => setGoalModal((m) => ({ ...m, open: false }))}
-        onConfirm={(author, assist) => confirmGoal(author, assist)}
+        onClose={fecharModal}
+        players={mockPlayers}
+        onConfirm={(author, assist) => confirmarGol(author, assist)}
       />
     </div>
   );
-};
+}
