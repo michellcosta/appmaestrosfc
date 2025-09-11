@@ -1,7 +1,6 @@
-// src/services/payments.ts
 import type { DiaristRequest } from '@/types';
 
-// janela de pagamento (ajuste conforme regra do negócio)
+// janela de pagamento (ajuste se necessário)
 export const PAYMENT_WINDOW_MS = 15 * 60 * 1000; // 15 min
 
 export function startPaymentWindow(r: DiaristRequest): DiaristRequest {
@@ -25,10 +24,9 @@ export function markFull(r: DiaristRequest): DiaristRequest {
   return { ...r, status: 'full', updatedAt: new Date().toISOString() };
 }
 
-// regra placeholder: conceder crédito se janela expirou e ainda pending
+// regra placeholder: creditar se janela expirou e ainda está pending
 export function creditIfLate(r: DiaristRequest): DiaristRequest {
   if (r.status === 'pending' && r.windowStartedAt && !isPaymentWindowActive(r)) {
-    // aplique lógica real aqui se necessário
     return { ...r, updatedAt: new Date().toISOString() };
   }
   return r;
