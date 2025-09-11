@@ -1,6 +1,6 @@
 export type TeamColor =
   | 'blue' | 'red' | 'green' | 'yellow' | 'purple' | 'orange' | 'gray'
-  // rótulos PT usados no app:
+  // rótulos PT usados na UI:
   | 'Preto' | 'Verde' | 'Cinza' | 'Coletes';
 
 export type Player = {
@@ -18,11 +18,11 @@ export type GoalEvent = {
   minute: number;
   ownGoal?: boolean;
   createdAt: string;
-  // campos opcionais usados na UI de Match.tsx:
+  // opcionais usados na página Match:
   team?: TeamColor;
   authorName?: string;
   assistName?: string;
-  ts?: number; // em segundos (ou ms) conforme seu uso na UI
+  ts?: number; // segundos (ou ms) conforme uso
 };
 
 export type Venue = { name: string; address?: string; lat?: number; lng?: number };
@@ -44,7 +44,7 @@ export type ChatMessage = {
   createdAt: string;
 };
 
-// ---- tipos exigidos por Financial.tsx e Match.tsx ----
+// ---- exigidos por Financial.tsx e Match.tsx ----
 export type DiaristRequest = {
   id: string;
   amountCents: number;
