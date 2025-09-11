@@ -3,11 +3,17 @@ import { Play, Pause, StopCircle, Plus, Users, Shuffle, Trophy, Clock } from 'lu
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/illustrations/empty-state';
 import { pt } from '@/i18n/pt';
 import { cn } from '@/lib/utils';
 import { TeamColor } from '@/types';
+
+interface Player { id: string; name: string; team: TeamColor; }
 
 interface TeamScore {
   Preto: number;
@@ -18,6 +24,12 @@ interface TeamScore {
 
 export const Match: React.FC = () => {
   const [matchState, setMatchState] = useState<'idle' | 'running' | 'paused'>('idle');
+  const [isGoalOpen, setIsGoalOpen] = useState(false);
+  const [goalStep, setGoalStep] = useState<'select_scorer' | 'select_assist'>('select_scorer');
+  const [goalScorer, setGoalScorer] = useState<Player | null>(null);
+  const [goalAssist, setGoalAssist] = useState<Player | null>(null);
+  const [goalTeam, setGoalTeam] = useState<TeamColor>('Preto' as TeamColor);
+  const [goalPlayer, setGoalPlayer] = useState('');
   const [elapsedTime, setElapsedTime] = useState(0);
   const [currentRound, setCurrentRound] = useState(1);
   const [scores, setScores] = useState<TeamScore>({
@@ -40,6 +52,28 @@ export const Match: React.FC = () => {
     return () => {
       if (interval) clearInterval(interval);
     };
+
+  const confirmGoal = () => {
+    if (!goalScorer) return;
+    // Update scoreboard
+    setScores(prev => ({ ...prev, [goalTeam]: prev[goalTeam] + 1 }));
+
+    // Time label
+    const minutes = Math.floor(elapsedTime / 60).toString().padStart(2, '0');
+    const seconds = (elapsedTime % 60).toString().padStart(2, '0');
+
+    // Update recent goals list
+    setRecentGoals([{ team: goalTeam, player: goalScorer.name, assist: goalAssist?.name, time: f"{minutes}:{seconds}" }, ...recentGoals].slice(0, 8));
+
+    // Update player stats
+    setPlayerStats(prev => ({
+      ...prev,
+      [goalScorer.id]: { goals: (prev[goalScorer.id]?.goals || 0) + 1, assists: prev[goalScorer.id]?.assists || 0 },
+      *(goalAssist ? { [goalAssist.id]: { goals: prev[goalAssist.id]?.goals || 0, assists: (prev[goalAssist.id]?.assists || 0) + 1 } } : {})
+    }));
+
+    setIsGoalOpen(false);
+  };
   }, [matchState]);
 
   const formatTime = (seconds: number) => {
@@ -132,6 +166,26 @@ export const Match: React.FC = () => {
               <StopCircle className="w-5 h-5" />
               {pt.match.end}
             </Button>
+          )}
+        </div>
+      </Card>
+
+      <Card className="p-4 mt-4">
+        <h3 className="font-semibold mb-3">Estatísticas dos jogadores (sessão)</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {Object.entries(playerStats).length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sem registros ainda.</p>
+          ) : (
+            Object.entries(playerStats).map(([pid, s]) => {
+              const pl = Object.values(roster).flat().find(p => p.id === pid);
+              if (!pl) return null;
+              return (
+                <div key={pid} className="flex items-center justify-between text-sm">
+                  <span className="font-medium">{pl.name}</span>
+                  <span className="text-muted-foreground">Gols: {s.goals} · Assist.: {s.assists}</span>
+                </div>
+              );
+            })
           )}
         </div>
       </Card>
@@ -232,6 +286,55 @@ export const Match: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+    
+      <Dialog open={isGoalOpen} onOpenChange={setIsGoalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{goalStep === 'select_scorer' ? 'Quem fez o gol?' : 'Quem deu a assistência?'}</DialogTitle>
+          </DialogHeader>
+
+          {/* Listagem de jogadores do time selecionado */}
+          <div className="space-y-2 max-h-80 overflow-auto">
+            {roster[goalTeam]?.length ? (
+              roster[goalTeam].map((pl) => (
+                <Button
+                  key={pl.id}
+                  variant={(goalStep === 'select_scorer' ? goalScorer?.id === pl.id : goalAssist?.id === pl.id) ? 'default' : 'outline'}
+                  className="w-full justify-between"
+                  onClick={() => {
+                    if (goalStep === 'select_scorer') {
+                      setGoalScorer(pl);
+                      setGoalStep('select_assist');
+                    } else {
+                      if (goalScorer && pl.id === goalScorer.id) return; // não permitir auto-assistência
+                      setGoalAssist(pl);
+                      confirmGoal();
+                    }
+                  }}
+                >
+                  <span className="font-medium">{pl.name}</span>
+                  <Badge variant="secondary">{goalTeam}</Badge>
+                </Button>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">Sem jogadores cadastrados para {goalTeam}.</p>
+            )}
+          </div>
+
+          {/* Botão para registrar sem assistência (na etapa de assistência) */}
+          {goalStep === 'select_assist' && (
+            <div className="flex items-center justify-between pt-2">
+              <Button variant="ghost" onClick={() => { setGoalAssist(null); confirmGoal(); }}>
+                Registrar sem assistência
+              </Button>
+              <Button variant="outline" onClick={() => { setGoalAssist(null); setIsGoalOpen(false); }}>
+                Cancelar
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+          </Dialog>
     </div>
   );
 };
