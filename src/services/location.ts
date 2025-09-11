@@ -1,4 +1,3 @@
-// src/services/location.ts
 export type LatLng = { lat: number; lng: number };
 
 export function haversine(a: LatLng, b: LatLng) {
@@ -9,13 +8,12 @@ export function haversine(a: LatLng, b: LatLng) {
   const Δφ = toRad(b.lat - a.lat);
   const Δλ = toRad(b.lng - a.lng);
   const s =
-    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    Math.sin(Δφ / 2) ** 2 +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
-  return R * c; // meters
+  return R * c; // metros
 }
 
-// NOVO:
 export function withinRadius(center: LatLng, point: LatLng, radiusMeters: number): boolean {
   return haversine(center, point) <= radiusMeters;
 }
