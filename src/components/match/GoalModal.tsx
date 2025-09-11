@@ -24,7 +24,6 @@ export function GoalModal({
   const [isOwnGoal, setIsOwnGoal] = useState(false);
   const saveBtnRef = useRef<HTMLButtonElement>(null);
 
-  // Sincroniza minuto inicial quando o modal abre
   useEffect(() => {
     if (open) setMinute(defaultMinute);
   }, [open, defaultMinute]);
