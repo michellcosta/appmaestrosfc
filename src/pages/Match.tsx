@@ -26,7 +26,6 @@ export default function MatchPage() {
     team: 'Preto',
   });
 
-  // só para exemplo: avança 10s
   const tick10 = () => setClock((c) => c + 10);
 
   const abrirModal = (team: TeamColor) => setGoalModal({ open: true, team });
