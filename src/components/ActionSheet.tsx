@@ -45,7 +45,7 @@ export function ActionSheet({
       if (!open) return;
       if (e.key === "Escape") onClose();
       if (e.key === "Tab") {
-        // Focus trap simples
+        // focus trap simples
         const focusables = sheetRef.current?.querySelectorAll<HTMLElement>(
           'a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])'
         );
