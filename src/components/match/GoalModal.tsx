@@ -9,11 +9,9 @@ export type GoalModalProps = {
   players: Player[];
   // API original:
   onSave?: (goal: GoalEvent) => void;
-
-  // Compatibilidade com Match.tsx:
+  // Compat com Match.tsx:
   teamLabel?: TeamColor;
   onConfirm?: (author: Player, assist?: Player) => void;
-
   defaultMinute?: number;
 };
 
