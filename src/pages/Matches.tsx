@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { MapPin, Calendar, Users, Clock, CheckCircle, Navigation } from 'lucide-react';
+import React, { useState } from 'react';
+import { MapPin, Calendar, Users, Clock, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/illustrations/empty-state';
-import { ActionSheet } from '@/components/ui/action-sheet';
 import { pt } from '@/i18n/pt';
 import { cn } from '@/lib/utils';
-import { TeamColor } from '@/types/teams';
 
 // Mock data - será substituído por dados do Supabase
 const mockMatches = [
@@ -24,100 +22,35 @@ const mockMatches = [
 export const Matches: React.FC = () => {
   const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
-  const [showRouteSheet, setShowRouteSheet] = useState(false);
-  const [selectedVenue, setSelectedVenue] = useState<any>(null);
-  const [locationError, setLocationError] = useState<string>('');
-  const [userLocation, setUserLocation] = useState<GeolocationCoordinates | null>(null);
-  
   const currentUserId = 'user1'; // Mock - será obtido do contexto de auth
-  const VENUE_LAT = -23.550520; // Mock - virá do app_settings_venue
-  const VENUE_LNG = -46.633308;
-  const MAX_DISTANCE_METERS = 30;
-
-  // Calcular distância entre dois pontos
-  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
-    const R = 6371e3; // Earth radius in meters
-    const φ1 = lat1 * Math.PI/180;
-    const φ2 = lat2 * Math.PI/180;
-    const Δφ = (lat2-lat1) * Math.PI/180;
-    const Δλ = (lng2-lng1) * Math.PI/180;
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  };
 
   const handleCheckIn = async (matchId: string) => {
     setIsCheckingIn(true);
-    setLocationError('');
-    
+    // Simular geolocalização
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const distance = calculateDistance(
-          position.coords.latitude,
-          position.coords.longitude,
-          VENUE_LAT,
-          VENUE_LNG
-        );
-        
-        if (position.coords.accuracy > 50) {
-          setLocationError(pt.match.weakGpsSignal);
-          setIsCheckingIn(false);
-          return;
-        }
-        
-        if (distance > MAX_DISTANCE_METERS) {
-          setLocationError(pt.match.approachField);
-          setIsCheckingIn(false);
-          return;
-        }
-        
-        // Check-in válido
+        console.log('Location:', position.coords);
+        // TODO: Validar distância do campo
         setTimeout(() => {
           setIsCheckingIn(false);
-          // TODO: Chamar edge function para registrar check-in
+          // Show success toast
         }, 1000);
       },
       (error) => {
-        setLocationError('Erro ao obter localização');
+        console.error('Location error:', error);
         setIsCheckingIn(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
       }
     );
   };
 
   const handleDrawTeams = (matchId: string) => {
-    // TODO: Mostrar action sheet de confirmação
+    // TODO: Chamar edge function para sortear times
     console.log('Drawing teams for match:', matchId);
   };
 
   const handleOpenRoute = (venue: any) => {
-    setSelectedVenue(venue);
-    setShowRouteSheet(true);
-  };
-
-  const openNavigation = (app: 'googlemaps' | 'waze') => {
-    const lat = VENUE_LAT;
-    const lng = VENUE_LNG;
-    
-    if (app === 'googlemaps') {
-      // Try deep link first, then fallback to web
-      const deepLink = `comgooglemaps://?daddr=${lat},${lng}&directionsmode=driving`;
-      const webLink = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-      window.open(deepLink);
-      setTimeout(() => window.open(webLink, '_blank'), 500);
-    } else {
-      // Waze
-      const deepLink = `waze://?ll=${lat},${lng}&navigate=yes`;
-      const webLink = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
-      window.open(deepLink);
-      setTimeout(() => window.open(webLink, '_blank'), 500);
-    }
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${venue.name}`;
+    window.open(url, '_blank');
   };
 
   if (mockMatches.length === 0) {
