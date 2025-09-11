@@ -3,7 +3,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { AppLayout } from "./components/layout/app-layout";
+import { Matches } from "./pages/Matches";
+import { Match } from "./pages/Match";
+import { Financial } from "./pages/Financial";
+import { Ranking } from "./pages/Ranking";
+import { Chat } from "./pages/Chat";
+import { Profile } from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -15,7 +21,12 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route element={<AppLayout><Matches /></AppLayout>} path="/" />
+          <Route element={<AppLayout><Match /></AppLayout>} path="/match" />
+          <Route element={<AppLayout><Financial /></AppLayout>} path="/financial" />
+          <Route element={<AppLayout><Ranking /></AppLayout>} path="/ranking" />
+          <Route element={<AppLayout><Chat /></AppLayout>} path="/chat" />
+          <Route element={<AppLayout><Profile /></AppLayout>} path="/profile" />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

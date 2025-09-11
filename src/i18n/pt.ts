@@ -1,0 +1,162 @@
+// Portuguese translations for Maestros FC
+
+export const pt = {
+  app: {
+    name: 'Maestros FC',
+    tagline: 'Organize suas peladas',
+  },
+  
+  navigation: {
+    matches: 'Jogos',
+    match: 'Partida',
+    financial: 'Financeiro',
+    ranking: 'Ranking',
+    chat: 'Chat',
+    profile: 'Perfil',
+  },
+  
+  auth: {
+    signInWithGoogle: 'Entrar com Google',
+    signOut: 'Sair',
+    welcome: 'Bem-vindo',
+  },
+  
+  roles: {
+    owner: 'Owner',
+    admin: 'Admin',
+    aux: 'Auxiliar',
+    mensalista: 'Mensalista',
+    diarista: 'Diarista',
+  },
+  
+  teams: {
+    black: 'Preto',
+    green: 'Verde',
+    gray: 'Cinza',
+    bibs: 'Coletes',
+  },
+  
+  match: {
+    checkIn: 'Cheguei',
+    drawTeams: 'Sortear Times',
+    openRoute: 'Abrir Rota',
+    requestSpot: 'Pedir Vaga',
+    players: 'jogadores',
+    confirmed: 'Confirmados',
+    waiting: 'Aguardando',
+    start: 'Iniciar',
+    pause: 'Pausar',
+    end: 'Encerrar',
+    goal: 'Gol',
+    substitute: 'Substituir',
+    selectGK: 'Selecionar Goleiro',
+    tiebreaker: 'Desempate',
+    coinFlip: 'Cara ou Coroa',
+    wheel: 'Roleta',
+    history: 'Histórico',
+    round: 'Rodada',
+    score: 'Placar',
+    drawnTeams: 'Times Sorteados',
+    matchLive: 'Partida ao Vivo',
+  },
+  
+  financial: {
+    payment: 'Pagamento',
+    pay: 'Pagar',
+    paid: 'Pago',
+    pending: 'Pendente',
+    awaitingApproval: 'Aguardando aprovação',
+    paymentInProgress: 'Pagamento em andamento',
+    matchFull: 'Partida cheia',
+    pixCopyPaste: 'Pix - Copiar',
+    monthlyPayment: 'Pagamento Mensalista Maestros FC',
+    dailyPayment: 'Pagamento Diarista Maestros FC',
+    dueDate: 'Vencimento',
+    credits: 'Créditos',
+    refund: 'Reembolso',
+  },
+  
+  profile: {
+    name: 'Nome',
+    position: 'Posição',
+    shirtSize: 'Tamanho da Camisa',
+    editProfile: 'Editar Perfil',
+    theme: 'Tema',
+    themeLight: 'Claro',
+    themeDark: 'Escuro',
+    themeAuto: 'Automático',
+    notifications: 'Notificações',
+    muteAll: 'Silenciar Todas',
+  },
+  
+  positions: {
+    gol: 'Gol',
+    zaga: 'Zaga',
+    lateral: 'Lateral',
+    meio: 'Meio',
+    atacante: 'Atacante',
+    coringa: 'Coringa',
+  },
+  
+  status: {
+    requested: 'Solicitado',
+    accepted: 'Aceito',
+    declined: 'Recusado',
+    paid: 'Pago',
+    confirmed: 'Confirmado',
+    cancelled: 'Cancelado',
+  },
+  
+  time: {
+    today: 'Hoje',
+    tomorrow: 'Amanhã',
+    week: 'Semana',
+    month: 'Mês',
+    all: 'Todos',
+    minutes: 'min',
+    seconds: 's',
+  },
+  
+  actions: {
+    save: 'Salvar',
+    cancel: 'Cancelar',
+    confirm: 'Confirmar',
+    delete: 'Excluir',
+    edit: 'Editar',
+    copy: 'Copiar',
+    share: 'Compartilhar',
+    filter: 'Filtrar',
+    search: 'Buscar',
+    refresh: 'Atualizar',
+    back: 'Voltar',
+  },
+  
+  messages: {
+    loading: 'Carregando...',
+    error: 'Erro ao carregar',
+    noData: 'Sem dados',
+    noMatches: 'Nenhum jogo encontrado',
+    noMessages: 'Nenhuma mensagem',
+    noNotices: 'Nenhum aviso',
+    noPayments: 'Nenhum pagamento',
+    noRanking: 'Sem dados para este período',
+    locationRequired: 'Localização necessária para check-in',
+    tooFarFromVenue: 'Você está muito longe do campo',
+    checkInSuccess: 'Check-in realizado com sucesso',
+    teamsSorted: 'Times sorteados com sucesso',
+    goalRegistered: 'Gol registrado',
+    paymentSuccess: 'Pagamento confirmado',
+    pixCopied: 'Código Pix copiado',
+    profileUpdated: 'Perfil atualizado',
+  },
+  
+  errors: {
+    generic: 'Ocorreu um erro',
+    network: 'Erro de conexão',
+    unauthorized: 'Não autorizado',
+    notFound: 'Não encontrado',
+    invalidData: 'Dados inválidos',
+    locationDenied: 'Permissão de localização negada',
+    mockLocation: 'Localização simulada detectada',
+  },
+};
