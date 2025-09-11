@@ -1,52 +1,35 @@
-// ===============================
 // src/services/payments.ts
-// ===============================
-export type PixQR = { emv: string; qrUrl?: string; copyPaste?: string };
-export type PaymentIntent = {
-id: string;
-amount: number; // em centavos
-description?: string;
-qr?: PixQR;
-createdAt: string;
-};
+import type { DiaristRequest } from '@/types';
 
+// janela de pagamento (ajuste conforme regra do negócio)
+export const PAYMENT_WINDOW_MS = 15 * 60 * 1000; // 15 min
 
-export type PaymentState =
-| { status: "idle" }
-| { status: "creating" }
-| { status: "qr_ready"; intent: PaymentIntent }
-| { status: "waiting_confirmation"; intent: PaymentIntent }
-| { status: "confirmed"; intent: PaymentIntent; paidAt: string }
-| { status: "failed"; error: string }
-| { status: "expired"; intent: PaymentIntent }
-| { status: "cancelled" };
-
-
-export type PaymentEvents =
-| { type: "CREATE"; amount: number; description?: string }
-| { type: "CANCEL" }
-| { type: "EXPIRE" }
-| { type: "CONFIRM"; paidAt?: string };
-
-
-export type TransitionListener = (state: PaymentState) => void;
-
-
-export class PaymentMachine {
-state: PaymentState = { status: "idle" };
-private pollTimer: any = null;
-private pollFn: ((intentId: string) => Promise<"PENDING" | "CONFIRMED" | "EXPIRED">) | null = null;
-private listeners = new Set<TransitionListener>();
-
-
-constructor(pollFn?: (intentId: string) => Promise<"PENDING" | "CONFIRMED" | "EXPIRED">) {
-this.pollFn = pollFn ?? null;
+export function startPaymentWindow(r: DiaristRequest): DiaristRequest {
+  return { ...r, windowStartedAt: Date.now(), status: r.status ?? 'pending' };
 }
 
-
-on(event: 'transition', cb: TransitionListener) {
-if (event !== 'transition') return () => {};
-this.listeners.add(cb);
-return () => this.listeners.delete(cb);
+export function isPaymentWindowActive(r: DiaristRequest): boolean {
+  if (!r.windowStartedAt) return false;
+  return Date.now() - r.windowStartedAt < PAYMENT_WINDOW_MS;
 }
+
+export function canShowPayButton(r: DiaristRequest): boolean {
+  return r.status !== 'paid' && !isPaymentWindowActive(r);
+}
+
+export function markPaid(r: DiaristRequest): DiaristRequest {
+  return { ...r, status: 'paid', updatedAt: new Date().toISOString() };
+}
+
+export function markFull(r: DiaristRequest): DiaristRequest {
+  return { ...r, status: 'full', updatedAt: new Date().toISOString() };
+}
+
+// regra placeholder: conceder crédito se janela expirou e ainda pending
+export function creditIfLate(r: DiaristRequest): DiaristRequest {
+  if (r.status === 'pending' && r.windowStartedAt && !isPaymentWindowActive(r)) {
+    // aplique lógica real aqui se necessário
+    return { ...r, updatedAt: new Date().toISOString() };
+  }
+  return r;
 }
