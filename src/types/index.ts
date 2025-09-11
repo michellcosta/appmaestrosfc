@@ -1,7 +1,6 @@
-// src/types/index.ts
 export type TeamColor =
   | 'blue' | 'red' | 'green' | 'yellow' | 'purple' | 'orange' | 'gray'
-  // labels em PT usados no app:
+  // rótulos PT usados no app:
   | 'Preto' | 'Verde' | 'Cinza' | 'Coletes';
 
 export type Player = {
@@ -19,11 +18,11 @@ export type GoalEvent = {
   minute: number;
   ownGoal?: boolean;
   createdAt: string;
-  // campos utilizados na UI de Match.tsx (tornamos opcionais para compatibilidade):
+  // campos opcionais usados na UI de Match.tsx:
   team?: TeamColor;
   authorName?: string;
   assistName?: string;
-  ts?: number; // timestamp em segundos ou ms, conforme o uso
+  ts?: number; // em segundos (ou ms) conforme seu uso na UI
 };
 
 export type Venue = { name: string; address?: string; lat?: number; lng?: number };
@@ -45,13 +44,12 @@ export type ChatMessage = {
   createdAt: string;
 };
 
-// --- novos tipos exigidos por Financial.tsx e Match.tsx:
-
+// ---- tipos exigidos por Financial.tsx e Match.tsx ----
 export type DiaristRequest = {
   id: string;
   amountCents: number;
   status?: 'pending' | 'paid' | 'full';
-  windowStartedAt?: number; // ms epoch
+  windowStartedAt?: number; // epoch ms
   createdAt?: string;
   updatedAt?: string;
 };
