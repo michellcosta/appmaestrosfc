@@ -3,7 +3,6 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-// Mantém renderização de mídia externa (audio/image/video), mas sem gravar nada aqui.
 type Msg = {
   id: string;
   me?: boolean;
