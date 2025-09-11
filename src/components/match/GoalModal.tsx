@@ -10,7 +10,7 @@ export type GoalModalProps = {
   // API original:
   onSave?: (goal: GoalEvent) => void;
 
-  // Compatibilidade com uso em Match.tsx:
+  // Compatibilidade com Match.tsx:
   teamLabel?: TeamColor;
   onConfirm?: (author: Player, assist?: Player) => void;
 
