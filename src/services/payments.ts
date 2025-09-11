@@ -24,7 +24,7 @@ export function markFull(r: DiaristRequest): DiaristRequest {
   return { ...r, status: 'full', updatedAt: new Date().toISOString() };
 }
 
-// regra placeholder: creditar se janela expirou e ainda está pending
+// placeholder: creditar se janela expirou e ainda pending
 export function creditIfLate(r: DiaristRequest): DiaristRequest {
   if (r.status === 'pending' && r.windowStartedAt && !isPaymentWindowActive(r)) {
     return { ...r, updatedAt: new Date().toISOString() };
