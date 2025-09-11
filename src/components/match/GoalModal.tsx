@@ -1,6 +1,3 @@
-// ===============================
-// src/components/match/GoalModal.tsx
-// ===============================
 import React, { useMemo, useRef, useState } from "react";
 import { ActionSheet } from "@/components/ActionSheet";
 import { CheckCircle, User, Timer, Trophy } from "lucide-react";
@@ -67,6 +64,4 @@ className="w-full inline-flex items-center justify-center gap-2 rounded-xl borde
 key={p.id}
 onClick={() => setScorerId(p.id)}
 className={`flex items-center gap-3 rounded-xl border p-3 text-left ${
-scorerId === p.id ? "ring-2 ring-primary border-primary" : "hover:bg-muted/50"
-}`}
->
+}
