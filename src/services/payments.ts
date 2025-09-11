@@ -1,38 +1,52 @@
-import type { DiaristRequest } from '@/types';
+// ===============================
+// src/services/payments.ts
+// ===============================
+export type PixQR = { emv: string; qrUrl?: string; copyPaste?: string };
+export type PaymentIntent = {
+id: string;
+amount: number; // em centavos
+description?: string;
+qr?: PixQR;
+createdAt: string;
+};
 
-export const PAYMENT_WINDOW_MS = 30 * 60 * 1000; // 30:00
 
-export function canShowPayButton(req: DiaristRequest): boolean {
-  return req.state === 'approved';
+export type PaymentState =
+| { status: "idle" }
+| { status: "creating" }
+| { status: "qr_ready"; intent: PaymentIntent }
+| { status: "waiting_confirmation"; intent: PaymentIntent }
+| { status: "confirmed"; intent: PaymentIntent; paidAt: string }
+| { status: "failed"; error: string }
+| { status: "expired"; intent: PaymentIntent }
+| { status: "cancelled" };
+
+
+export type PaymentEvents =
+| { type: "CREATE"; amount: number; description?: string }
+| { type: "CANCEL" }
+| { type: "EXPIRE" }
+| { type: "CONFIRM"; paidAt?: string };
+
+
+export type TransitionListener = (state: PaymentState) => void;
+
+
+export class PaymentMachine {
+state: PaymentState = { status: "idle" };
+private pollTimer: any = null;
+private pollFn: ((intentId: string) => Promise<"PENDING" | "CONFIRMED" | "EXPIRED">) | null = null;
+private listeners = new Set<TransitionListener>();
+
+
+constructor(pollFn?: (intentId: string) => Promise<"PENDING" | "CONFIRMED" | "EXPIRED">) {
+this.pollFn = pollFn ?? null;
 }
 
-export function startPaymentWindow(req: DiaristRequest, now = Date.now()): DiaristRequest {
-  if (req.state !== 'approved') return req;
-  return { ...req, state: 'paying', paymentStartedAt: now };
-}
 
-export function isPaymentWindowActive(req: DiaristRequest, now = Date.now()): boolean {
-  if (req.state !== 'paying' || !req.paymentStartedAt) return false;
-  return now - req.paymentStartedAt < PAYMENT_WINDOW_MS;
+on(event: 'transition', cb: TransitionListener) {
+if (event !== 'transition') return () => {};
+this.listeners.add(cb);
+return () => this.listeners.delete(cb);
 }
-
-export function markPaid(req: DiaristRequest, now = Date.now()): DiaristRequest {
-  if (req.state !== 'paying') return req;
-  return { ...req, state: 'paid', paidAt: now };
-}
-
-export function markFull(req: DiaristRequest): DiaristRequest {
-  // used when match becomes full BEFORE user clicks "Gerar Pix — Copiar"
-  if (req.state === 'approved') return { ...req, state: 'full' };
-  return req;
-}
-
-export function creditIfLate(req: DiaristRequest, now = Date.now()): DiaristRequest {
-  // called after provider webhook confirms payment
-  // if window expired OR match got full in the meantime, convert to credit
-  const expired = req.paymentStartedAt ? (now - req.paymentStartedAt >= PAYMENT_WINDOW_MS) : false;
-  if (req.state === 'paying' && (expired || req.state === 'full')) {
-    return { ...req, state: 'credited', creditedAt: now };
-  }
-  return req;
 }
