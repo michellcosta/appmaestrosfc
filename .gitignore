@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Aux/temporários
+src/pages/Match.tsx.bak
+supabase/.temp/
+create_*.sh
