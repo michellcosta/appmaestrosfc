@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/illustrations/empty-state';
 import { pt } from '@/i18n/pt';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,9 @@ interface TeamScore {
   Cinza: number;
   Vermelho: number;
 }
+
+// --- Novo: tipos/estados para registrar gols ---
+interface Player { id: string; name: string; team: TeamColor }
 
 export const Match: React.FC = () => {
   const [matchState, setMatchState] = useState<'idle' | 'running' | 'paused'>('idle');
@@ -63,6 +67,57 @@ export const Match: React.FC = () => {
     setElapsedTime(0);
     setCurrentRound(currentRound + 1);
   };
+
+  const openGoalModal = (team: TeamColor) => {
+    setGoalTeam(team);
+    setGoalStep('select_scorer');
+    setGoalScorer(null);
+    setGoalAssist(null);
+    setIsGoalOpen(true);
+  };
+
+  const handleSelectScorer = (pl: Player) => {
+    setGoalScorer(pl);
+    setGoalStep('select_assist');
+  };
+
+  const formatMMSS = (totalSeconds: number) => {
+    const mm = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+    const ss = String(totalSeconds % 60).padStart(2, '0');
+    return `${mm}:${ss}`;
+  };
+
+  const confirmGoal = (assist: Player | null) => {
+    if (!goalScorer) return;
+    // 1) Placar
+    setScores(prev => ({ ...prev, [goalTeam]: (prev[goalTeam] ?? 0) + 1 }));
+    // 2) Histórico
+    setRecentGoals(prev => [
+      { team: goalTeam, player: goalScorer.name, assist: assist?.name, time: formatMMSS(elapsedTime) },
+      ...prev,
+    ].slice(0, 8));
+    // 3) Estatísticas por jogador (sessão)
+    setPlayerStats(prev => ({
+      ...prev,
+      [goalScorer.id]: {
+        goals: (prev[goalScorer.id]?.goals ?? 0) + 1,
+        assists: prev[goalScorer.id]?.assists ?? 0,
+      },
+      ...(assist ? {
+        [assist.id]: {
+          goals: prev[assist.id]?.goals ?? 0,
+          assists: (prev[assist.id]?.assists ?? 0) + 1,
+        }
+      } : {}),
+    }));
+    setIsGoalOpen(false);
+  };
+
+  const handleSelectAssist = (pl: Player | null) => {
+    if (pl && goalScorer && pl.id === goalScorer.id) return; // evita auto-assistência
+    confirmGoal(pl);
+  };
+
 
   const handleGoal = (team: TeamColor) => {
     setScores((prev) => ({
@@ -161,7 +216,7 @@ return (
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => handleGoal(team)}
+                  onClick={() => openGoalModal(team)}
                   className="h-8 w-8"
                 >
                   <Plus className="w-4 h-4" />
