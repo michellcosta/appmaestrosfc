@@ -17,7 +17,6 @@ interface TeamScore {
   Vermelho: number;
 }
 
-// --- Novo: tipos/estados para registrar gols ---
 interface Player { id: string; name: string; team: TeamColor }
 
 export const Match: React.FC = () => {
@@ -31,38 +30,38 @@ export const Match: React.FC = () => {
     Vermelho: 0,
   });
 
-  // Elenco (mock para teste - trocar por Supabase depois)
-  const [roster] = useState<Partial<Record<TeamColor, Player[]>>>(
-    {
-      Preto: [
-        { id: 'p1', name: 'Michell', team: 'Preto' },
-        { id: 'p2', name: 'Rafael', team: 'Preto' },
-        { id: 'p3', name: 'Leo', team: 'Preto' },
-      ],
-      Verde: [
-        { id: 'v1', name: 'Gui', team: 'Verde' },
-        { id: 'v2', name: 'Dudu', team: 'Verde' },
-        { id: 'v3', name: 'Carlos', team: 'Verde' },
-      ],
-      Cinza: [
-        { id: 'c1', name: 'João', team: 'Cinza' },
-        { id: 'c2', name: 'Pedro', team: 'Cinza' },
-        { id: 'c3', name: 'Vini', team: 'Cinza' },
-      ],
-      Vermelho: [
-        { id: 'r1', name: 'André', team: 'Vermelho' },
-        { id: 'r2', name: 'Felipe', team: 'Vermelho' },
-        { id: 'r3', name: 'Thiago', team: 'Vermelho' },
-      ]
-    }
-  );
+  // Elenco (mock); depois trocar por Supabase
+  const [roster] = useState<Partial<Record<TeamColor, Player[]>>>({
+    Preto: [
+      { id: 'p1', name: 'Michell', team: 'Preto' },
+      { id: 'p2', name: 'Rafael', team: 'Preto' },
+      { id: 'p3', name: 'Leo', team: 'Preto' },
+    ],
+    Verde: [
+      { id: 'v1', name: 'Gui', team: 'Verde' },
+      { id: 'v2', name: 'Dudu', team: 'Verde' },
+      { id: 'v3', name: 'Carlos', team: 'Verde' },
+    ],
+    Cinza: [
+      { id: 'c1', name: 'João', team: 'Cinza' },
+      { id: 'c2', name: 'Pedro', team: 'Cinza' },
+      { id: 'c3', name: 'Vini', team: 'Cinza' },
+    ],
+    Vermelho: [
+      { id: 'r1', name: 'André', team: 'Vermelho' },
+      { id: 'r2', name: 'Felipe', team: 'Vermelho' },
+      { id: 'r3', name: 'Thiago', team: 'Vermelho' },
+    ],
+  });
 
+  // Modal de gol
   const [isGoalOpen, setIsGoalOpen] = useState(false);
   const [goalTeam, setGoalTeam] = useState<TeamColor>('Preto');
   const [goalStep, setGoalStep] = useState<'select_scorer' | 'select_assist'>('select_scorer');
   const [goalScorer, setGoalScorer] = useState<Player | null>(null);
   const [goalAssist, setGoalAssist] = useState<Player | null>(null);
 
+  // Histórico/estatísticas (sessão)
   const [recentGoals, setRecentGoals] = useState<{
     team: TeamColor;
     player: string;
@@ -71,58 +70,22 @@ export const Match: React.FC = () => {
     assistId?: string;
     time: string;
   }[]>([]);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [playerStats, setPlayerStats] = useState<Record<string, { goals: number; assists: number }>>({});
-
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   // Cronômetro
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
+    let interval: any;
     if (matchState === 'running') {
-      interval = setInterval(() => {
-        setElapsedTime((prev) => prev + 1);
-      }, 1000);
+      interval = setInterval(() => setElapsedTime((prev) => prev + 1), 1000);
     }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    return () => { if (interval) clearInterval(interval); };
   }, [matchState]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleStartPause = () => {
-    if (matchState === 'idle') {
-      setMatchState('running');
-    } else if (matchState === 'running') {
-      setMatchState('paused');
-    } else {
-      setMatchState('running');
-    }
-  };
-
-  const handleEnd = () => {
-    setMatchState('idle');
-    setElapsedTime(0);
-    setCurrentRound(currentRound + 1);
-  };
-
-  const openGoalModal = (team: TeamColor) => {
-    setGoalTeam(team);
-    setGoalStep('select_scorer');
-    setGoalScorer(null);
-    setGoalAssist(null);
-    setIsGoalOpen(true);
-  };
-
-  const handleSelectScorer = (pl: Player) => {
-    setGoalScorer(pl);
-    setGoalStep('select_assist');
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
   const formatMMSS = (totalSeconds: number) => {
@@ -131,15 +94,41 @@ export const Match: React.FC = () => {
     return `${mm}:${ss}`;
   };
 
-  
+  const handleStartPause = () => {
+    if (matchState === 'idle') setMatchState('running');
+    else if (matchState === 'running') setMatchState('paused');
+    else setMatchState('running');
+  };
+
+  const handleEnd = () => {
+    setMatchState('idle');
+    setElapsedTime(0);
+    setCurrentRound((r) => r + 1);
+  };
+
+  const openGoalModal = (team: TeamColor) => {
+    setGoalTeam(team);
+    setGoalStep('select_scorer');
+    setGoalScorer(null);
+    setGoalAssist(null);
+    setEditingIndex(null);
+    setIsGoalOpen(true);
+  };
+
+  const handleSelectScorer = (pl: Player) => {
+    setGoalScorer(pl);
+    setGoalStep('select_assist');
+  };
+
   const confirmGoal = (assist: Player | null) => {
     if (!goalScorer) return;
+
     if (editingIndex !== null) {
-      // Edição: ajustar estatísticas antigas e substituir o item
+      // Edição: ajusta estatísticas antigas e substitui item mantendo time/tempo
       setRecentGoals(prev => {
         const old = prev[editingIndex];
         if (!old) return prev;
-        // Atualiza estatísticas removendo o antigo
+
         setPlayerStats(ps => {
           const next = { ...ps };
           const decGoal = (id?: string) => {
@@ -152,16 +141,16 @@ export const Match: React.FC = () => {
           };
           decGoal(old.playerId);
           decAssist(old.assistId);
-          // Incrementa novos
-          const scorerId = goalScorer.id;
-          next[scorerId] = { goals: (next[scorerId]?.goals ?? 0) + 1, assists: next[scorerId]?.assists ?? 0 };
+
+          const sid = goalScorer.id;
+          next[sid] = { goals: (next[sid]?.goals ?? 0) + 1, assists: next[sid]?.assists ?? 0 };
           if (assist) {
             const aid = assist.id;
             next[aid] = { goals: next[aid]?.goals ?? 0, assists: (next[aid]?.assists ?? 0) + 1 };
           }
           return next;
         });
-        // Substitui mantendo time e horário
+
         const updated = { team: old.team, player: goalScorer.name, playerId: goalScorer.id, assist: assist?.name, assistId: assist?.id, time: old.time };
         const arr = [...prev];
         arr[editingIndex] = updated;
@@ -171,6 +160,7 @@ export const Match: React.FC = () => {
       setEditingIndex(null);
       return;
     }
+
     // Inclusão normal
     setScores(prev => ({ ...prev, [goalTeam]: (prev[goalTeam] ?? 0) + 1 }));
     setRecentGoals(prev => [
@@ -222,7 +212,7 @@ export const Match: React.FC = () => {
         }
         return next;
       });
-      // Remove item da lista
+      // Remove item
       const arr = [...prev];
       arr.splice(index, 1);
       return arr;
@@ -237,32 +227,23 @@ export const Match: React.FC = () => {
     const byId = item.playerId ? players.find(p => p.id === item.playerId) : undefined;
     const byName = players.find(p => p.name === item.player);
     setGoalScorer(byId || byName || null);
-    setGoalStep('select_scorer'); // permite trocar artilheiro e depois assistência
+    setGoalStep('select_scorer');
     setGoalAssist(null);
     setEditingIndex(index);
     setIsGoalOpen(true);
   };
 
-
-
-  const handleGoal = (team: TeamColor) => {
-    setScores((prev) => ({
-      ...prev,
-      [team]: prev[team] + 1,
-    }));
-  };
-
   const getTeamColor = (team: TeamColor) => {
-    const colors = {
+    const colors: Record<TeamColor, string> = {
       Preto: 'bg-team-black',
       Verde: 'bg-team-green',
       Cinza: 'bg-team-gray',
-      
-      Vermelho: 'bg-team-red', // transição: usa a mesma cor até migrarmos o CSS
+      Vermelho: 'bg-team-red',
     };
     return colors[team];
   };
-return (
+
+  return (
     <div className="p-4 space-y-4">
       <header className="mb-6">
         <h1 className="text-2xl font-outfit font-bold text-foreground">
@@ -353,21 +334,7 @@ return (
         </div>
       </Card>
 
-      {/* Ações Rápidas */}
-      <div className="grid grid-cols-2 gap-3">
-        <Button variant="outline" size="lg" className="w-full">
-          <Users className="w-4 h-4" />
-          {pt.match.substitute}
-        </Button>
-        <Button variant="outline" size="lg" className="w-full">
-          <Shuffle className="w-4 h-4" />
-          {pt.match.tiebreaker}
-        </Button>
-      </div>
-
-
-      {/* Gols recentes + Estatísticas (sessão) */}
-      
+      {/* Gols recentes + Estatísticas */}
       <Card className="p-4 mt-6">
         <h3 className="font-semibold mb-3">Gols recentes</h3>
         {recentGoals.length === 0 ? (
@@ -394,7 +361,6 @@ return (
           </ul>
         )}
       </Card>
-</Card>
 
       <Card className="p-4 mt-4">
         <h3 className="font-semibold mb-3">Estatísticas dos jogadores (sessão)</h3>
@@ -415,7 +381,6 @@ return (
           )}
         </div>
       </Card>
-
 
       {/* Tabs para Histórico */}
       <Tabs defaultValue="week" className="w-full">
@@ -466,6 +431,7 @@ return (
         </TabsContent>
       </Tabs>
 
+      {/* Dialog do gol (2 etapas) */}
       <Dialog open={isGoalOpen} onOpenChange={setIsGoalOpen}>
         <DialogContent>
           <DialogHeader>
@@ -507,7 +473,6 @@ return (
           )}
         </DialogContent>
       </Dialog>
-
     </div>
   );
 };
