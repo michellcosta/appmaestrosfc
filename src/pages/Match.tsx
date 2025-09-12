@@ -77,9 +77,12 @@ export const Match: React.FC = () => {
       Verde: 'bg-team-green',
       Cinza: 'bg-team-gray',
       Coletes: 'bg-team-bibs',
+      Vermelho: 'bg-team-bibs', // transição: usa a mesma cor até migrarmos o CSS
     };
     return colors[team];
   };
+
+  const displayTeamName = (team: TeamColor) => (team === 'Coletes' ? 'Vermelho' : team);
 
   return (
     <div className="p-4 space-y-4">
@@ -154,7 +157,7 @@ export const Match: React.FC = () => {
                   "w-8 h-8 rounded-full",
                   getTeamColor(team)
                 )} />
-                <span className="font-medium">{team}</span>
+                <span className="font-medium">{displayTeamName(team)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold">{score}</span>
