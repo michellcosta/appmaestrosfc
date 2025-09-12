@@ -23,7 +23,7 @@ const mockMatches = [
 export const Matches: React.FC = () => {
   const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
-  const TEAM_COLORS: TeamColor[] = ['Preto','Verde','Cinza','Coletes'];
+  const TEAM_COLORS: TeamColor[] = ['Preto','Verde','Cinza','Coletes','Vermelho'];
   const [drawnMatches, setDrawnMatches] = useState<Record<string, boolean>>({});
   const currentUserId = 'user1'; // Mock - será obtido do contexto de auth
 

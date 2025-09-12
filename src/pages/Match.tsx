@@ -10,21 +10,22 @@ import { pt } from '@/i18n/pt';
 import { cn } from '@/lib/utils';
 import { TeamColor } from '@/types';
 
-interface TeamScore { Preto: number; Verde: number; Cinza: number; Coletes: number; }
+interface TeamScore { Preto: number; Verde: number; Cinza: number; Coletes: number; Vermelho: number; }
 interface Player { id: string; name: string; team: TeamColor }
 
 export const Match: React.FC = () => {
   const [matchState, setMatchState] = useState<'idle' | 'running' | 'paused'>('idle');
   const [elapsedTime, setElapsedTime] = useState(0);
   const [currentRound, setCurrentRound] = useState(1);
-  const [scores, setScores] = useState<TeamScore>({ Preto: 0, Verde: 0, Cinza: 0, Coletes: 0 });
+  const [scores, setScores] = useState<TeamScore>({ Preto: 0, Verde: 0, Cinza: 0, Coletes: 0, Vermelho: 0 });
 
   // roster (mock)
   const [roster, setRoster] = useState<Partial<Record<TeamColor, Player[]>>>({
     Preto: [{ id: 'p1', name: 'Michell', team: 'Preto' }, { id: 'p2', name: 'Rafael', team: 'Preto' }],
     Verde: [{ id: 'v1', name: 'Gui', team: 'Verde' }, { id: 'v2', name: 'Dudu', team: 'Verde' }],
     Cinza: [{ id: 'c1', name: 'João', team: 'Cinza' }, { id: 'c2', name: 'Pedro', team: 'Cinza' }],
-    Coletes: [{ id: 'r1', name: 'André', team: 'Coletes' }, { id: 'r2', name: 'Felipe', team: 'Coletes' }],
+    Coletes: [{ id: 'col1', name: 'André', team: 'Coletes' }, { id: 'col2', name: 'Felipe', team: 'Coletes' }],
+    Vermelho: [{ id: 'v1', name: 'Lucas', team: 'Vermelho' }, { id: 'v2', name: 'Carlos', team: 'Vermelho' }],
   });
 
   // Goal modal
@@ -42,7 +43,7 @@ export const Match: React.FC = () => {
   const [subTeam, setSubTeam] = useState<TeamColor>('Preto');
   const [subOut, setSubOut] = useState<string | null>(null);
   const [subIn, setSubIn] = useState<string | null>(null);
-  const [subsPerRound, setSubsPerRound] = useState<Record<TeamColor, number>>({ Preto: 0, Verde: 0, Cinza: 0, Coletes: 0 });
+  const [subsPerRound, setSubsPerRound] = useState<Record<TeamColor, number>>({ Preto: 0, Verde: 0, Cinza: 0, Coletes: 0, Vermelho: 0 });
   const [subsHistory, setSubsHistory] = useState<{ team: TeamColor; outId: string; inId: string; time: string }[]>([]);
   const [isTieOpen, setIsTieOpen] = useState(false);
   const [tieResult, setTieResult] = useState<TeamColor | null>(null);
@@ -136,7 +137,7 @@ export const Match: React.FC = () => {
     setTieResult(tied.length<=1 ? null : tied[Math.floor(Math.random()*tied.length)]);
   };
 
-  const getTeamColor = (team: TeamColor) => ({ Preto:'bg-team-black', Verde:'bg-team-green', Cinza:'bg-team-gray', Coletes:'bg-team-bibs' }[team]);
+  const getTeamColor = (team: TeamColor) => ({ Preto:'bg-team-black', Verde:'bg-team-green', Cinza:'bg-team-gray', Coletes:'bg-team-bibs', Vermelho:'bg-team-red' }[team]);
 
   return (
     <div className="p-4 space-y-4">
@@ -260,8 +261,8 @@ export const Match: React.FC = () => {
         <DialogContent>
           <DialogHeader><DialogTitle>Substituição</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div className="grid grid-cols-4 gap-2">
-              {(['Preto','Verde','Cinza','Coletes'] as TeamColor[]).map(c => (<Button key={c} variant={subTeam===c?'default':'outline'} onClick={() => setSubTeam(c)}>{c}</Button>))}
+            <div className="grid grid-cols-5 gap-2">
+              {(['Preto','Verde','Cinza','Coletes','Vermelho'] as TeamColor[]).map(c => (<Button key={c} variant={subTeam===c?'default':'outline'} onClick={() => setSubTeam(c)}>{c}</Button>))}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

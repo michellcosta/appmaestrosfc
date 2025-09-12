@@ -34,6 +34,7 @@ export const pt = {
     green: 'Verde',
     gray: 'Cinza',
     bibs: 'Coletes',
+    red: 'Vermelho',
   },
   
   match: {
