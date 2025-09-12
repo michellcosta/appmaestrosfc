@@ -83,6 +83,23 @@ export const Match: React.FC = () => {
   const [playerStats, setPlayerStats] = useState<Record<string, { goals: number; assists: number }>>({});
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
+  // Histórico unificado de eventos da partida
+  interface MatchEvent {
+    type: 'START' | 'GOAL' | 'SUB' | 'PAUSE' | 'END';
+    time: string;
+    team?: TeamColor;
+    scorerId?: string;
+    scorerName?: string;
+    assistId?: string;
+    assistName?: string;
+    subOutId?: string;
+    subOutName?: string;
+    subInId?: string;
+    subInName?: string;
+    author?: 'Owner' | 'Admin' | 'Aux';
+  }
+  const [matchEvents, setMatchEvents] = useState<MatchEvent[]>([]);
+
   // Cronômetro
   useEffect(() => {
     let interval: any;
@@ -104,13 +121,24 @@ export const Match: React.FC = () => {
     return `${mm}:${ss}`;
   };
 
+  
   const handleStartPause = () => {
-    if (matchState === 'idle') setMatchState('running');
-    else if (matchState === 'running') setMatchState('paused');
-    else setMatchState('running');
+    if (matchState === 'idle') {
+      setMatchState('running');
+      setMatchEvents(prev => [{ type: 'START', time: formatMMSS(elapsedTime), author: 'Owner' }, ...prev]);
+    } else if (matchState === 'running') {
+      setMatchState('paused');
+      setMatchEvents(prev => [{ type: 'PAUSE', time: formatMMSS(elapsedTime), author: 'Owner' }, ...prev]);
+    } else {
+      setMatchState('running');
+      setMatchEvents(prev => [{ type: 'START', time: formatMMSS(elapsedTime), author: 'Owner' }, ...prev]);
+    }
   };
 
+  
   const handleEnd = () => {
+    // Registra fim antes de resetar o clock
+    setMatchEvents(prev => [{ type: 'END', time: formatMMSS(elapsedTime), author: 'Owner' }, ...prev]);
     setMatchState('idle');
     setElapsedTime(0);
     setCurrentRound((r) => r + 1);
@@ -190,6 +218,7 @@ export const Match: React.FC = () => {
         }
       } : {}),
     }));
+    setMatchEvents(prev => [{ type: 'GOAL', time: formatMMSS(elapsedTime), team: goalTeam, scorerId: goalScorer.id, scorerName: goalScorer.name, assistId: assist?.id, assistName: assist?.name, author: 'Owner' }, ...prev]);
     setIsGoalOpen(false);
   };
 
@@ -261,7 +290,10 @@ export const Match: React.FC = () => {
       return;
     }
     // Registra histórico (não alteramos roster neste MVP)
+    const outName = (roster[subTeam] || []).find(p => p.id === subOut!)?.name || '';
+    const inName = (roster[subTeam] || []).find(p => p.id === subIn!)?.name || '';
     setSubsHistory(prev => [{ team: subTeam, outId: subOut!, inId: subIn!, time: formatMMSS(elapsedTime) }, ...prev].slice(0, 12));
+    setMatchEvents(prev => [{ type: 'SUB', time: formatMMSS(elapsedTime), team: subTeam, subOutId: subOut!, subOutName: outName, subInId: subIn!, subInName: inName, author: 'Owner' }, ...prev]);
     // Incrementa contador
     setSubsPerRound(prev => ({ ...prev, [subTeam]: (prev[subTeam] ?? 0) + 1 }));
     // Fecha modal
@@ -441,6 +473,43 @@ const getTeamColor = (team: TeamColor) => {
           )}
         </div>
       </Card>
+
+
+      {/* Histórico (partida atual) */}
+      <Card className="p-4 mt-4">
+        <h3 className="font-semibold mb-3">Histórico da partida</h3>
+        {matchEvents.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Sem eventos ainda.</p>
+        ) : (
+          <ul className="space-y-2">
+            {matchEvents.map((e, i) => (
+              <li key={i} className="text-sm flex items-center justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  <Badge variant="outline">{e.type}</Badge>
+                  {e.type === 'GOAL' && (
+                    <span>
+                      <strong>{e.scorerName}</strong>
+                      {e.assistName ? ` (assist.: ${e.assistName})` : ''}
+                      {e.team ? ` — ${e.team}` : ''}
+                    </span>
+                  )}
+                  {e.type === 'SUB' && (
+                    <span>
+                      Sai <strong>{e.subOutName}</strong> · Entra <strong>{e.subInName}</strong>
+                      {e.team ? ` — ${e.team}` : ''}
+                    </span>
+                  )}
+                  {e.type === 'START' && <span>Início / Retomada</span>}
+                  {e.type === 'PAUSE' && <span>Pausa</span>}
+                  {e.type === 'END' && <span>Fim da partida</span>}
+                </div>
+                <span className="tabular-nums text-muted-foreground">{e.time}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
 
       {/* Tabs para Histórico */}
       <Tabs defaultValue="week" className="w-full">
