@@ -56,6 +56,17 @@ export const Match: React.FC = () => {
 
   // Modal de gol
   const [isGoalOpen, setIsGoalOpen] = useState(false);
+  // Substituições
+  const [isSubOpen, setIsSubOpen] = useState(false);
+  const [subTeam, setSubTeam] = useState<TeamColor>('Preto');
+  const [subOut, setSubOut] = useState<string | null>(null);
+  const [subIn, setSubIn] = useState<string | null>(null);
+  const [subsPerRound, setSubsPerRound] = useState<Record<TeamColor, number>>({ Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 });
+  const [subsHistory, setSubsHistory] = useState<{ team: TeamColor; outId: string; inId: string; time: string }[]>([]);
+
+  // Desempate
+  const [isTieOpen, setIsTieOpen] = useState(false);
+  const [tieResult, setTieResult] = useState<TeamColor | null>(null);
   const [goalTeam, setGoalTeam] = useState<TeamColor>('Preto');
   const [goalStep, setGoalStep] = useState<'select_scorer' | 'select_assist'>('select_scorer');
   const [goalScorer, setGoalScorer] = useState<Player | null>(null);
@@ -232,7 +243,57 @@ export const Match: React.FC = () => {
     setIsGoalOpen(true);
   };
 
-  const getTeamColor = (team: TeamColor) => {
+  
+  // Regras básicas de substituição:
+  // - Só libera se clock >= 5:00 (simplificado)
+  // - Máximo 2 por rodada por time
+  const canSubstituteNow = (team: TeamColor) => {
+    if (elapsedTime < 300) return { ok: false, reason: 'Aguarde pelo menos 5:00 de jogo' };
+    if (subsPerRound[team] >= 2) return { ok: false, reason: 'Limite de 2 substituições por rodada' };
+    return { ok: true };
+  };
+
+  const confirmSubstitution = () => {
+    if (!subTeam || !subOut || !subIn) return;
+    const rule = canSubstituteNow(subTeam);
+    if (!(rule as any).ok) {
+      alert((rule as any).reason);
+      return;
+    }
+    // Registra histórico (não alteramos roster neste MVP)
+    setSubsHistory(prev => [{ team: subTeam, outId: subOut!, inId: subIn!, time: formatMMSS(elapsedTime) }, ...prev].slice(0, 12));
+    // Incrementa contador
+    setSubsPerRound(prev => ({ ...prev, [subTeam]: (prev[subTeam] ?? 0) + 1 }));
+    // Fecha modal
+    setIsSubOpen(false);
+    setSubOut(null);
+    setSubIn(null);
+  };
+
+  const resetSubsForNextRound = () => {
+    setSubsPerRound({ Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 });
+  };
+
+  // Chame no fim da rodada
+  const endRoundAndResetSubs = () => {
+    handleEnd();
+    resetSubsForNextRound();
+  };
+
+  const runTiebreaker = () => {
+    // encontra times com maior pontuação empatada
+    const entries = Object.entries(scores) as [TeamColor, number][];
+    const max = Math.max(...entries.map(([, n]) => n));
+    const tied = entries.filter(([, n]) => n === max).map(([t]) => t);
+    if (tied.length <= 1) {
+      setTieResult(null);
+    } else {
+      const idx = Math.floor(Math.random() * tied.length);
+      setTieResult(tied[idx]);
+    }
+  };
+
+const getTeamColor = (team: TeamColor) => {
     const colors: Record<TeamColor, string> = {
       Preto: 'bg-team-black',
       Verde: 'bg-team-green',
@@ -472,6 +533,72 @@ export const Match: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Substituição */}
+      <Dialog open={isSubOpen} onOpenChange={setIsSubOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Substituição</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-4 gap-2">
+              {(['Preto','Verde','Cinza','Vermelho'] as TeamColor[]).map(c => (
+                <Button key={c} variant={subTeam === c ? 'default' : 'outline'} onClick={() => setSubTeam(c)}>
+                  {c}
+                </Button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <div className="text-sm font-medium mb-2">Sai</div>
+                <div className="space-y-2 max-h-56 overflow-auto">
+                  {roster[subTeam]?.map(p => (
+                    <Button key={p.id} variant={subOut === p.id ? 'default' : 'outline'} className="w-full justify-between" onClick={() => setSubOut(p.id)}>
+                      <span>{p.name}</span>
+                      <Badge>{subTeam}</Badge>
+                    </Button>
+                  )) || <p className="text-sm text-muted-foreground">Sem jogadores.</p>}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm font-medium mb-2">Entra</div>
+                <div className="space-y-2 max-h-56 overflow-auto">
+                  {roster[subTeam]?.map(p => (
+                    <Button key={p.id} variant={subIn === p.id ? 'default' : 'outline'} className="w-full justify-between" onClick={() => setSubIn(p.id)}>
+                      <span>{p.name}</span>
+                      <Badge variant="secondary">{subTeam}</Badge>
+                    </Button>
+                  )) || <p className="text-sm text-muted-foreground">Sem jogadores.</p>}
+                </div>
+              </div>
+            </div>
+
+            <Button onClick={confirmSubstitution} className="w-full">Confirmar substituição</Button>
+            <p className="text-xs text-muted-foreground">Regra: mínimo 5:00 de jogo · máx. 2 por rodada/time.</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Desempate */}
+      <Dialog open={isTieOpen} onOpenChange={setIsTieOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Desempate</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Seleciona aleatoriamente entre os times empatados no placar.</p>
+            <Button onClick={runTiebreaker} className="w-full">Sortear</Button>
+            {tieResult && (
+              <div className="p-3 rounded-lg border mt-2 flex items-center gap-3">
+                <div className={cn('w-5 h-5 rounded-full', getTeamColor(tieResult))} />
+                <span className="font-medium">Time vencedor: {tieResult}</span>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 };
