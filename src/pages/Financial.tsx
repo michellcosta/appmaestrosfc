@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DollarSign, Copy, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -14,7 +14,7 @@ interface PaymentData {
   status: 'pendente' | 'confirmado' | 'aguardando_aprovacao' | 'payment_in_progress';
   amount: number;
   dueDate?: Date;
-  match?: { date: Date; venue: string };
+  match?: { date: Date; venue: string; is_full?: boolean };
   pixCode?: string;
 }
 
@@ -24,7 +24,7 @@ export const Financial: React.FC = () => {
   const [copiedPixCode, setCopiedPixCode] = useState<string | null>(null);
 
   // Mock data
-  const payments: PaymentData[] = [
+  const [payments, setPayments] = useState<PaymentData[]>([
     {
       id: '1',
       type: 'mensal',
@@ -37,18 +37,16 @@ export const Financial: React.FC = () => {
       type: 'diaria',
       status: 'aguardando_aprovacao',
       amount: 10,
-      match: { date: new Date('2025-09-14'), venue: 'Campo do Maestros' },
+      match: { date: new Date('2025-09-14'), venue: 'Campo do Maestros', is_full: false },
     },
-  ];
+  ]);
 
   const handleGeneratePix = (paymentId: string) => {
     // Iniciar timer de 30 minutos
-    setPixTimer(30 * 60); // 30 minutos em segundos
-    
-    // Simular geração de código Pix
+    setPixTimer(30 * 60);
     const mockPixCode = '00020126580014BR.GOV.BCB.PIX0136123e4567-e89b-12d3-a456-426655440000';
-    
-    // TODO: Chamar edge function para gerar Pix real
+    // Atualiza o status do pagamento para 'payment_in_progress' e define o pixCode
+    setPayments(prev => prev.map(p => p.id === paymentId ? { ...p, status: 'payment_in_progress', pixCode: mockPixCode } : p));
     console.log('Generating Pix for payment:', paymentId);
   };
 
@@ -60,6 +58,14 @@ export const Financial: React.FC = () => {
       setCopiedPixCode(null);
     }, 2000);
   };
+
+  useEffect(() => {
+    if (pixTimer === null) return;
+    const t = setInterval(() => {
+      setPixTimer((v) => (v && v > 0 ? v - 1 : 0));
+    }, 1000);
+    return () => clearInterval(t);
+  }, [pixTimer]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -195,10 +201,43 @@ export const Financial: React.FC = () => {
                 </div>
 
                 {payment.status === 'aguardando_aprovacao' && (
+
                   <div className="flex items-center gap-2 p-3 bg-warning/10 rounded-lg border border-warning/20">
                     <AlertCircle className="w-5 h-5 text-warning" />
                     <span className="text-sm font-medium text-warning">
                       Aguardando aprovação do administrador
+                    </span>
+                  </div>
+                )}
+
+                {payment.status === 'pendente' && (
+                  <>
+                    {payment.match?.is_full ? (
+                      <div className="flex items-center gap-2 p-3 bg-accent/30 rounded-lg border border-accent/40 mb-3">
+                        <AlertCircle className="w-5 h-5 text-muted-foreground" />
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Partida cheia — aguarde liberação de vaga
+                        </span>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="warning"
+                        size="lg"
+                        className="w-full"
+                        onClick={() => handleGeneratePix(payment.id)}
+                      >
+                        <DollarSign className="w-4 h-4" />
+                        {pt.financial.pay} ({pt.financial.pixCopyPaste})
+                      </Button>
+                    )}
+                  </>
+                )}
+
+                {payment.status === 'confirmado' && payment.match?.is_full && (
+                  <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg border border-primary/20 mb-3">
+                    <AlertCircle className="w-5 h-5 text-primary" />
+                    <span className="text-sm font-medium text-primary">
+                      Pagamento convertido em <strong>crédito</strong> para o próximo jogo.
                     </span>
                   </div>
                 )}
