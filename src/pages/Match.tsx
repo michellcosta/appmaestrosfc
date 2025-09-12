@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, StopCircle, Plus, Users, Shuffle, Trophy, Clock } from 'lucide-react';
+import { Play, Pause, StopCircle, Plus, Users, Shuffle, Trophy, Clock, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -93,7 +93,7 @@ export const Match: React.FC = () => {
     setScores(prev => ({ ...prev, [goalTeam]: (prev[goalTeam] ?? 0) + 1 }));
     // 2) Histórico
     setRecentGoals(prev => [
-      { team: goalTeam, player: goalScorer.name, assist: assist?.name, time: formatMMSS(elapsedTime) },
+      { team: goalTeam, player: goalScorer.name, playerId: goalScorer.id, assist: assist?.name, assistId: assist?.id, time: formatMMSS(elapsedTime) },
       ...prev,
     ].slice(0, 8));
     // 3) Estatísticas por jogador (sessão)
@@ -117,6 +117,38 @@ export const Match: React.FC = () => {
     if (pl && goalScorer && pl.id === goalScorer.id) return; // evita auto-assistência
     confirmGoal(pl);
   };
+
+  const removeGoalAt = (index: number) => {
+    setRecentGoals(prev => {
+      const item = prev[index];
+      if (!item) return prev;
+      // Update scores
+      setScores(s => ({ ...s, [item.team]: Math.max(0, (s[item.team] ?? 0) - 1) }));
+      // Update player stats (by id if available; fallback by name)
+      setPlayerStats(ps => {
+        const next = { ...ps };
+        const findPlayerIdByName = (name?: string) => {
+          if (!name) return undefined;
+          const pl = Object.values(roster).flat().find(p => p?.name === name);
+          return pl?.id;
+        };
+        const scorerId = item.playerId ?? findPlayerIdByName(item.player);
+        if (scorerId && next[scorerId]) {
+          next[scorerId] = { goals: Math.max(0, (next[scorerId].goals ?? 0) - 1), assists: next[scorerId].assists ?? 0 };
+        }
+        const assistId = item.assistId ?? findPlayerIdByName(item.assist);
+        if (assistId && next[assistId]) {
+          next[assistId] = { goals: next[assistId].goals ?? 0, assists: Math.max(0, (next[assistId].assists ?? 0) - 1) };
+        }
+        return next;
+      });
+      // Remove item from list
+      const clone = [...prev];
+      clone.splice(index, 1);
+      return clone;
+    });
+  };
+
 
 
   const handleGoal = (team: TeamColor) => {
