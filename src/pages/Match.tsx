@@ -260,3 +260,6 @@ export default function Match() {
     </div>
   );
 }
+
+// Named export para compatibilidade com import { Match }
+export { Match };
