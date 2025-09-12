@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, StopCircle, Plus, Users, Shuffle, Trophy, Clock, Trash2 } from 'lucide-react';
+import { Play, Pause, StopCircle, Plus, Users, Shuffle, Trophy, Clock, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -89,14 +89,49 @@ export const Match: React.FC = () => {
 
   const confirmGoal = (assist: Player | null) => {
     if (!goalScorer) return;
-    // 1) Placar
+    if (editingIndex !== null) {
+      // Edição: ajustar stats antigos e substituir item
+      setRecentGoals(prev => {
+        const old = prev[editingIndex];
+        if (!old) return prev;
+        // Ajuste de estatísticas antigas
+        setPlayerStats(ps => {
+          const next = { ...ps };
+          const dec = (id?: string) => {
+            if (!id) return;
+            if (next[id]) next[id] = { goals: Math.max(0, (next[id].goals ?? 0) - 1), assists: next[id].assists ?? 0 };
+          };
+          const decAssist = (id?: string) => {
+            if (!id) return;
+            if (next[id]) next[id] = { goals: next[id].goals ?? 0, assists: Math.max(0, (next[id].assists ?? 0) - 1) };
+          };
+          dec(old.playerId);
+          decAssist(old.assistId);
+          // Incrementa novas
+          const scorerId = goalScorer.id;
+          next[scorerId] = { goals: (next[scorerId]?.goals ?? 0) + 1, assists: next[scorerId]?.assists ?? 0 };
+          if (assist) {
+            const aid = assist.id;
+            next[aid] = { goals: next[aid]?.goals ?? 0, assists: (next[aid]?.assists ?? 0) + 1 };
+          }
+          return next;
+        });
+        // Substitui o item mantendo time e horário original
+        const updated = { team: old.team, player: goalScorer.name, playerId: goalScorer.id, assist: assist?.name, assistId: assist?.id, time: old.time };
+        const arr = [...prev];
+        arr[editingIndex] = updated;
+        return arr;
+      });
+      setIsGoalOpen(false);
+      setEditingIndex(null);
+      return;
+    }
+    // Inclusão normal: soma no placar e adiciona item
     setScores(prev => ({ ...prev, [goalTeam]: (prev[goalTeam] ?? 0) + 1 }));
-    // 2) Histórico
     setRecentGoals(prev => [
       { team: goalTeam, player: goalScorer.name, playerId: goalScorer.id, assist: assist?.name, assistId: assist?.id, time: formatMMSS(elapsedTime) },
       ...prev,
     ].slice(0, 8));
-    // 3) Estatísticas por jogador (sessão)
     setPlayerStats(prev => ({
       ...prev,
       [goalScorer.id]: {
@@ -112,213 +147,3 @@ export const Match: React.FC = () => {
     }));
     setIsGoalOpen(false);
   };
-
-  const handleSelectAssist = (pl: Player | null) => {
-    if (pl && goalScorer && pl.id === goalScorer.id) return; // evita auto-assistência
-    confirmGoal(pl);
-  };
-
-  const removeGoalAt = (index: number) => {
-    setRecentGoals(prev => {
-      const item = prev[index];
-      if (!item) return prev;
-      // Update scores
-      setScores(s => ({ ...s, [item.team]: Math.max(0, (s[item.team] ?? 0) - 1) }));
-      // Update player stats (by id if available; fallback by name)
-      setPlayerStats(ps => {
-        const next = { ...ps };
-        const findPlayerIdByName = (name?: string) => {
-          if (!name) return undefined;
-          const pl = Object.values(roster).flat().find(p => p?.name === name);
-          return pl?.id;
-        };
-        const scorerId = item.playerId ?? findPlayerIdByName(item.player);
-        if (scorerId && next[scorerId]) {
-          next[scorerId] = { goals: Math.max(0, (next[scorerId].goals ?? 0) - 1), assists: next[scorerId].assists ?? 0 };
-        }
-        const assistId = item.assistId ?? findPlayerIdByName(item.assist);
-        if (assistId && next[assistId]) {
-          next[assistId] = { goals: next[assistId].goals ?? 0, assists: Math.max(0, (next[assistId].assists ?? 0) - 1) };
-        }
-        return next;
-      });
-      // Remove item from list
-      const clone = [...prev];
-      clone.splice(index, 1);
-      return clone;
-    });
-  };
-
-
-
-  const handleGoal = (team: TeamColor) => {
-    setScores((prev) => ({
-      ...prev,
-      [team]: prev[team] + 1,
-    }));
-  };
-
-  const getTeamColor = (team: TeamColor) => {
-    const colors = {
-      Preto: 'bg-team-black',
-      Verde: 'bg-team-green',
-      Cinza: 'bg-team-gray',
-      
-      Vermelho: 'bg-team-red', // transição: usa a mesma cor até migrarmos o CSS
-    };
-    return colors[team];
-  };
-return (
-    <div className="p-4 space-y-4">
-      <header className="mb-6">
-        <h1 className="text-2xl font-outfit font-bold text-foreground">
-          {pt.match.matchLive}
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          {pt.match.round} {currentRound}
-        </p>
-      </header>
-
-      {/* Cronômetro Principal */}
-      <Card className="p-8 text-center shadow-xl bg-gradient-card">
-        <div className={cn(
-          "text-6xl font-outfit font-bold mb-4 transition-all duration-200",
-          matchState === 'running' && "text-primary animate-pulse",
-          matchState === 'paused' && "text-warning",
-          matchState === 'idle' && "text-muted-foreground"
-        )}>
-          {formatTime(elapsedTime)}
-        </div>
-        
-        <div className="flex gap-3 justify-center">
-          <Button
-            variant={matchState === 'running' ? 'warning' : 'success'}
-            size="xl"
-            onClick={handleStartPause}
-            className="min-w-[140px]"
-          >
-            {matchState === 'running' ? (
-              <>
-                <Pause className="w-5 h-5" />
-                {pt.match.pause}
-              </>
-            ) : (
-              <>
-                <Play className="w-5 h-5" />
-                {pt.match.start}
-              </>
-            )}
-          </Button>
-          
-          {matchState !== 'idle' && (
-            <Button
-              variant="destructive"
-              size="xl"
-              onClick={handleEnd}
-            >
-              <StopCircle className="w-5 h-5" />
-              {pt.match.end}
-            </Button>
-          )}
-        </div>
-      </Card>
-
-      {/* Placar */}
-      <Card className="p-6 shadow-lg">
-        <h2 className="text-lg font-outfit font-semibold mb-4 flex items-center gap-2">
-          <Trophy className="w-5 h-5 text-primary" />
-          {pt.match.score}
-        </h2>
-        
-        <div className="grid grid-cols-2 gap-4">
-          {(Object.entries(scores) as [TeamColor, number][]).map(([team, score]) => (
-            <div
-              key={team}
-              className="flex items-center justify-between p-4 rounded-xl bg-card border-2 border-border hover:border-primary/30 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className={cn(
-                  "w-8 h-8 rounded-full",
-                  getTeamColor(team)
-                )} />
-                <span className="font-medium">{team}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold">{score}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => openGoalModal(team)}
-                  className="h-8 w-8"
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Ações Rápidas */}
-      <div className="grid grid-cols-2 gap-3">
-        <Button variant="outline" size="lg" className="w-full">
-          <Users className="w-4 h-4" />
-          {pt.match.substitute}
-        </Button>
-        <Button variant="outline" size="lg" className="w-full">
-          <Shuffle className="w-4 h-4" />
-          {pt.match.tiebreaker}
-        </Button>
-      </div>
-
-      {/* Tabs para Histórico */}
-      <Tabs defaultValue="week" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="week">{pt.time.week}</TabsTrigger>
-          <TabsTrigger value="month">{pt.time.month}</TabsTrigger>
-          <TabsTrigger value="all">{pt.time.all}</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="week" className="mt-4">
-          <Card className="p-6">
-            <h3 className="font-outfit font-semibold mb-4">
-              {pt.match.history} - {pt.time.week}
-            </h3>
-            <div className="space-y-3">
-              {/* Mock data - será substituído por dados reais */}
-              <div className="flex items-center justify-between p-3 bg-accent rounded-lg">
-                <div className="text-sm">
-                  <div className="font-medium">Rodada 1</div>
-                  <div className="text-muted-foreground">Preto 3 x 2 Verde</div>
-                </div>
-                <Badge variant="secondary">10 min</Badge>
-              </div>
-            </div>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="month">
-          <Card className="p-6">
-            <div className="flex flex-col items-center justify-center py-8">
-              <EmptyState type="ranking" className="text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
-                {pt.messages.noRanking}
-              </p>
-            </div>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="all">
-          <Card className="p-6">
-            <div className="flex flex-col items-center justify-center py-8">
-              <EmptyState type="ranking" className="text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
-                {pt.messages.noRanking}
-              </p>
-            </div>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-};
