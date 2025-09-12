@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Pause, StopCircle, Plus, Users, Shuffle, Trophy, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +32,7 @@ export const Match: React.FC = () => {
   });
 
   // Elenco (mock); depois trocar por Supabase
-  const [roster] = useState<Partial<Record<TeamColor, Player[]>>>({
+  const [roster, setRoster] = useState<Partial<Record<TeamColor, Player[]>>>({
     Preto: [
       { id: 'p1', name: 'Michell', team: 'Preto' },
       { id: 'p2', name: 'Rafael', team: 'Preto' },
@@ -56,6 +57,10 @@ export const Match: React.FC = () => {
 
   // Modal de gol
   const [isGoalOpen, setIsGoalOpen] = useState(false);
+  // Editor de elencos
+  const [isRosterOpen, setIsRosterOpen] = useState(false);
+  const [rosterTeam, setRosterTeam] = useState<TeamColor>('Preto');
+  const [newPlayerName, setNewPlayerName] = useState('');
   // Substituições
   const [isSubOpen, setIsSubOpen] = useState(false);
   const [subTeam, setSubTeam] = useState<TeamColor>('Preto');
@@ -383,6 +388,26 @@ export const Match: React.FC = () => {
         </Card>
       </div>
     );
+  };
+
+
+  // Helpers: gerenciamento de elenco (sessão)
+  const addPlayerToTeam = () => {
+    const name = newPlayerName.trim();
+    if (!name) return;
+    const id = `${rosterTeam[0].toLowerCase()}_${Date.now()}`;
+    setRoster(prev => ({
+      ...prev,
+      [rosterTeam]: [ ...(prev[rosterTeam] || []), { id, name, team: rosterTeam } ]
+    }));
+    setNewPlayerName('');
+  };
+
+  const removePlayerFromTeam = (pid: string) => {
+    setRoster(prev => ({
+      ...prev,
+      [rosterTeam]: (prev[rosterTeam] || []).filter(p => p.id != pid)
+    }));
   };
 
 const getTeamColor = (team: TeamColor) => {
