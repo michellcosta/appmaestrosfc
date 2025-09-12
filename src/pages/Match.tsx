@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, StopCircle, Plus, Users, Shuffle, Trophy, Clock, Pencil, Trash2 } from 'lucide-react';
+import { Play, Pause, StopCircle, Plus, Users, Shuffle, Trophy, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -59,7 +59,6 @@ export const Match: React.FC = () => {
   const [goalTeam, setGoalTeam] = useState<TeamColor>('Preto');
   const [goalStep, setGoalStep] = useState<'select_scorer' | 'select_assist'>('select_scorer');
   const [goalScorer, setGoalScorer] = useState<Player | null>(null);
-  const [goalAssist, setGoalAssist] = useState<Player | null>(null);
 
   // Histórico/estatísticas (sessão)
   const [recentGoals, setRecentGoals] = useState<{
