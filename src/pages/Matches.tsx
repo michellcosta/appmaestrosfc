@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/illustrations/empty-state';
 import { pt } from '@/i18n/pt';
+import { TeamColor } from '@/types';
 import { cn } from '@/lib/utils';
 
 // Mock data - será substituído por dados do Supabase
@@ -22,6 +23,8 @@ const mockMatches = [
 export const Matches: React.FC = () => {
   const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
+  const TEAM_COLORS: TeamColor[] = ['Preto','Verde','Cinza','Vermelho'];
+  const [drawnMatches, setDrawnMatches] = useState<Record<string, boolean>>({});
   const currentUserId = 'user1'; // Mock - será obtido do contexto de auth
 
   const handleCheckIn = async (matchId: string) => {
@@ -44,8 +47,10 @@ export const Matches: React.FC = () => {
   };
 
   const handleDrawTeams = (matchId: string) => {
-    // TODO: Chamar edge function para sortear times
-    console.log('Drawing teams for match:', matchId);
+    // Sorteio simples (placeholder): marca como sorteado no estado local
+    setDrawnMatches(prev => ({ ...prev, [matchId]: true }));
+    console.log('Drawing teams for match:', matchId, 'cores:', TEAM_COLORS);
+    // FUTURO: chamar edge function para sorteio equilibrado
   };
 
   const handleOpenRoute = (venue: any) => {
@@ -163,7 +168,7 @@ export const Matches: React.FC = () => {
               </div>
 
               {/* Ação de sortear times (apenas para admin/aux/owner) */}
-              {canDrawTeams && !match.teams_drawn && (
+              {canDrawTeams && !drawnMatches[match.id] && (
                 <Button
                   variant="warning"
                   size="lg"
