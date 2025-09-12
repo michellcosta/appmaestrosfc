@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, StopCircle, Plus, Users, Shuffle, Trophy, Pencil, Trash2 } from 'lucide-react';
+import {Download, Pause, Pencil, Play, Plus, RotateCcw, Shuffle, StopCircle, Trash2, Trophy, Users} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -410,6 +410,58 @@ export const Match: React.FC = () => {
     }));
   };
 
+
+  // Exportar relatório CSV (placar, eventos, estatísticas)
+  const toCSV = (rows: (string | number | undefined | null)[][]) =>
+    rows.map(r => r.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(';')).join('\n');
+
+  const handleExportCSV = () => {
+    const now = new Date();
+    const filename = `maestrosfc_relatorio_R${currentRound}_${now.toISOString().slice(0,10)}.csv`;
+
+    const entries = (Object.entries(scores) as [TeamColor, number][]);
+    const placar = [['Placar'], ...entries.map(([t, n]) => [t, String(n)])];
+
+    const eventsHeader = [['Eventos'], ['Tipo','Time','Jogador','Assist.','Sai','Entra','Tempo']];
+    const eventsRows: (string | number)[][] = matchEvents.slice().reverse().map(e => [
+      e.type,
+      e.team ?? '',
+      e.scorerName ?? '',
+      e.assistName ?? '',
+      e.subOutName ?? '',
+      e.subInName ?? '',
+      e.time,
+    ]);
+
+    const allPlayers = (Object.values(roster).flat().filter(Boolean) as Player[]);
+    const statsHeader = [['Estatísticas (sessão)'], ['Jogador','Time','Gols','Assist.']];
+    const statsRows: (string | number)[][] = Object.entries(playerStats).map(([pid, st]) => {
+      const pl = allPlayers.find(p => p.id === pid);
+      return [pl?.name ?? pid, pl?.team ?? '', st.goals ?? 0, st.assists ?? 0];
+    });
+
+    const csv = [toCSV(placar), '', toCSV(eventsHeader.concat(eventsRows)), '', toCSV(statsHeader.concat(statsRows))].join('\n');
+    const blob = new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Nova partida (limpa dados da sessão)
+  const resetMatchSession = () => {
+    setScores({ Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 });
+    setRecentGoals([]);
+    setPlayerStats({});
+    setSubsHistory([]);
+    setSubsPerRound({ Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 });
+    setMatchEvents([]);
+    setElapsedTime(0);
+    setMatchState('idle');
+  };
+
 const getTeamColor = (team: TeamColor) => {
     const colors: Record<TeamColor, string> = {
       Preto: 'bg-team-black',
@@ -562,7 +614,17 @@ const getTeamColor = (team: TeamColor) => {
 
       {/* Histórico (partida atual) */}
       <Card className="p-4 mt-4">
-        <h3 className="font-semibold mb-3">Histórico da partida</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold">Histórico da partida</h3>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleExportCSV}>
+              <Download className="w-4 h-4" /> Exportar CSV
+            </Button>
+            <Button variant="ghost" size="sm" onClick={resetMatchSession}>
+              <RotateCcw className="w-4 h-4" /> Nova partida
+            </Button>
+          </div>
+        </div>
         {matchEvents.length === 0 ? (
           <p className="text-sm text-muted-foreground">Sem eventos ainda.</p>
         ) : (
