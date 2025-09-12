@@ -60,8 +60,7 @@ All colors MUST be HSL.
     --team-black: 0 0% 10%;
     --team-green: 142 71% 35%;
     --team-gray: 215 14% 44%;
-    --team-bibs: 33 91% 50%;
-    --team-red: 0 80% 50%;
+    --team-red: 0 84% 50%;
     
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
@@ -137,7 +136,7 @@ All colors MUST be HSL.
     --team-black: 0 0% 95%;
     --team-green: 142 71% 55%;
     --team-gray: 215 15% 70%;
-    --team-bibs: 33 91% 60%;
+    --team-red: 0 84% 60%;
     
     /* Gradients (dark) */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-hover)));
