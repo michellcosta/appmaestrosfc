@@ -13,7 +13,7 @@ interface TeamScore {
   Preto: number;
   Verde: number;
   Cinza: number;
-  Coletes: number;
+  Vermelho: number;
 }
 
 export const Match: React.FC = () => {
@@ -24,7 +24,7 @@ export const Match: React.FC = () => {
     Preto: 0,
     Verde: 0,
     Cinza: 0,
-    Coletes: 0,
+    Vermelho: 0,
   });
 
   // Cronômetro
@@ -76,15 +76,12 @@ export const Match: React.FC = () => {
       Preto: 'bg-team-black',
       Verde: 'bg-team-green',
       Cinza: 'bg-team-gray',
-      Coletes: 'bg-team-bibs',
+      
       Vermelho: 'bg-team-red', // transição: usa a mesma cor até migrarmos o CSS
     };
     return colors[team];
   };
-
-  const displayTeamName = (team: TeamColor) => (team === 'Coletes' ? 'Vermelho' : team);
-
-  return (
+return (
     <div className="p-4 space-y-4">
       <header className="mb-6">
         <h1 className="text-2xl font-outfit font-bold text-foreground">
@@ -157,7 +154,7 @@ export const Match: React.FC = () => {
                   "w-8 h-8 rounded-full",
                   getTeamColor(team)
                 )} />
-                <span className="font-medium">{displayTeamName(team)}</span>
+                <span className="font-medium">{team}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold">{score}</span>
