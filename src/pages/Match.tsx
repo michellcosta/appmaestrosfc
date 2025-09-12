@@ -325,6 +325,66 @@ export const Match: React.FC = () => {
     }
   };
 
+
+  // Ranking (sessão) – usa playerStats acumulados
+  const renderRanking = () => {
+    const allPlayers = Object.values(roster).flat().filter(Boolean) as Player[];
+    const toList = (key: 'goals' | 'assists') => Object.entries(playerStats)
+      .map(([pid, s]) => {
+        const pl = allPlayers.find(p => p.id === pid);
+        return { id: pid, name: pl?.name || 'Jogador', team: pl?.team, value: s[key] };
+      })
+      .filter(i => i.value > 0)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10);
+
+    const topGoals = toList('goals');
+    const topAssists = toList('assists');
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="p-4">
+          <h4 className="font-semibold mb-3">Artilheiros</h4>
+          {topGoals.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sem gols registrados.</p>
+          ) : (
+            <ul className="space-y-2">
+              {topGoals.map((p, i) => (
+                <li key={p.id} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="w-6 justify-center">{i + 1}</Badge>
+                    <span className="font-medium">{p.name}</span>
+                    {p.team && <span className="text-xs text-muted-foreground">{p.team}</span>}
+                  </div>
+                  <span className="font-semibold">{p.value}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card className="p-4">
+          <h4 className="font-semibold mb-3">Assistências</h4>
+          {topAssists.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sem assistências registradas.</p>
+          ) : (
+            <ul className="space-y-2">
+              {topAssists.map((p, i) => (
+                <li key={p.id} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="w-6 justify-center">{i + 1}</Badge>
+                    <span className="font-medium">{p.name}</span>
+                    {p.team && <span className="text-xs text-muted-foreground">{p.team}</span>}
+                  </div>
+                  <span className="font-semibold">{p.value}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
+    );
+  };
+
 const getTeamColor = (team: TeamColor) => {
     const colors: Record<TeamColor, string> = {
       Preto: 'bg-team-black',
@@ -519,45 +579,38 @@ const getTeamColor = (team: TeamColor) => {
           <TabsTrigger value="all">{pt.time.all}</TabsTrigger>
         </TabsList>
         
+        
         <TabsContent value="week" className="mt-4">
           <Card className="p-6">
             <h3 className="font-outfit font-semibold mb-4">
               {pt.match.history} - {pt.time.week}
             </h3>
-            <div className="space-y-3">
-              {/* Mock data - será substituído por dados reais */}
-              <div className="flex items-center justify-between p-3 bg-accent rounded-lg">
-                <div className="text-sm">
-                  <div className="font-medium">Rodada 1</div>
-                  <div className="text-muted-foreground">Preto 3 x 2 Verde</div>
-                </div>
-                <Badge variant="secondary">10 min</Badge>
-              </div>
-            </div>
+            {renderRanking()}
           </Card>
         </TabsContent>
+    
         
-        <TabsContent value="month">
-          <Card className="p-6">
-            <div className="flex flex-col items-center justify-center py-8">
-              <EmptyState type="ranking" className="text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
-                {pt.messages.noRanking}
-              </p>
-            </div>
-          </Card>
-        </TabsContent>
         
-        <TabsContent value="all">
+        <TabsContent value="month" className="mt-4">
           <Card className="p-6">
-            <div className="flex flex-col items-center justify-center py-8">
-              <EmptyState type="ranking" className="text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
-                {pt.messages.noRanking}
-              </p>
-            </div>
+            <h3 className="font-outfit font-semibold mb-4">
+              {pt.match.history} - {pt.time.month}
+            </h3>
+            {renderRanking()}
           </Card>
         </TabsContent>
+    
+        
+        
+        <TabsContent value="all" className="mt-4">
+          <Card className="p-6">
+            <h3 className="font-outfit font-semibold mb-4">
+              {pt.match.history} - {pt.time.all}
+            </h3>
+            {renderRanking()}
+          </Card>
+        </TabsContent>
+    
       </Tabs>
 
       {/* Dialog do gol (2 etapas) */}
