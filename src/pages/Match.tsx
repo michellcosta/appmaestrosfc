@@ -88,7 +88,23 @@ export const Match: React.FC = () => {
   const [playerStats, setPlayerStats] = useState<Record<string, { goals: number; assists: number }>>({});
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-  // Persistência (localStorage)
+  // Histórico unificado de eventos da partida
+  interface MatchEvent {
+    type: 'START' | 'GOAL' | 'SUB' | 'PAUSE' | 'END';
+    time: string;
+    team?: TeamColor;
+    scorerId?: string;
+    scorerName?: string;
+    assistId?: string;
+    assistName?: string;
+    subOutId?: string;
+    subOutName?: string;
+    subInId?: string;
+    subInName?: string;
+    author?: 'Owner' | 'Admin' | 'Aux';
+  }
+  const [matchEvents, setMatchEvents] = useState<MatchEvent[]>([]);
+// Persistência (localStorage)
   const STORAGE_KEY = 'maestrosfc_match_v1';
   const firstLoadRef = useRef(true);
 
@@ -141,22 +157,7 @@ export const Match: React.FC = () => {
   }, [currentRound, scores, recentGoals, playerStats, subsPerRound, subsHistory, matchEvents, roster, elapsedTime, matchState]);
 
 
-  // Histórico unificado de eventos da partida
-  interface MatchEvent {
-    type: 'START' | 'GOAL' | 'SUB' | 'PAUSE' | 'END';
-    time: string;
-    team?: TeamColor;
-    scorerId?: string;
-    scorerName?: string;
-    assistId?: string;
-    assistName?: string;
-    subOutId?: string;
-    subOutName?: string;
-    subInId?: string;
-    subInName?: string;
-    author?: 'Owner' | 'Admin' | 'Aux';
-  }
-  const [matchEvents, setMatchEvents] = useState<MatchEvent[]>([]);
+  
 
   // Cronômetro
   useEffect(() => {
