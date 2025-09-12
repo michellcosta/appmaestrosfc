@@ -33,7 +33,7 @@ export const pt = {
     black: 'Preto',
     green: 'Verde',
     gray: 'Cinza',
-    bibs: 'Vermelho',
+    bibs: 'Coletes',
   },
   
   match: {

@@ -1,7 +1,7 @@
 // Core Types for Maestros FC
 
 export type UserRole = 'owner' | 'admin' | 'aux' | 'mensalista' | 'diarista';
-export type TeamColor = 'Preto' | 'Verde' | 'Cinza' | 'Coletes' | 'Vermelho'; // 'Coletes' mantido temporariamente p/ migração
+export type TeamColor = 'Preto' | 'Verde' | 'Cinza' | 'Coletes';
 export type ShirtSize = 'G' | 'GG';
 export type MatchStatus = 'draft' | 'open' | 'live' | 'closed';
 export type GKMode = 'two_fixed' | 'one_fixed' | 'by_team' | 'auto';

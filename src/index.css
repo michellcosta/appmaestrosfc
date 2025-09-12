@@ -61,7 +61,7 @@ All colors MUST be HSL.
     --team-green: 142 71% 35%;
     --team-gray: 215 14% 44%;
     --team-bibs: 33 91% 50%;
-    --team-red: 0 80% 50%; /* novo: Vermelho */
+    /* --team-red removed - using only Preto, Verde, Cinza, Coletes */
     
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
