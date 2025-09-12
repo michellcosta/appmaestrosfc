@@ -77,7 +77,7 @@ export const Match: React.FC = () => {
       Verde: 'bg-team-green',
       Cinza: 'bg-team-gray',
       Coletes: 'bg-team-bibs',
-      Vermelho: 'bg-team-bibs', // transição: usa a mesma cor até migrarmos o CSS
+      Vermelho: 'bg-team-red', // transição: usa a mesma cor até migrarmos o CSS
     };
     return colors[team];
   };
