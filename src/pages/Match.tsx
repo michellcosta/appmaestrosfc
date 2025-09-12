@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {Download, Pause, Pencil, Play, Plus, RotateCcw, Shuffle, StopCircle, Trash2, Trophy, Users} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,6 +87,59 @@ export const Match: React.FC = () => {
   }[]>([]);
   const [playerStats, setPlayerStats] = useState<Record<string, { goals: number; assists: number }>>({});
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  // Persistência (localStorage)
+  const STORAGE_KEY = 'maestrosfc_match_v1';
+  const firstLoadRef = useRef(true);
+
+  const canUseStorage = typeof window !== 'undefined' && !!window.localStorage;
+
+  useEffect(() => {
+    if (!canUseStorage) return;
+    if (!firstLoadRef.current) return;
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) { firstLoadRef.current = false; return; }
+      const data = JSON.parse(raw);
+      if (data.currentRound != null) setCurrentRound(data.currentRound);
+      if (data.scores) setScores(data.scores);
+      if (Array.isArray(data.recentGoals)) setRecentGoals(data.recentGoals);
+      if (data.playerStats) setPlayerStats(data.playerStats);
+      if (data.subsPerRound) setSubsPerRound(data.subsPerRound);
+      if (Array.isArray(data.subsHistory)) setSubsHistory(data.subsHistory);
+      if (Array.isArray(data.matchEvents)) setMatchEvents(data.matchEvents);
+      if (data.roster) setRoster(data.roster);
+      if (typeof data.elapsedTime === 'number') setElapsedTime(data.elapsedTime);
+      if (data.matchState === 'running' || data.matchState === 'paused' || data.matchState === 'idle') setMatchState(data.matchState);
+    } catch (e) {
+      console.warn('Falha ao carregar storage:', e);
+    } finally {
+      firstLoadRef.current = false;
+    }
+  }, [canUseStorage]);
+
+  useEffect(() => {
+    if (!canUseStorage) return;
+    if (firstLoadRef.current) return;
+    try {
+      const payload = {
+        currentRound,
+        scores,
+        recentGoals,
+        playerStats,
+        subsPerRound,
+        subsHistory,
+        matchEvents,
+        roster,
+        elapsedTime,
+        matchState,
+      };
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch (e) {
+      console.warn('Falha ao salvar storage:', e);
+    }
+  }, [currentRound, scores, recentGoals, playerStats, subsPerRound, subsHistory, matchEvents, roster, elapsedTime, matchState]);
+
 
   // Histórico unificado de eventos da partida
   interface MatchEvent {
@@ -460,6 +513,7 @@ export const Match: React.FC = () => {
     setMatchEvents([]);
     setElapsedTime(0);
     setMatchState('idle');
+    try { if (canUseStorage) window.localStorage.removeItem(STORAGE_KEY); } catch {}
   };
 
 const getTeamColor = (team: TeamColor) => {
