@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/illustrations/empty-state';
 import { pt } from '@/i18n/pt';
@@ -22,8 +21,7 @@ interface TeamScore {
 interface Player { id: string; name: string; team: TeamColor }
 
 export const Match: React.FC = () => {
-  const [matchState,
-        userRole, setMatchState] = useState<'idle' | 'running' | 'paused'>('idle');
+  const [matchState, setMatchState] = useState<'idle' | 'running' | 'paused'>('idle');
   const [elapsedTime, setElapsedTime] = useState(0);
   const [currentRound, setCurrentRound] = useState(1);
   const [scores, setScores] = useState<TeamScore>({
@@ -89,7 +87,6 @@ export const Match: React.FC = () => {
   }[]>([]);
   const [playerStats, setPlayerStats] = useState<Record<string, { goals: number; assists: number }>>({});
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [userRole, setUserRole] = useState<'Owner' | 'Admin' | 'Aux'>('Owner');
 
   // Persistência (localStorage)
   const STORAGE_KEY = 'maestrosfc_match_v1';
@@ -112,7 +109,6 @@ export const Match: React.FC = () => {
       if (Array.isArray(data.subsHistory)) setSubsHistory(data.subsHistory);
       if (Array.isArray(data.matchEvents)) setMatchEvents(data.matchEvents);
       if (data.roster) setRoster(data.roster);
-      if (data.userRole) setUserRole(data.userRole);
       if (typeof data.elapsedTime === 'number') setElapsedTime(data.elapsedTime);
       if (data.matchState === 'running' || data.matchState === 'paused' || data.matchState === 'idle') setMatchState(data.matchState);
     } catch (e) {
@@ -137,7 +133,6 @@ export const Match: React.FC = () => {
         roster,
         elapsedTime,
         matchState,
-        userRole,
       };
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch (e) {
@@ -533,25 +528,7 @@ const getTeamColor = (team: TeamColor) => {
 
   return (
     <div className="p-4 space-y-4">
-      
-      <div className="flex items-center justify-between mb-2">
-        <div />
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Perfil:</span>
-          <Select value={userRole} onValueChange={(v) => setUserRole(v as any)}>
-            <SelectTrigger className="w-36 h-8">
-              <SelectValue placeholder="Perfil" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Owner">Owner</SelectItem>
-              <SelectItem value="Admin">Admin</SelectItem>
-              <SelectItem value="Aux">Aux</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-<header className="mb-6">
+      <header className="mb-6">
         <h1 className="text-2xl font-outfit font-bold text-foreground">
           {pt.match.matchLive}
         </h1>
@@ -654,7 +631,6 @@ const getTeamColor = (team: TeamColor) => {
                   <span>{g.player}{g.assist ? ` (assist.: ${g.assist})` : ''}</span>
                   <span className="tabular-nums text-muted-foreground">{g.time}</span>
                 </div>
-                {userRole !== "Aux" && (
                 <div className="flex items-center gap-1">
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => editGoalAt(i)} title="Editar gol">
                     <Pencil className="w-4 h-4" />
@@ -663,7 +639,6 @@ const getTeamColor = (team: TeamColor) => {
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
-              )}
               </li>
             ))}
           </ul>
