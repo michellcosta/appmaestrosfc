@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, StopCircle, Plus, Users, Shuffle, Trophy, Clock } from 'lucide-react';
+import { Play, Pause, StopCircle, Plus, Users, Shuffle, Trophy, Clock, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -66,9 +66,12 @@ export const Match: React.FC = () => {
   const [recentGoals, setRecentGoals] = useState<{
     team: TeamColor;
     player: string;
+    playerId?: string;
     assist?: string;
+    assistId?: string;
     time: string;
   }[]>([]);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [playerStats, setPlayerStats] = useState<Record<string, { goals: number; assists: number }>>({});
 
 
@@ -128,16 +131,52 @@ export const Match: React.FC = () => {
     return `${mm}:${ss}`;
   };
 
+  
   const confirmGoal = (assist: Player | null) => {
     if (!goalScorer) return;
-    // 1) Placar
+    if (editingIndex !== null) {
+      // Edição: ajustar estatísticas antigas e substituir o item
+      setRecentGoals(prev => {
+        const old = prev[editingIndex];
+        if (!old) return prev;
+        // Atualiza estatísticas removendo o antigo
+        setPlayerStats(ps => {
+          const next = { ...ps };
+          const decGoal = (id?: string) => {
+            if (!id) return;
+            if (next[id]) next[id] = { goals: Math.max(0, (next[id].goals ?? 0) - 1), assists: next[id].assists ?? 0 };
+          };
+          const decAssist = (id?: string) => {
+            if (!id) return;
+            if (next[id]) next[id] = { goals: next[id].goals ?? 0, assists: Math.max(0, (next[id].assists ?? 0) - 1) };
+          };
+          decGoal(old.playerId);
+          decAssist(old.assistId);
+          // Incrementa novos
+          const scorerId = goalScorer.id;
+          next[scorerId] = { goals: (next[scorerId]?.goals ?? 0) + 1, assists: next[scorerId]?.assists ?? 0 };
+          if (assist) {
+            const aid = assist.id;
+            next[aid] = { goals: next[aid]?.goals ?? 0, assists: (next[aid]?.assists ?? 0) + 1 };
+          }
+          return next;
+        });
+        // Substitui mantendo time e horário
+        const updated = { team: old.team, player: goalScorer.name, playerId: goalScorer.id, assist: assist?.name, assistId: assist?.id, time: old.time };
+        const arr = [...prev];
+        arr[editingIndex] = updated;
+        return arr;
+      });
+      setIsGoalOpen(false);
+      setEditingIndex(null);
+      return;
+    }
+    // Inclusão normal
     setScores(prev => ({ ...prev, [goalTeam]: (prev[goalTeam] ?? 0) + 1 }));
-    // 2) Histórico
     setRecentGoals(prev => [
-      { team: goalTeam, player: goalScorer.name, assist: assist?.name, time: formatMMSS(elapsedTime) },
+      { team: goalTeam, player: goalScorer.name, playerId: goalScorer.id, assist: assist?.name, assistId: assist?.id, time: formatMMSS(elapsedTime) },
       ...prev,
     ].slice(0, 8));
-    // 3) Estatísticas por jogador (sessão)
     setPlayerStats(prev => ({
       ...prev,
       [goalScorer.id]: {
@@ -158,6 +197,52 @@ export const Match: React.FC = () => {
     if (pl && goalScorer && pl.id === goalScorer.id) return; // evita auto-assistência
     confirmGoal(pl);
   };
+
+  const removeGoalAt = (index: number) => {
+    setRecentGoals(prev => {
+      const item = prev[index];
+      if (!item) return prev;
+      // Atualiza placar
+      setScores(s => ({ ...s, [item.team]: Math.max(0, (s[item.team] ?? 0) - 1) }));
+      // Atualiza estatísticas
+      setPlayerStats(ps => {
+        const next = { ...ps };
+        const findIdByName = (name?: string) => {
+          if (!name) return undefined;
+          const pl = Object.values(roster).flat().find(p => p?.name === name);
+          return pl?.id;
+        };
+        const scorerId = item.playerId ?? findIdByName(item.player);
+        if (scorerId && next[scorerId]) {
+          next[scorerId] = { goals: Math.max(0, (next[scorerId].goals ?? 0) - 1), assists: next[scorerId].assists ?? 0 };
+        }
+        const assistId = item.assistId ?? findIdByName(item.assist);
+        if (assistId && next[assistId]) {
+          next[assistId] = { goals: next[assistId].goals ?? 0, assists: Math.max(0, (next[assistId].assists ?? 0) - 1) };
+        }
+        return next;
+      });
+      // Remove item da lista
+      const arr = [...prev];
+      arr.splice(index, 1);
+      return arr;
+    });
+  };
+
+  const editGoalAt = (index: number) => {
+    const item = recentGoals[index];
+    if (!item) return;
+    setGoalTeam(item.team);
+    const players = roster[item.team] || [];
+    const byId = item.playerId ? players.find(p => p.id === item.playerId) : undefined;
+    const byName = players.find(p => p.name === item.player);
+    setGoalScorer(byId || byName || null);
+    setGoalStep('select_scorer'); // permite trocar artilheiro e depois assistência
+    setGoalAssist(null);
+    setEditingIndex(index);
+    setIsGoalOpen(true);
+  };
+
 
 
   const handleGoal = (team: TeamColor) => {
@@ -282,6 +367,7 @@ return (
 
 
       {/* Gols recentes + Estatísticas (sessão) */}
+      
       <Card className="p-4 mt-6">
         <h3 className="font-semibold mb-3">Gols recentes</h3>
         {recentGoals.length === 0 ? (
@@ -295,11 +381,20 @@ return (
                   <span>{g.player}{g.assist ? ` (assist.: ${g.assist})` : ''}</span>
                   <span className="tabular-nums text-muted-foreground">{g.time}</span>
                 </div>
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => editGoalAt(i)} title="Editar gol">
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeGoalAt(i)} title="Remover gol">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>
         )}
       </Card>
+</Card>
 
       <Card className="p-4 mt-4">
         <h3 className="font-semibold mb-3">Estatísticas dos jogadores (sessão)</h3>
