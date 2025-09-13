@@ -16,9 +16,22 @@ const colorChip: Record<TeamColor, string> = {
   Cinza: 'bg-slate-400 text-zinc-900',
   Vermelho: 'bg-red-600 text-white',
 }
+/*  >>> BLOCO ANTIGO (QUEBRADO) <<<
 const TeamBadge: React.FC<{ color: TeamColor; className?: string }> = ({ color, className }) => (
   <span
-    className={inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${colorChip[color]} ${className ?? ""}}
+      className={inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${colorChip[color]} ${className ?? ""}}
+    >
+      {color}
+  </span>
+)
+*/
+const TeamBadge: React.FC<{ color: TeamColor; className?: string }> = ({ color, className }) => (
+  <span
+    className={[
+      "inline-flex items-center px-3 py-1 rounded-full text-sm font-medium",
+      colorChip[color],
+      className || ""
+    ].join(" ")}
   >
     {color}
   </span>
