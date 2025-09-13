@@ -106,24 +106,38 @@ const Match: React.FC = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyFilter, setHistoryFilter] = useState<FilterRange>('week');
 
-  // modal gol (assistência opcional, sem autoassistência)
+  // modal gol (criar/editar com assistência opcional, sem autoassistência)
   const [goalOpen, setGoalOpen] = useState(false);
+  const [goalEditId, setGoalEditId] = useState<string | null>(null); // null = criar; id != null = editar
   const [goalTeam, setGoalTeam] = useState<TeamColor>('Preto');
   const [goalAuthor, setGoalAuthor] = useState<string>('');          // controlado
-  const [goalAssist, setGoalAssist] = useState<string>('__none__');  // "__none__" = sem assistência (evita value="")
+  const [goalAssist, setGoalAssist] = useState<string>('__none__');  // "__none__" = sem assistência
 
   const playerOptions = (team: TeamColor) => (teamPlayers?.[team]) ? teamPlayers[team] : [];
 
+  // abrir modal para novo gol
   const openGoal = (team: TeamColor) => {
-    if (!round.running) return; // respeita regra
+    if (!round.running) return;
+    setGoalEditId(null);
     setGoalTeam(team);
     const first = playerOptions(team)[0] ?? '';
-    setGoalAuthor(first);           // autor pré-selecionado
-    setGoalAssist('__none__');      // padrão = sem assistência
+    setGoalAuthor(first);      // autor pré-selecionado
+    setGoalAssist('__none__'); // sem assistência por padrão
     setGoalOpen(true);
   };
 
-  // se o autor mudar e a assistência for igual ao autor, força voltar para "sem assistência"
+  // abrir modal para editar um gol existente
+  const openEditGoal = (ev: GoalEvent) => {
+    if (!canEdit(userRole)) return;
+    setGoalEditId(ev.id);
+    setGoalTeam(ev.team);
+    // mantém autor/assistência existentes (assist null -> "__none__")
+    setGoalAuthor(ev.author || (playerOptions(ev.team)[0] ?? ''));
+    setGoalAssist(ev.assist ?? '__none__');
+    setGoalOpen(true);
+  };
+
+  // se o autor mudar e a assistência for igual ao autor, volta para "sem assistência"
   useEffect(() => {
     if (!goalOpen) return;
     if (goalAssist !== '__none__' && goalAssist === goalAuthor) {
@@ -134,20 +148,28 @@ const Match: React.FC = () => {
   const saveGoal = () => {
     if (!goalAuthor) return; // autor obrigatório
     const assistVal = goalAssist === '__none__' ? null : goalAssist;
-    setRound(r => ({ ...r, scores: { ...r.scores, [goalTeam]: (r.scores[goalTeam] ?? 0) + 1 } }));
-    setEvents(ev => [...ev, { id: uuidv4(), team: goalTeam, author: goalAuthor, assist: assistVal, ts: Date.now() }]);
+
+    if (goalEditId) {
+      // editar: não mexe no placar (mesmo time), só atualiza autor/assist
+      setEvents((evts) =>
+        evts.map((e) => (e.id === goalEditId ? { ...e, author: goalAuthor, assist: assistVal } : e))
+      );
+    } else {
+      // novo gol: incrementa placar e adiciona evento
+      setRound(r => ({ ...r, scores: { ...r.scores, [goalTeam]: (r.scores[goalTeam] ?? 0) + 1 } }));
+      setEvents(ev => [...ev, { id: uuidv4(), team: goalTeam, author: goalAuthor, assist: assistVal, ts: Date.now() }]);
+    }
+
     setGoalOpen(false);
+    setGoalEditId(null);
   };
 
-  const editGoal = (id: string, author: string, assist: string | null) => {
-    if (!canEdit(userRole)) return;
-    if (!author) return;
-    // impede autoassistência no editar também
-    const fixedAssist = assist && assist === author ? null : assist;
-    setEvents(ev => ev.map(e => e.id===id ? { ...e, author, assist: fixedAssist } : e));
-  };
   const removeGoal = (id: string) => {
     if (!canEdit(userRole)) return;
+    // confirmação antes de excluir
+    const ok = window.confirm('Tem certeza que deseja excluir este gol?');
+    if (!ok) return;
+
     const g = events.find(e=>e.id===id);
     if (g) setRound(r => ({ ...r, scores: { ...r.scores, [g.team]: Math.max((r.scores[g.team] ?? 0) - 1, 0) } }));
     setEvents(ev => ev.filter(e => e.id!==id));
@@ -306,17 +328,17 @@ const Match: React.FC = () => {
                       <Button
                         type="button"
                         variant="outline" size="sm"
-                        onClick={() => {
-                          const author = prompt('Autor do gol:', e.author) || e.author;
-                          let assist  = e.assist ?? '';
-                          assist = prompt('Assistência (deixe vazio para nenhum):', assist) || '';
-                          if (author === assist) assist = ''; // evita autoassistência
-                          editGoal(e.id, author, assist || null);
-                        }}
+                        onClick={() => openEditGoal(e)}
                       >
                         Editar
                       </Button>
-                      <Button type="button" variant="secondary" size="sm" onClick={() => removeGoal(e.id)}>Excluir</Button>
+                      <Button
+                        type="button"
+                        variant="secondary" size="sm"
+                        onClick={() => removeGoal(e.id)}
+                      >
+                        Excluir
+                      </Button>
                     </div>
                   )}
                 </li>
@@ -405,13 +427,13 @@ const Match: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Modal Gol (assistência opcional, sem autoassistência) */}
+      {/* Modal Gol (criar/editar) */}
       {goalOpen && (
-        <Dialog open={goalOpen} onOpenChange={setGoalOpen}>
+        <Dialog open={goalOpen} onOpenChange={(o)=>{ setGoalOpen(o); if(!o) setGoalEditId(null); }}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Registrar Gol</DialogTitle>
-              <DialogDescription>Autor pré-selecionado; assistência é opcional.</DialogDescription>
+              <DialogTitle>{goalEditId ? 'Editar Gol' : 'Registrar Gol'}</DialogTitle>
+              <DialogDescription>Autor pré-selecionado; assistência é opcional. Autoassistência não é permitida.</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-3">
@@ -444,8 +466,8 @@ const Match: React.FC = () => {
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="secondary" onClick={()=>setGoalOpen(false)}>Cancelar</Button>
-              <Button type="button" onClick={saveGoal}>Salvar Gol</Button>
+              <Button type="button" variant="secondary" onClick={()=>{ setGoalOpen(false); setGoalEditId(null); }}>Cancelar</Button>
+              <Button type="button" onClick={saveGoal}>{goalEditId ? 'Salvar alterações' : 'Salvar Gol'}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
