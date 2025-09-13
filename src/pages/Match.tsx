@@ -1,3 +1,5 @@
+import { Pencil, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import React, { useState, useEffect } from 'react';
 import { Play, Pause, StopCircle, Plus, Users, Shuffle, Trophy, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,6 +18,9 @@ interface Player { id: string; name: string; team: TeamColor }
 export const Match: React.FC = () => {
   const [matchState, setMatchState] = useState<'idle' | 'running' | 'paused'>('idle');
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [openEnd, setOpenEnd] = useState<boolean>(false);
+  const [nextChallenger, setNextChallenger] = useState<string>("");
+  const [activeTeams, setActiveTeams] = useState<string[]>(["Preto", "Verde"]);
   const [currentRound, setCurrentRound] = useState(1);
   const [scores, setScores] = useState<TeamScore>({ Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 });
 
