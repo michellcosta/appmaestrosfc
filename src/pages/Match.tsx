@@ -101,7 +101,7 @@ const Match: React.FC = () => {
   const [goalTeam, setGoalTeam] = useState<TeamColor>('Preto');
   const [goalAuthor, setGoalAuthor] = useState<string>('');  // sem pré-seleção
   const [goalAssist, setGoalAssist] = useState<string>('');
-  const playerOptions = (team: TeamColor) => teamPlayers[team] ?? [];
+  const playerOptions = (team: TeamColor) => (teamPlayers const playerOptions = (team: TeamColor) => teamPlayers[team] ?? [];const playerOptions = (team: TeamColor) => teamPlayers[team] ?? []; teamPlayers[team]) ? teamPlayers[team] : [];
 
   const openGoal = (team: TeamColor) => {
     setGoalTeam(team);
