@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-/** Times fixos (sem Coletes) */
 export type TeamColor = 'Preto' | 'Verde' | 'Cinza' | 'Vermelho';
 
 type Score = Record<TeamColor, number>;
@@ -22,8 +21,8 @@ type RoundState = {
 type GoalEvent = {
   id: string;
   team: TeamColor;
-  author?: string;
-  assist?: string;
+  author: string | null;
+  assist: string | null;
   ts: number;
 };
 
@@ -37,6 +36,8 @@ type HistoryItem = {
   ts: number;
 };
 
+type FilterRange = 'week' | 'month' | 'all';
+
 /** Chips por cor */
 const colorChip: Record<TeamColor, string> = {
   Preto: 'bg-zinc-900 text-white',
@@ -44,19 +45,31 @@ const colorChip: Record<TeamColor, string> = {
   Cinza: 'bg-slate-400 text-zinc-900',
   Vermelho: 'bg-red-600 text-white',
 };
+
 const TeamBadge: React.FC<{ color: TeamColor; className?: string }> = ({ color, className }) => (
   <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${colorChip[color]} ${className ?? ''}`}>
     {color}
   </span>
 );
 
-/** Permissões locais (trocar pelo Auth real depois) */
+/** Permissões locais (trocar por Auth real) */
 const userRole: 'owner' | 'admin' | 'aux' | 'mensalista' | 'diarista' = 'owner';
 const canEdit = (role: typeof userRole) => ['owner','admin','aux'].includes(role);
 
+/** ��� MOCK do sorteio: mapa de jogadores por time
+ *  Depois: popular com o retorno real de team_draw.teams (drawTeams)
+ */
+const defaultTeamPlayers: Record<TeamColor, string[]> = {
+  Preto:  ['João #9', 'Marco', 'Lipe', 'Dani', 'Rafa'],
+  Verde:  ['Pedro #10', 'Caio', 'Beto', 'Guga', 'Nico'],
+  Cinza:  ['Vini', 'Diogo', 'Hugo', 'Téo', 'Iuri'],
+  Vermelho: ['Allan', 'Pablo', 'Leo', 'Roni', 'Alex'],
+};
+
 const Match: React.FC = () => {
-  // Fila que futuramente virá do sorteio (drawTeams)
+  // Fila e jogadores (virão do sorteio)
   const [queue] = useState<TeamColor[]>(['Preto', 'Verde', 'Cinza', 'Vermelho']);
+  const [teamPlayers, setTeamPlayers] = useState<Record<TeamColor, string[]>>(defaultTeamPlayers);
 
   // Estado da rodada
   const [round, setRound] = useState<RoundState>(() => ({
@@ -66,10 +79,9 @@ const Match: React.FC = () => {
     running: false,
   }));
 
-  // Timer: 00:00 → duração
+  // Timer (00:00 → duração)
   const [duracaoMin, setDuracaoMin] = useState<number>(10);
   const [elapsed, setElapsed] = useState<number>(0);
-
   useEffect(() => {
     if (!round.running) return;
     const id = setInterval(() => setElapsed((s) => s + 1), 1000);
@@ -85,45 +97,56 @@ const Match: React.FC = () => {
     return `${m}:${s}`;
   }, [elapsed]);
 
-  // Gols / Histórico
+  // Eventos/Gols e Histórico
   const [events, setEvents] = useState<GoalEvent[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [historyFilter, setHistoryFilter] = useState<FilterRange>('week');
 
   // Modal: Gol
   const [goalOpen, setGoalOpen] = useState(false);
   const [goalTeam, setGoalTeam] = useState<TeamColor>('Preto');
-  const [goalAuthor, setGoalAuthor] = useState('');
-  const [goalAssist, setGoalAssist] = useState('');
+  const [goalAuthor, setGoalAuthor] = useState<string>('');
+  const [goalAssist, setGoalAssist] = useState<string>('');
 
   const openGoal = (team: TeamColor) => {
-    setGoalTeam(team); setGoalAuthor(''); setGoalAssist('');
+    setGoalTeam(team);
+    setGoalAuthor('');
+    setGoalAssist('');
     setGoalOpen(true);
   };
+
   const saveGoal = () => {
     setRound((r) => ({ ...r, scores: { ...r.scores, [goalTeam]: (r.scores[goalTeam] ?? 0) + 1 } }));
-    setEvents((ev) => [...ev, { id: crypto.randomUUID(), team: goalTeam, author: goalAuthor || undefined, assist: goalAssist || undefined, ts: Date.now() }]);
+    setEvents((ev) => [
+      ...ev,
+      { id: crypto.randomUUID(), team: goalTeam, author: goalAuthor || null, assist: goalAssist || null, ts: Date.now() },
+    ]);
     setGoalOpen(false);
   };
-  const editGoal = (id: string, author?: string, assist?: string) => {
+
+  const editGoal = (id: string, author: string | null, assist: string | null) => {
     if (!canEdit(userRole)) return;
-    setEvents((ev) => ev.map(e => e.id === id ? { ...e, author, assist } : e));
-  };
-  const removeGoal = (id: string) => {
-    if (!canEdit(userRole)) return;
-    const g = events.find(e => e.id === id);
-    if (g) setRound((r) => ({ ...r, scores: { ...r.scores, [g.team]: Math.max((r.scores[g.team] ?? 0) - 1, 0) } }));
-    setEvents((ev) => ev.filter(e => e.id !== id));
+    setEvents((ev) => ev.map((e) => (e.id === id ? { ...e, author, assist } : e)));
   };
 
-  // Modal: Próximo time após Encerrar
+  const removeGoal = (id: string) => {
+    if (!canEdit(userRole)) return;
+    const g = events.find((e) => e.id === id);
+    if (g) {
+      setRound((r) => ({ ...r, scores: { ...r.scores, [g.team]: Math.max((r.scores[g.team] ?? 0) - 1, 0) } }));
+    }
+    setEvents((ev) => ev.filter((e) => e.id !== id));
+  };
+
+  // Modal: Próximo adversário ao Encerrar
   const [nextOpen, setNextOpen] = useState(false);
   const [nextCandidate, setNextCandidate] = useState<TeamColor | null>(null);
 
   // Ações
-  const iniciar = () => setRound((r) => ({ ...r, running: true }));
-  const pausar = () => setRound((r) => ({ ...r, running: false }));
+  const iniciar   = () => setRound((r) => ({ ...r, running: true }));
+  const pausar    = () => setRound((r) => ({ ...r, running: false }));
   const recomeçar = () => { setElapsed(0); setRound((r)=>({ ...r, scores:{Preto:0,Verde:0,Cinza:0,Vermelho:0} })); };
-  const encerrar = () => { setRound((r)=>({ ...r, running:false })); setNextOpen(true); };
+  const encerrar  = () => { setRound((r)=>({ ...r, running:false })); setNextOpen(true); };
 
   const confirmarProximoTime = () => {
     const [left, right] = round.inPlay;
@@ -134,11 +157,11 @@ const Match: React.FC = () => {
     // Histórico automático
     setHistory((h) => [...h, { round: round.number, left, right, leftScore: l, rightScore: r, winner, ts: Date.now() }]);
 
-    // Próximo par: vencedor permanece (em empate, mantém left); adversário escolhido
+    // Próximo par (vencedor permanece; empate mantém left)
     const stay: TeamColor = winner === 'Empate' ? left : (winner as TeamColor);
     const next = nextCandidate ?? (['Preto','Verde','Cinza','Vermelho'].find(t => t!==stay && t!==left && t!==right) || right);
 
-    // Reset placar/tempo para nova rodada
+    // Reset rodada
     setElapsed(0);
     setRound((rd) => ({
       number: rd.number + 1,
@@ -152,28 +175,45 @@ const Match: React.FC = () => {
 
   // Helpers
   const [left, right] = round.inPlay;
-  const leftScore = round.scores[left] ?? 0;
+  const leftScore  = round.scores[left]  ?? 0;
   const rightScore = round.scores[right] ?? 0;
-  const candidatos = ['Preto','Verde','Cinza','Vermelho'].filter(t => t !== left && t !== right) as TeamColor[];
+  const candidatos = (['Preto','Verde','Cinza','Vermelho'] as TeamColor[]).filter(t => t !== left && t !== right);
 
-  // Estatísticas G/A (sessão)
+  // Estatísticas da sessão (G/A por jogador)
   const stats = useMemo(() => {
     const map = new Map<string, { g: number; a: number }>();
     for (const e of events) {
-      const author = e.author?.trim();
-      const assist = e.assist?.trim();
-      if (author) {
-        const cur = map.get(author) ?? { g:0, a:0 };
-        cur.g += 1; map.set(author, cur);
+      if (e.author) {
+        const cur = map.get(e.author) ?? { g:0, a:0 };
+        cur.g += 1; map.set(e.author, cur);
       }
-      if (assist) {
-        const cur = map.get(assist) ?? { g:0, a:0 };
-        cur.a += 1; map.set(assist, cur);
+      if (e.assist) {
+        const cur = map.get(e.assist) ?? { g:0, a:0 };
+        cur.a += 1; map.set(e.assist, cur);
       }
     }
-    return Array.from(map.entries()).map(([name, {g,a}]) => ({ name, g, a }))
+    return Array.from(map.entries())
+      .map(([name, {g,a}]) => ({ name, g, a }))
       .sort((x,y) => y.g - x.g || y.a - x.a);
   }, [events]);
+
+  // Filtro Semana/Mês/Todos para Histórico
+  const filteredHistory = useMemo(() => {
+    if (historyFilter === 'all') return history;
+    const now = new Date();
+    return history.filter((h) => {
+      const d = new Date(h.ts);
+      if (historyFilter === 'week') {
+        const diff = (now.getTime() - d.getTime()) / (1000*60*60*24);
+        return diff <= 7;
+      }
+      // month
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+  }, [history, historyFilter]);
+
+  // options de autor/assistência conforme o time do gol
+  const playerOptions = (team: TeamColor) => (teamPlayers[team] ?? []);
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-5">
@@ -267,9 +307,10 @@ const Match: React.FC = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          const author = prompt('Autor do gol:', e.author ?? '') ?? undefined;
-                          const assist = prompt('Assistência (opcional):', e.assist ?? '') ?? undefined;
-                          editGoal(e.id, author, assist);
+                          const players = playerOptions(e.team);
+                          const author = prompt('Autor do gol:', e.author ?? '') || '';
+                          const assist = prompt('Assistência (opcional):', e.assist ?? '') || '';
+                          editGoal(e.id, author || null, assist || null);
                         }}
                       >
                         Editar
@@ -315,69 +356,108 @@ const Match: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Histórico de Placar (preenche ao Encerrar) */}
-      <Card className="rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800">
-        <CardContent className="p-4 sm:p-5">
-          <h3 className="text-sm font-semibold mb-2">Histórico de Placar</h3>
-          {history.length === 0 ? (
-            <p className="text-sm text-zinc-500">Sem registros ainda.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-zinc-500">
-                  <tr>
-                    <th className="text-left py-1">Rodada</th>
-                    <th className="text-left py-1">Duelo</th>
-                    <th className="text-right py-1">Placar</th>
-                    <th className="text-right py-1">Vencedor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.map((h) => (
-                    <tr key={h.round + '-' + h.ts} className="border-t">
-                      <td className="py-1">#{h.round}</td>
-                      <td className="py-1">{h.left} vs {h.right}</td>
-                      <td className="py-1 text-right">{h.leftScore} - {h.rightScore}</td>
-                      <td className="py-1 text-right">{h.winner}</td>
+      {/* Filtro: Semana / Mês / Todos + Histórico de Placar */}
+      <div className="rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800">
+        <div className="flex">
+          <button
+            className={`flex-1 text-sm py-2 rounded-tl-2xl ${historyFilter==='week' ? 'bg-zinc-100 dark:bg-zinc-800 font-medium' : ''}`}
+            onClick={() => setHistoryFilter('week')}
+          >
+            Semana
+          </button>
+          <button
+            className={`flex-1 text-sm py-2 ${historyFilter==='month' ? 'bg-zinc-100 dark:bg-zinc-800 font-medium' : ''}`}
+            onClick={() => setHistoryFilter('month')}
+          >
+            Mês
+          </button>
+          <button
+            className={`flex-1 text-sm py-2 rounded-tr-2xl ${historyFilter==='all' ? 'bg-zinc-100 dark:bg-zinc-800 font-medium' : ''}`}
+            onClick={() => setHistoryFilter('all')}
+          >
+            Todos
+          </button>
+        </div>
+        <Card className="rounded-t-none border-0">
+          <CardContent className="p-4 sm:p-5">
+            <h3 className="text-sm font-semibold mb-2">Histórico de Placar</h3>
+            {filteredHistory.length === 0 ? (
+              <p className="text-sm text-zinc-500">Sem registros ainda.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-zinc-500">
+                    <tr>
+                      <th className="text-left py-1">Rodada</th>
+                      <th className="text-left py-1">Duelo</th>
+                      <th className="text-right py-1">Placar</th>
+                      <th className="text-right py-1">Vencedor</th>
+                      <th className="text-right py-1">Data</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </thead>
+                  <tbody>
+                    {filteredHistory.map((h) => (
+                      <tr key={h.round + '-' + h.ts} className="border-t">
+                        <td className="py-1">#{h.round}</td>
+                        <td className="py-1">{h.left} vs {h.right}</td>
+                        <td className="py-1 text-right">{h.leftScore} - {h.rightScore}</td>
+                        <td className="py-1 text-right">{h.winner}</td>
+                        <td className="py-1 text-right">{new Date(h.ts).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Modal: Registrar Gol */}
+      {/* Modal: Registrar Gol (time -> autor/assist da lista do sorteio) */}
       <Dialog open={goalOpen} onOpenChange={setGoalOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Registrar Gol</DialogTitle>
-            <DialogDescription>Informe autor e (opcional) assistência.</DialogDescription>
+            <DialogDescription>Escolha o autor e (opcional) a assistência do time selecionado.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">
             <div className="text-sm"><span className="mr-2">Time:</span><TeamBadge color={goalTeam} /></div>
 
             <div className="grid gap-2">
-              <Label htmlFor="author">Autor do gol</Label>
-              <Input id="author" placeholder="ex.: João #9" value={goalAuthor} onChange={(e)=>setGoalAuthor(e.target.value)} />
+              <Label>Autor do gol</Label>
+              <Select value={goalAuthor} onValueChange={setGoalAuthor}>
+                <SelectTrigger><SelectValue placeholder="Selecione o autor" /></SelectTrigger>
+                <SelectContent>
+                  {(playerOptions(goalTeam)).map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="assist">Assistência (opcional)</Label>
-              <Input id="assist" placeholder="ex.: Pedro #10" value={goalAssist} onChange={(e)=>setGoalAssist(e.target.value)} />
+              <Label>Assistência (opcional)</Label>
+              <Select value={goalAssist} onValueChange={setGoalAssist}>
+                <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhuma</SelectItem>
+                  {(playerOptions(goalTeam)).map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="secondary" onClick={()=>setGoalOpen(false)}>Cancelar</Button>
-            <Button onClick={saveGoal}>Salvar Gol</Button>
+            <Button disabled={!goalAuthor} onClick={saveGoal}>Salvar Gol</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Modal: Próximo time (Encerrar) */}
+      {/* Modal: Próximo time (ao Encerrar) */}
       <Dialog open={nextOpen} onOpenChange={setNextOpen}>
         <DialogContent>
           <DialogHeader>
