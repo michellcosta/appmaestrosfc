@@ -113,6 +113,10 @@ const Match: React.FC = () => {
   const [goalAuthor, setGoalAuthor] = useState<string>('');          // controlado
   const [goalAssist, setGoalAssist] = useState<string>('__none__');  // "__none__" = sem assistência
 
+  // modal confirmar exclusão
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<GoalEvent | null>(null);
+
   const playerOptions = (team: TeamColor) => (teamPlayers?.[team]) ? teamPlayers[team] : [];
 
   // abrir modal para novo gol
@@ -135,6 +139,13 @@ const Match: React.FC = () => {
     setGoalAuthor(ev.author || (playerOptions(ev.team)[0] ?? ''));
     setGoalAssist(ev.assist ?? '__none__');
     setGoalOpen(true);
+  };
+
+  // abrir modal de confirmação de exclusão
+  const openConfirmDelete = (ev: GoalEvent) => {
+    if (!canEdit(userRole)) return;
+    setConfirmTarget(ev);
+    setConfirmOpen(true);
   };
 
   // se o autor mudar e a assistência for igual ao autor, volta para "sem assistência"
@@ -164,15 +175,19 @@ const Match: React.FC = () => {
     setGoalEditId(null);
   };
 
-  const removeGoal = (id: string) => {
-    if (!canEdit(userRole)) return;
-    // confirmação antes de excluir
-    const ok = window.confirm('Tem certeza que deseja excluir este gol?');
-    if (!ok) return;
+  const confirmDelete = () => {
+    if (!confirmTarget) return;
+    const g = confirmTarget;
+    // decrementa placar do time do gol (não abaixo de zero)
+    setRound(r => ({ ...r, scores: { ...r.scores, [g.team]: Math.max((r.scores[g.team] ?? 0) - 1, 0) } }));
+    setEvents(ev => ev.filter(e => e.id !== g.id));
+    setConfirmOpen(false);
+    setConfirmTarget(null);
+  };
 
-    const g = events.find(e=>e.id===id);
-    if (g) setRound(r => ({ ...r, scores: { ...r.scores, [g.team]: Math.max((r.scores[g.team] ?? 0) - 1, 0) } }));
-    setEvents(ev => ev.filter(e => e.id!==id));
+  const cancelDelete = () => {
+    setConfirmOpen(false);
+    setConfirmTarget(null);
   };
 
   // encerrar → histórico + próximo
@@ -335,7 +350,7 @@ const Match: React.FC = () => {
                       <Button
                         type="button"
                         variant="secondary" size="sm"
-                        onClick={() => removeGoal(e.id)}
+                        onClick={() => openConfirmDelete(e)}
                       >
                         Excluir
                       </Button>
@@ -472,6 +487,35 @@ const Match: React.FC = () => {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Modal de confirmação de exclusão */}
+      <Dialog open={confirmOpen} onOpenChange={(o)=>{ setConfirmOpen(o); if(!o) setConfirmTarget(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir gol?</DialogTitle>
+            <DialogDescription>Essa ação não pode ser desfeita. O placar será atualizado.</DialogDescription>
+          </DialogHeader>
+
+          {confirmTarget && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">Time:</span>
+                <TeamBadge color={confirmTarget.team} />
+              </div>
+              <div className="text-sm">
+                <div><strong>Autor:</strong> {confirmTarget.author}</div>
+                {confirmTarget.assist && <div className="text-zinc-600"><strong>Assistência:</strong> {confirmTarget.assist}</div>}
+                <div className="text-zinc-600"><strong>Horário:</strong> {new Date(confirmTarget.ts).toLocaleTimeString()}</div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={cancelDelete}>Não</Button>
+            <Button type="button" className="bg-red-600 hover:bg-red-600/90" onClick={confirmDelete}>Sim, excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal Próximo Adversário */}
       <Dialog open={nextOpen} onOpenChange={setNextOpen}>
