@@ -30,3 +30,6 @@ create_*.sh
 
 # helper scripts
 *.sh
+*.bak
+fix_*.sh
+update_match_page_v*.sh
