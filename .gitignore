@@ -27,3 +27,6 @@ dist-ssr
 src/pages/Match.tsx.bak
 supabase/.temp/
 create_*.sh
+
+# helper scripts
+*.sh
