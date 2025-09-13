@@ -1,6 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 /** Times fixos (sem Coletes) */
 export type TeamColor = 'Preto' | 'Verde' | 'Cinza' | 'Vermelho';
@@ -11,6 +21,14 @@ type RoundState = {
   inPlay: [TeamColor, TeamColor];
   scores: Score;
   running: boolean;
+};
+
+type GoalEvent = {
+  id: string;
+  team: TeamColor;
+  author?: string;
+  assist?: string;
+  ts: number;
 };
 
 /** Chips por cor (cores do app) */
@@ -27,14 +45,20 @@ const TeamBadge: React.FC<{ color: TeamColor; className?: string }> = ({ color, 
   </span>
 );
 
-/** Página da partida — mostra apenas 2 times em campo (mobile-first)
- * Regra: vencedor permanece; perdedor vai para o fim da fila; entra o próximo.
+/** Página da partida — 2 times em campo (mobile-first)
+ * Regras atendidas:
+ * - Botões: Iniciar / Encerrar / Recomeçar
+ * - Encerrar = finaliza a partida atual e pergunta o próximo adversário; vencedor permanece
+ * - +Gol abre modal para registrar autor e assistência (opcional), como no modelo anterior
+ * - Fila preparada para vir do sorteio (drawTeams)
  */
 const Match: React.FC = () => {
-  // fila inicial
+  // ======= FILA VINDO DO SORTEIO =======
+  // TODO: quando ligar ao Supabase, substitua este estado por resultado de drawTeams (team_draw.teams)
+  // e defina a ordem inicial conforme sorteio.
   const [queue, setQueue] = useState<TeamColor[]>(['Preto', 'Verde', 'Cinza', 'Vermelho']);
 
-  // estado da rodada
+  // ======= ESTADO DA RODADA =======
   const [round, setRound] = useState<RoundState>(() => ({
     number: 1,
     inPlay: ['Preto', 'Verde'],
@@ -42,7 +66,7 @@ const Match: React.FC = () => {
     running: false,
   }));
 
-  // timer 10:00 padrão
+  // ======= TIMER 10:00 =======
   const [seconds, setSeconds] = useState(10 * 60);
   useEffect(() => {
     if (!round.running) return;
@@ -56,82 +80,85 @@ const Match: React.FC = () => {
     return `${m}:${s}`;
   }, [seconds]);
 
-  const startRound = () => setRound((r) => ({ ...r, running: true }));
-  const pauseRound = () => setRound((r) => ({ ...r, running: false }));
-  const endRound = () => setRound((r) => ({ ...r, running: false }));
-  const resetScore = () =>
-    setRound((r) => ({ ...r, scores: { Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 } }));
+  // ======= GOALS (LOG LOCAL) =======
+  const [events, setEvents] = useState<GoalEvent[]>([]);
 
-  const goal = (team: TeamColor) => {
-    if (!round.inPlay.includes(team)) return;
-    setRound((r) => ({ ...r, scores: { ...r.scores, [team]: (r.scores[team] ?? 0) + 1 } }));
+  // ======= MODAL: Registrar Gol =======
+  const [goalOpen, setGoalOpen] = useState(false);
+  const [goalTeam, setGoalTeam] = useState<TeamColor>('Preto');
+  const [goalAuthor, setGoalAuthor] = useState('');
+  const [goalAssist, setGoalAssist] = useState('');
+
+  const openGoalModal = (team: TeamColor) => {
+    setGoalTeam(team);
+    setGoalAuthor('');
+    setGoalAssist('');
+    setGoalOpen(true);
   };
 
-  const getNextQueueAfterLoser = (q: TeamColor[], loser: TeamColor) => {
-    const without = q.filter((t) => t !== loser);
-    return [...without, loser];
-  };
-  const pickNextOpponent = (q: TeamColor[], winner: TeamColor): TeamColor => {
-    for (const t of q) if (t !== winner) return t;
-    return q[0];
+  const submitGoal = () => {
+    // incrementa o placar do time selecionado
+    setRound((r) => ({ ...r, scores: { ...r.scores, [goalTeam]: (r.scores[goalTeam] ?? 0) + 1 } }));
+    // log local (futuro: persistir em events)
+    setEvents((ev) => [
+      ...ev,
+      { id: crypto.randomUUID(), team: goalTeam, author: goalAuthor || undefined, assist: goalAssist || undefined, ts: Date.now() },
+    ]);
+    setGoalOpen(false);
   };
 
-  /** Encerrar rodada + rodízio */
-  const closeRoundAndRotate = () => {
+  // ======= MODAL: Escolher próximo time ao Encerrar =======
+  const [nextOpen, setNextOpen] = useState(false);
+  const [nextCandidate, setNextCandidate] = useState<TeamColor | null>(null);
+
+  // ======= AÇÕES =======
+  const iniciar = () => setRound((r) => ({ ...r, running: true }));
+  const pausar = () => setRound((r) => ({ ...r, running: false }));
+
+  const recomeçar = () => {
+    // recomeça o mesmo jogo/rodada: zera apenas o placar e o tempo
+    setRound((r) => ({
+      ...r,
+      scores: { Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 },
+    }));
+    setSeconds(10 * 60);
+  };
+
+  const encerrar = () => {
+    // encerra a partida atual e abre o seletor de próximo time (vencedor permanece)
+    setRound((r) => ({ ...r, running: false }));
+    setNextOpen(true);
+  };
+
+  // Ao confirmar o próximo time:
+  const confirmarProximoTime = () => {
+    if (!nextCandidate) return;
     const [A, B] = round.inPlay;
     const a = round.scores[A] ?? 0;
     const b = round.scores[B] ?? 0;
+    const winner: TeamColor = a === b ? (Math.random() < 0.5 ? A : B) : (a > b ? A : B);
 
-    let winner: TeamColor;
-    let loser: TeamColor;
+    // monta nova fila (mantém ordem do sorteio, removendo quem perdeu — que será escolhido manualmente — é opcional)
+    // aqui não mexemos na fila, pois o operador escolheu manualmente o próximo time
+    const nextPair: [TeamColor, TeamColor] = [winner, nextCandidate];
 
-    if (a === b) {
-      // placeholder: cara/coroa simples (trocaremos por modal animado)
-      const choice = window.prompt('Empate! Digite A ou B (ou "coin" p/ Cara/Coroa):', 'coin');
-      if (!choice || choice.toLowerCase() === 'coin') {
-        winner = Math.random() < 0.5 ? A : B;
-        loser = winner === A ? B : A;
-      } else if (choice.toUpperCase() === 'A') {
-        winner = A; loser = B;
-      } else if (choice.toUpperCase() === 'B') {
-        winner = B; loser = A;
-      } else {
-        winner = Math.random() < 0.5 ? A : B;
-        loser = winner === A ? B : A;
-      }
-      // futuro: gravar tiebreaker_event(method, result_team)
-    } else if (a > b) {
-      winner = A; loser = B;
-    } else {
-      winner = B; loser = A;
-    }
-
-    // atualiza fila (perdedor vai pro fim)
-    setQueue((q) => {
-      const withoutLoser = q.filter((t) => t !== loser);
-      return [...withoutLoser, loser];
-    });
-
-    // define novo par (winner + próximo da fila ≠ winner)
-    setRound((r) => {
-      const currentQueue = getNextQueueAfterLoser(queue, loser);
-      const nextOpponent = currentQueue.find((t) => t !== winner) ?? pickNextOpponent(queue, winner);
-      return {
-        number: r.number + 1,
-        inPlay: [winner, nextOpponent],
-        scores: { Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 },
-        running: false,
-      };
-    });
-
-    // reseta tempo/placar
+    setRound((r) => ({
+      number: r.number + 1,
+      inPlay: nextPair,
+      scores: { Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 },
+      running: false,
+    }));
     setSeconds(10 * 60);
-    resetScore();
+    setNextOpen(false);
+    setNextCandidate(null);
   };
 
+  // ======= HELPERS UI =======
   const [left, right] = round.inPlay;
   const leftScore = round.scores[left] ?? 0;
   const rightScore = round.scores[right] ?? 0;
+
+  const candidatos = queue.filter((t) => t !== left && t !== right); // fora os que já estão em campo
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-5">
@@ -140,7 +167,7 @@ const Match: React.FC = () => {
         <p className="text-sm text-zinc-500">Rodada #{round.number} — apenas os 2 times em campo</p>
       </header>
 
-      {/* Placar (Card shadcn, cantos 2xl, sombra suave) */}
+      {/* Placar */}
       <Card className="rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 mb-4">
         <CardContent className="p-4 sm:p-6">
           <div className="grid grid-cols-3 items-center gap-3">
@@ -150,7 +177,7 @@ const Match: React.FC = () => {
               <Button
                 variant="outline"
                 className="mt-2 w-full"
-                onClick={() => goal(left)}
+                onClick={() => openGoalModal(left)}
                 disabled={!round.running}
               >
                 + Gol
@@ -161,13 +188,13 @@ const Match: React.FC = () => {
               <div className="text-4xl sm:text-5xl font-extrabold tabular-nums">{mmss}</div>
               <div className="mt-3 flex items-center justify-center gap-2">
                 {!round.running ? (
-                  <Button className="px-4" onClick={startRound}>Start</Button>
+                  <Button className="px-4" onClick={iniciar}>Iniciar</Button>
                 ) : (
-                  <Button className="px-4 bg-amber-500 hover:bg-amber-500/90" onClick={pauseRound}>
-                    Pause
+                  <Button className="px-4 bg-amber-500 hover:bg-amber-500/90" onClick={pausar}>
+                    Pausar
                   </Button>
                 )}
-                <Button variant="secondary" className="px-4" onClick={endRound}>End</Button>
+                <Button variant="secondary" className="px-4" onClick={encerrar}>Encerrar</Button>
               </div>
             </div>
 
@@ -177,7 +204,7 @@ const Match: React.FC = () => {
               <Button
                 variant="outline"
                 className="mt-2 w-full"
-                onClick={() => goal(right)}
+                onClick={() => openGoalModal(right)}
                 disabled={!round.running}
               >
                 + Gol
@@ -189,24 +216,101 @@ const Match: React.FC = () => {
 
       {/* Ações */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        <Button variant="outline" onClick={resetScore}>Zerar Placar</Button>
-        <Button className="bg-blue-600 hover:bg-blue-600/90" onClick={closeRoundAndRotate}>
-          Encerrar Rodada → Rodízio
-        </Button>
+        <Button variant="outline" onClick={recomeçar}>Recomeçar</Button>
+        {/* Botão "Encerrar Rodada → Rodízio" removido conforme pedido */}
       </div>
 
-      {/* Fila (Card shadcn) */}
+      {/* Fila (apenas visual; origem será drawTeams) */}
       <Card className="rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800">
         <CardContent className="p-4 sm:p-5">
-          <h3 className="text-sm font-medium mb-2">Fila de Times</h3>
+          <h3 className="text-sm font-medium mb-2">Fila de Times (sorteio)</h3>
           <div className="flex flex-wrap gap-2">
             {queue.map((t) => <TeamBadge key={t} color={t} />)}
           </div>
           <p className="text-xs text-zinc-500 mt-2">
-            Regra: o vencedor permanece; o perdedor vai para o fim da fila; entra o próximo contra o vencedor.
+            Em breve: esta ordem virá do sorteio (drawTeams). O vencedor permanece; o próximo adversário é escolhido ao encerrar.
           </p>
         </CardContent>
       </Card>
+
+      {/* ===== MODAL Registrar Gol (time + autor + assistência) ===== */}
+      <Dialog open={goalOpen} onOpenChange={setGoalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Registrar Gol</DialogTitle>
+            <DialogDescription>Informe o autor e (opcional) a assistência.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="text-sm">
+              <span className="mr-2">Time:</span>
+              <TeamBadge color={goalTeam} />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="author">Autor do gol</Label>
+              <Input id="author" placeholder="ex.: João #9" value={goalAuthor} onChange={(e) => setGoalAuthor(e.target.value)} />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="assist">Assistência (opcional)</Label>
+              <Input id="assist" placeholder="ex.: Pedro #10" value={goalAssist} onChange={(e) => setGoalAssist(e.target.value)} />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setGoalOpen(false)}>Cancelar</Button>
+            <Button onClick={submitGoal}>Salvar Gol</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== MODAL Próximo Adversário ao Encerrar ===== */}
+      <Dialog open={nextOpen} onOpenChange={setNextOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Escolher próximo time</DialogTitle>
+            <DialogDescription>Selecione quem enfrenta o vencedor.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <div className="text-sm text-zinc-600">Vencedor permanece em campo.</div>
+            <div className="flex flex-wrap gap-2">
+              {candidatos.length === 0 && <span className="text-sm text-zinc-500">Sem candidatos (verifique a fila).</span>}
+              {candidatos.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setNextCandidate(t)}
+                  className={`px-3 py-1 rounded-full text-sm border ${nextCandidate === t ? 'ring-2 ring-blue-500' : ''} ${colorChip[t].replace('text-white','text-white')}`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setNextOpen(false)}>Cancelar</Button>
+            <Button disabled={!nextCandidate} onClick={confirmarProximoTime}>Confirmar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Log simples de gols (debug visual) */}
+      {events.length > 0 && (
+        <div className="mt-4 text-sm text-zinc-600">
+          <div className="font-medium mb-1">Gols registrados</div>
+          <ul className="list-disc ml-5 space-y-1">
+            {events.map((e) => (
+              <li key={e.id}>
+                <b>{e.team}</b> — {e.author || 'Autor não informado'}
+                {e.assist ? ` (assistência: ${e.assist})` : ''}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };
