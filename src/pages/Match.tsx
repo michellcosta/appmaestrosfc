@@ -36,10 +36,11 @@ const defaultTeamPlayers: Record<TeamColor, string[]> = {
 
 const Match: React.FC = () => {
   const {
-    round, elapsed, durationMin, events, history,
-    setDuration, start, pause, reset, tick,
+    round, durationMin, events, history,
+    setDuration, start, pause, reset, 
     addGoal, editGoal, deleteGoal, endRoundChooseNext,
   } = useMatchStore()
+  const elapsed = useMatchStore(s => s.getElapsedSec())
 
   const [goalOpen, setGoalOpen] = useState(false)
   const [goalEditId, setGoalEditId] = useState<string | null>(null)
@@ -51,11 +52,6 @@ const Match: React.FC = () => {
   const [confirmTarget, setConfirmTarget] = useState<GoalEvent | null>(null)
 
   // liga/desliga intervalo do cronômetro com base no store
-  useEffect(() => {
-    if (!round.running) return
-    const id = setInterval(() => tick(), 1000)
-    return () => clearInterval(id)
-  }, [round.running, tick])
 
   const alvo = durationMin * 60
   const atrasado = elapsed >= alvo
