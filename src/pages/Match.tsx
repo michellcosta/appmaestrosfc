@@ -6,6 +6,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy } from 'lucide-react';
 
 export type TeamColor = 'Preto' | 'Verde' | 'Cinza' | 'Vermelho';
@@ -63,7 +64,6 @@ const defaultTeamPlayers: Record<TeamColor, string[]> = {
 };
 
 const Match: React.FC = () => {
-  // fila/jogadores (virão do sorteio real depois)
   const [teamPlayers] = useState<Record<TeamColor, string[]>>(defaultTeamPlayers);
 
   // estado da rodada
@@ -76,7 +76,7 @@ const Match: React.FC = () => {
 
   // ===== Timer MM:SS (sem milésimos) =====
   const [duracaoMin, setDuracaoMin] = useState<number>(10);
-  const [elapsed, setElapsed] = useState<number>(0); // em segundos
+  const [elapsed, setElapsed] = useState<number>(0); // segundos
   useEffect(() => {
     if (!round.running) return;
     const id = setInterval(() => setElapsed((s) => s + 1), 1000);
@@ -198,10 +198,10 @@ const Match: React.FC = () => {
       </header>
 
       {/* Cronômetro */}
-      <Card className="mb-3 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800">
+      <Card className="mb-3 rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800">
         <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col items-center gap-3">
-            <div className={`text-5xl sm:text-6xl font-extrabold tabular-nums ${isOverTime ? 'text-red-600 animate-pulse' : ''}`}>
+            <div className={`text-5xl sm:text-6xl font-extrabold tabular-nums ${isOverTime ? 'text-red-600 motion-safe:animate-pulse [animation-duration:500ms]' : ''}`}>
               {mmss}
             </div>
 
@@ -229,7 +229,7 @@ const Match: React.FC = () => {
       </Card>
 
       {/* Placar (2 times) */}
-      <Card className="rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 mb-3">
+      <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
         <CardContent className="p-4 sm:p-5">
           <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
             <Trophy className="h-4 w-4 text-emerald-600" /> Placar
@@ -252,7 +252,7 @@ const Match: React.FC = () => {
       </Card>
 
       {/* Gols recentes */}
-      <Card className="rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 mb-3">
+      <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
         <CardContent className="p-4 sm:p-5">
           <h3 className="text-sm font-semibold mb-2">Gols recentes</h3>
           {events.length === 0 ? (
@@ -291,7 +291,7 @@ const Match: React.FC = () => {
       </Card>
 
       {/* Estatísticas (sessão) */}
-      <Card className="rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 mb-3">
+      <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
         <CardContent className="p-4 sm:p-5">
           <h3 className="text-sm font-semibold mb-2">Estatísticas dos jogadores (sessão)</h3>
           {stats.length === 0 ? (
@@ -321,34 +321,21 @@ const Match: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Caixa separada — Filtro Semana / Mês / Todos (padronizado) */}
-      <Card className="rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 mb-0">
+      {/* Tabs — Semana / Mês / Todos (igual Ranking/Financeiro) */}
+      <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-0">
         <CardContent className="p-2 sm:p-3">
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              className={`text-sm py-2 rounded-xl border ${historyFilter==='week' ? 'bg-zinc-100 dark:bg-zinc-800 font-medium' : ''}`}
-              onClick={() => setHistoryFilter('week')}
-            >
-              Semana
-            </button>
-            <button
-              className={`text-sm py-2 rounded-xl border ${historyFilter==='month' ? 'bg-zinc-100 dark:bg-zinc-800 font-medium' : ''}`}
-              onClick={() => setHistoryFilter('month')}
-            >
-              Mês
-            </button>
-            <button
-              className={`text-sm py-2 rounded-xl border ${historyFilter==='all' ? 'bg-zinc-100 dark:bg-zinc-800 font-medium' : ''}`}
-              onClick={() => setHistoryFilter('all')}
-            >
-              Todos
-            </button>
-          </div>
+          <Tabs value={historyFilter} onValueChange={(v)=>setHistoryFilter(v as FilterRange)}>
+            <TabsList className="grid grid-cols-3 w-full rounded-xl">
+              <TabsTrigger value="week"  className="rounded-xl">Semana</TabsTrigger>
+              <TabsTrigger value="month" className="rounded-xl">Mês</TabsTrigger>
+              <TabsTrigger value="all"   className="rounded-xl">Todos</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </CardContent>
       </Card>
 
-      {/* Histórico de Partidas — card no mesmo padrão */}
-      <Card className="rounded-t-none shadow-sm border border-zinc-200 dark:border-zinc-800">
+      {/* Histórico de Partidas — card padronizado */}
+      <Card className="rounded-t-none border border-zinc-200 shadow-sm dark:border-zinc-800">
         <CardContent className="p-4 sm:p-5">
           <h3 className="text-sm font-semibold mb-2">Histórico de Partidas</h3>
           {filteredHistory.length === 0 ? (
@@ -382,7 +369,7 @@ const Match: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Modal: Registrar Gol (autor/assist da lista do time) */}
+      {/* Modal: Registrar Gol */}
       <Dialog open={goalOpen} onOpenChange={setGoalOpen}>
         <DialogContent>
           <DialogHeader>
