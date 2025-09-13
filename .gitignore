@@ -36,3 +36,5 @@ update_match_page_v*.sh
 .vscode/
 node_modules/
 dist/
+
+.vercel
