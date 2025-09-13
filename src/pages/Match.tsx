@@ -55,7 +55,7 @@ const TeamBadge: React.FC<{ color: TeamColor; className?: string }> = ({ color, 
 const userRole: 'owner' | 'admin' | 'aux' | 'mensalista' | 'diarista' = 'owner';
 const canEdit = (role: typeof userRole) => ['owner','admin','aux'].includes(role);
 
-/** MOCK do sorteio: jogadores por time (com os nomes pedidos) */
+/** MOCK do sorteio: jogadores por time (nomes de teste) */
 const defaultTeamPlayers: Record<TeamColor, string[]> = {
   Preto:    ['Michell', 'Thiago'],
   Verde:    ['Sérgio Jr', 'Oton'],
@@ -74,7 +74,7 @@ const Match: React.FC = () => {
     running: false,
   }));
 
-  // ===== Timer MM:SS (sem milésimos) =====
+  // ===== Timer MM:SS =====
   const [duracaoMin, setDuracaoMin] = useState<number>(10);
   const [elapsed, setElapsed] = useState<number>(0); // segundos
   useEffect(() => {
@@ -99,17 +99,19 @@ const Match: React.FC = () => {
   // modal de gol
   const [goalOpen, setGoalOpen] = useState(false);
   const [goalTeam, setGoalTeam] = useState<TeamColor>('Preto');
-  const [goalAuthor, setGoalAuthor] = useState<string>('');
+  const [goalAuthor, setGoalAuthor] = useState<string>('');  // sem pré-seleção
   const [goalAssist, setGoalAssist] = useState<string>('');
   const playerOptions = (team: TeamColor) => teamPlayers[team] ?? [];
 
   const openGoal = (team: TeamColor) => {
     setGoalTeam(team);
-    setGoalAuthor('');
+    setGoalAuthor('');   // não preenche autor automaticamente
     setGoalAssist('');
     setGoalOpen(true);
   };
   const saveGoal = () => {
+    // exige autor
+    if (!goalAuthor) return;
     setRound((r) => ({ ...r, scores: { ...r.scores, [goalTeam]: (r.scores[goalTeam] ?? 0) + 1 } }));
     setEvents((ev) => [...ev, { id: crypto.randomUUID(), team: goalTeam, author: goalAuthor || null, assist: goalAssist || null, ts: Date.now() }]);
     setGoalOpen(false);
@@ -243,6 +245,7 @@ const Match: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold tabular-nums">{round.scores[team] ?? 0}</span>
+                  {/* Só permite registrar gol quando a rodada está em andamento */}
                   <Button variant="outline" size="sm" onClick={()=>openGoal(team)} disabled={!round.running}>+</Button>
                 </div>
               </div>
@@ -294,7 +297,7 @@ const Match: React.FC = () => {
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
         <CardContent className="p-4 sm:p-5">
           <h3 className="text-sm font-semibold mb-2">Estatísticas dos jogadores (sessão)</h3>
-          {stats.length === 0 ? (
+          {events.length === 0 ? (
             <p className="text-sm text-zinc-500">Sem registros ainda.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -307,13 +310,15 @@ const Match: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {stats.map((row) => (
-                    <tr key={row.name} className="border-t">
-                      <td className="py-1">{row.name}</td>
-                      <td className="py-1 text-right tabular-nums">{row.g}</td>
-                      <td className="py-1 text-right tabular-nums">{row.a}</td>
-                    </tr>
-                  ))}
+                  {Array.from(new Map(events.flatMap(e => [
+                    e.author ? [[e.author, { g:1, a:0 }]] : [],
+                    e.assist ? [[e.assist, { g:0, a:1 }]] : [],
+                  ]).map).entries())
+                    .reduce((acc:any, [name, val]: any) => {
+                      const cur = acc.get(name) ?? { name, g:0, a:0 };
+                      return acc.set(name, { name, g: cur.g + (val.g || 0), a: cur.a + (val.a || 0) });
+                    }, new Map())
+                  }
                 </tbody>
               </table>
             </div>
@@ -322,7 +327,7 @@ const Match: React.FC = () => {
       </Card>
 
       {/* Tabs — Semana / Mês / Todos (igual Ranking/Financeiro) */}
-      <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-0">
+      <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
         <CardContent className="p-2 sm:p-3">
           <Tabs value={historyFilter} onValueChange={(v)=>setHistoryFilter(v as FilterRange)}>
             <TabsList className="grid grid-cols-3 w-full rounded-xl">
@@ -334,32 +339,32 @@ const Match: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Histórico de Partidas — card padronizado */}
-      <Card className="rounded-t-none border border-zinc-200 shadow-sm dark:border-zinc-800">
-        <CardContent className="p-4 sm:p-5">
-          <h3 className="text-sm font-semibold mb-2">Histórico de Partidas</h3>
+      {/* Histórico de Partidas — maior e destacado */}
+      <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800">
+        <CardContent className="p-5 sm:p-7">
+          <h3 className="text-base sm:text-lg font-semibold mb-3">Histórico de Partidas</h3>
           {filteredHistory.length === 0 ? (
             <p className="text-sm text-zinc-500">Sem registros ainda.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-[0.95rem]">
                 <thead className="text-zinc-500">
                   <tr>
-                    <th className="text-left py-1">Rodada</th>
-                    <th className="text-left py-1">Duelo</th>
-                    <th className="text-right py-1">Placar</th>
-                    <th className="text-right py-1">Vencedor</th>
-                    <th className="text-right py-1">Data</th>
+                    <th className="text-left py-2">Rodada</th>
+                    <th className="text-left py-2">Duelo</th>
+                    <th className="text-right py-2">Placar</th>
+                    <th className="text-right py-2">Vencedor</th>
+                    <th className="text-right py-2">Data</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredHistory.map((h) => (
                     <tr key={h.round + '-' + h.ts} className="border-t">
-                      <td className="py-1">#{h.round}</td>
-                      <td className="py-1">{h.left} vs {h.right}</td>
-                      <td className="py-1 text-right">{h.leftScore} - {h.rightScore}</td>
-                      <td className="py-1 text-right">{h.winner}</td>
-                      <td className="py-1 text-right">{new Date(h.ts).toLocaleDateString()}</td>
+                      <td className="py-2">#{h.round}</td>
+                      <td className="py-2">{h.left} vs {h.right}</td>
+                      <td className="py-2 text-right">{h.leftScore} - {h.rightScore}</td>
+                      <td className="py-2 text-right">{h.winner}</td>
+                      <td className="py-2 text-right">{new Date(h.ts).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -374,7 +379,7 @@ const Match: React.FC = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Registrar Gol</DialogTitle>
-            <DialogDescription>Escolha o autor e (opcional) a assistência do time.</DialogDescription>
+            <DialogDescription>Selecione o autor e (opcional) a assistência do time.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">
