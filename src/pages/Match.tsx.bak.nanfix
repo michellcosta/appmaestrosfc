@@ -40,14 +40,11 @@ const Match: React.FC = () => {
     setDuration, start, pause, reset, 
     addGoal, editGoal, deleteGoal, endRoundChooseNext,
   } = useMatchStore()
-  // elapsed robusto (anti-NaN): usa defaults caso storage esteja sujo
-  const elapsed = useMatchStore(s => {
-    const now = (typeof s.now === "number" ? s.now : Date.now())
-    const acc = (typeof s.accumulatedSec === "number" ? s.accumulatedSec : 0)
-    const live = s.runningSince ? Math.max(Math.floor((now - s.runningSince) / 1000), 0) : 0
-    return acc + live
-  })
   // elapsed derivado do relógio, sem chamar função do store
+  const elapsed = useMatchStore(s => {
+    const live = s.runningSince ? Math.floor((s.now - s.runningSince)/1000) : 0
+    return s.accumulatedSec + live
+  })
 
   const [goalOpen, setGoalOpen] = useState(false)
   const [goalEditId, setGoalEditId] = useState<string | null>(null)
