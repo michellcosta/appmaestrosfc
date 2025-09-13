@@ -124,6 +124,7 @@ const Match: React.FC = () => {
 
 
 
+
   const openGoal = (team: TeamColor) => {
     setGoalTeam(team);
     setGoalAuthor('');   // não preenche autor automaticamente
@@ -420,10 +421,10 @@ const Match: React.FC = () => {
 
             <div className="grid gap-2">
               <Label>Assistência (opcional)</Label>
-              <Select value={goalAssist || undefined} onValueChange={setGoalAssist}>
+              <Select value={goalAssist || undefined} onValueChange={(v)=>setGoalAssist(v==="__none__" ? "" : v)}>
                 <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma</SelectItem>
+                  <SelectItem value="__none__">Nenhuma</SelectItem>
                   {playerOptions(goalTeam).map((p)=>(
                     <SelectItem key={p} value={p}>{p}</SelectItem>
                   ))}
