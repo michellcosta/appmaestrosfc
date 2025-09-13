@@ -9,6 +9,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy } from 'lucide-react';
 
+// UUID seguro (fallback p/ navegadores sem crypto.randomUUID)
+function uuidv4(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    // @ts-ignore
+    return (crypto as any).randomUUID();
+  }
+  const bytes = new Uint8Array(16);
+  if (typeof crypto !== "undefined" && (crypto as any).getRandomValues) {
+    (crypto as any).getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < 16; i++) bytes[i] = Math.floor(Math.random()*256);
+  }
+  bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+  bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant
+  const h = Array.from(bytes).map(b => b.toString(16).padStart(2,"0")).join("");
+  return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
+}
+
+
 export type TeamColor = 'Preto' | 'Verde' | 'Cinza' | 'Vermelho';
 type FilterRange = 'week' | 'month' | 'all';
 
@@ -104,6 +123,7 @@ const Match: React.FC = () => {
   const playerOptions = (team: TeamColor) => (teamPlayers && teamPlayers[team]) ? teamPlayers[team] : [];
 
 
+
   const openGoal = (team: TeamColor) => {
     setGoalTeam(team);
     setGoalAuthor('');   // não preenche autor automaticamente
@@ -114,7 +134,7 @@ const Match: React.FC = () => {
     // exige autor
     if (!goalAuthor) return;
     setRound((r) => ({ ...r, scores: { ...r.scores, [goalTeam]: (r.scores[goalTeam] ?? 0) + 1 } }));
-    setEvents((ev) => [...ev, { id: crypto.randomUUID(), team: goalTeam, author: goalAuthor || null, assist: goalAssist || null, ts: Date.now() }]);
+    setEvents((ev) => [...ev, { id: uuidv4(), team: goalTeam, author: goalAuthor || null, assist: goalAssist || null, ts: Date.now() }]);
     setGoalOpen(false);
   };
   const editGoal = (id: string, author: string | null, assist: string | null) => {
@@ -220,12 +240,12 @@ const Match: React.FC = () => {
 
             <div className="flex flex-wrap items-center justify-center gap-2">
               {!round.running ? (
-                <Button onClick={iniciar}>Iniciar</Button>
+                <Button type="button" onClick={iniciar}>Iniciar</Button>
               ) : (
-                <Button className="bg-amber-500 hover:bg-amber-500/90" onClick={pausar}>Pausar</Button>
+                <Button type="button" className="bg-amber-500 hover:bg-amber-500/90" onClick={pausar}>Pausar</Button>
               )}
-              <Button variant="outline" onClick={recomeçar}>Recomeçar</Button>
-              <Button variant="secondary" onClick={encerrar}>Encerrar</Button>
+              <Button type="button" variant="outline" onClick={recomeçar}>Recomeçar</Button>
+              <Button type="button" variant="secondary" onClick={encerrar}>Encerrar</Button>
             </div>
           </div>
         </CardContent>
@@ -247,7 +267,7 @@ const Match: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold tabular-nums">{round.scores[team] ?? 0}</span>
                   {/* Só permite registrar gol quando a rodada está em andamento */}
-                  <Button variant="outline" size="sm" onClick={()=>openGoal(team)} disabled={!round.running}>+</Button>
+                  <Button type="button" variant="outline" size="sm" onClick={()=>openGoal(team)} disabled={!round.running}>+</Button>
                 </div>
               </div>
             ))}
@@ -284,7 +304,7 @@ const Match: React.FC = () => {
                       >
                         Editar
                       </Button>
-                      <Button variant="secondary" size="sm" onClick={() => removeGoal(e.id)}>Excluir</Button>
+                      <Button type="button" variant="secondary" size="sm" onClick={() => removeGoal(e.id)}>Excluir</Button>
                     </div>
                   )}
                 </li>
@@ -388,7 +408,7 @@ const Match: React.FC = () => {
 
             <div className="grid gap-2">
               <Label>Autor do gol</Label>
-              <Select value={goalAuthor} onValueChange={setGoalAuthor}>
+              <Select value={goalAuthor || undefined} onValueChange={setGoalAuthor}>
                 <SelectTrigger><SelectValue placeholder="Selecione o autor" /></SelectTrigger>
                 <SelectContent>
                   {playerOptions(goalTeam).map((p)=>(
@@ -400,7 +420,7 @@ const Match: React.FC = () => {
 
             <div className="grid gap-2">
               <Label>Assistência (opcional)</Label>
-              <Select value={goalAssist} onValueChange={setGoalAssist}>
+              <Select value={goalAssist || undefined} onValueChange={setGoalAssist}>
                 <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Nenhuma</SelectItem>
@@ -413,8 +433,8 @@ const Match: React.FC = () => {
           </div>
 
           <DialogFooter>
-            <Button variant="secondary" onClick={()=>setGoalOpen(false)}>Cancelar</Button>
-            <Button disabled={!goalAuthor} onClick={saveGoal}>Salvar Gol</Button>
+            <Button type="button" variant="secondary" onClick={()=>setGoalOpen(false)}>Cancelar</Button>
+            <Button type="button" disabled={!goalAuthor} onClick={saveGoal}>Salvar Gol</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -444,8 +464,8 @@ const Match: React.FC = () => {
           </div>
 
           <DialogFooter>
-            <Button variant="secondary" onClick={()=>setNextOpen(false)}>Cancelar</Button>
-            <Button disabled={!nextCandidate} onClick={confirmarProximoTime}>Confirmar</Button>
+            <Button type="button" variant="secondary" onClick={()=>setNextOpen(false)}>Cancelar</Button>
+            <Button type="button" disabled={!nextCandidate} onClick={confirmarProximoTime}>Confirmar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
