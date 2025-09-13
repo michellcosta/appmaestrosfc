@@ -189,11 +189,11 @@ export const useMatchStore = create<MatchStore>()(
       migrate: (persisted) => {
         try {
           const s = persisted as any;
-          if (typeof s.accumulatedSec !== "number") s.accumulatedSec = 0;
-          if (typeof s.now !== "number") s.now = Date.now();
-          if (!s.round) s.round = { number:1, inPlay:["Preto","Verde"], scores:{Preto:0,Verde:0,Cinza:0,Vermelho:0}, running:false };
+          if (typeof s.accumulatedSec !== \"number\") s.accumulatedSec = 0;
+          if (typeof s.now !== \"number\") s.now = Date.now();
+          if (!s.round) s.round = { number:1, inPlay:[\"Preto\",\"Verde\"], scores:{Preto:0,Verde:0,Cinza:0,Vermelho:0}, running:false };
           if (!s.round.scores) s.round.scores = {Preto:0,Verde:0,Cinza:0,Vermelho:0};
-          if (typeof s.round.running !== "boolean") s.round.running = false;
+          if (typeof s.round.running !== \"boolean\") s.round.running = false;
           return s;
         } catch { return persisted as any }
       },
