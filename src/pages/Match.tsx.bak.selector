@@ -40,11 +40,7 @@ const Match: React.FC = () => {
     setDuration, start, pause, reset, 
     addGoal, editGoal, deleteGoal, endRoundChooseNext,
   } = useMatchStore()
-  // elapsed derivado do relógio, sem chamar função do store
-  const elapsed = useMatchStore(s => {
-    const live = s.runningSince ? Math.floor((s.now - s.runningSince)/1000) : 0
-    return s.accumulatedSec + live
-  })
+  const elapsed = useMatchStore(s => s.getElapsedSec())
 
   const [goalOpen, setGoalOpen] = useState(false)
   const [goalEditId, setGoalEditId] = useState<string | null>(null)
