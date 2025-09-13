@@ -64,14 +64,14 @@ const Match: React.FC = () => {
 
   // ---------- Modal de Encerrar Rodada ----------
   const [endOpen, setEndOpen] = useState(false)
-  const [nextTeamChoice, setNextTeamChoice] = useState<TeamColor | '_auto'>('_auto')
+  const [nextTeamChoice, setNextTeamChoice] = useState<TeamColor | '_auto'>('auto_')
 
   const alvo = durationMin * 60
   const atrasado = elapsed >= alvo
   const mmss = useMemo(() => {
-  const m = Math.floor(elapsed/60).toString().padStart(2, '0')
-  const s = (elapsed%60).toString().padStart(2, '0')
-  return `${m}:${s}`
+    const m = Math.floor(elapsed/60).toString().padStart(2, '0')
+    const s = (elapsed%60).toString().padStart(2, '0')
+    return ${m}:${s}
   }, [elapsed])
 
   const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
@@ -167,12 +167,12 @@ const Match: React.FC = () => {
 
   // abrir modal de Encerrar
   const openEnd = () => {
-  setNextTeamChoice('_auto')
+    setNextTeamChoice('_auto_')
     setEndOpen(true)
   }
   const confirmEnd = () => {
-  const choice = (nextTeamChoice === '_auto') ? null : nextTeamChoice
-  endRoundChooseNext(choice as TeamColor | null)
+    const choice = (nextTeamChoice === '_auto_') ? null : nextTeamChoice
+    endRoundChooseNext(choice)
     setEndOpen(false)
   }
 
@@ -187,7 +187,7 @@ const Match: React.FC = () => {
       <Card className="mb-3 rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800">
         <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col items-center gap-3">
-            <div className={`text-5xl sm:text-6xl font-extrabold tabular-nums ${atrasado ? 'text-red-600 motion-safe:animate-pulse [animation-duration:500ms]' : ''}`}>
+            <div className={text-5xl sm:text-6xl font-extrabold tabular-nums ${atrasado ? 'text-red-600 motion-safe:animate-pulse [animation-duration:500ms]' : ''}}>
               {mmss}
             </div>
 
