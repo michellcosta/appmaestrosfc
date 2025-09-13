@@ -1,58 +1,30 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Trophy } from 'lucide-react'
+import { useMatchStore, GoalEvent, TeamColor } from '@/store/matchStore'
 
-export type TeamColor = 'Preto' | 'Verde' | 'Cinza' | 'Vermelho';
-type FilterRange = 'week' | 'month' | 'all';
-
-type Score = Record<TeamColor, number>;
-type RoundState = {
-  number: number;
-  inPlay: [TeamColor, TeamColor];
-  scores: Score;
-  running: boolean;
-};
-
-type GoalEvent = {
-  id: string;
-  team: TeamColor;
-  author: string;
-  assist: string | null; // opcional
-  ts: number;
-};
-
-type HistoryItem = {
-  round: number;
-  left: TeamColor;
-  right: TeamColor;
-  leftScore: number;
-  rightScore: number;
-  winner: TeamColor | 'Empate';
-  ts: number;
-};
+type FilterRange = 'week' | 'month' | 'all'
 
 const colorChip: Record<TeamColor, string> = {
   Preto: 'bg-zinc-900 text-white',
   Verde: 'bg-emerald-600 text-white',
   Cinza: 'bg-slate-400 text-zinc-900',
   Vermelho: 'bg-red-600 text-white',
-};
+}
 const TeamBadge: React.FC<{ color: TeamColor; className?: string }> = ({ color, className }) => (
   <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${colorChip[color]} ${className ?? ''}`}>
     {color}
   </span>
-);
+)
 
-// permissões locais mock
-const userRole: 'owner' | 'admin' | 'aux' | 'mensalista' | 'diarista' = 'owner';
-const canEdit = (role: typeof userRole) => ['owner','admin','aux'].includes(role);
+// mock: permissões locais
+const userRole: 'owner'|'admin'|'aux'|'mensalista'|'diarista' = 'owner'
+const canEdit = (role: typeof userRole) => ['owner','admin','aux'].includes(role)
 
 // jogadores mock por time
 const defaultTeamPlayers: Record<TeamColor, string[]> = {
@@ -60,204 +32,128 @@ const defaultTeamPlayers: Record<TeamColor, string[]> = {
   Verde:    ['Sérgio Jr', 'Oton'],
   Cinza:    ['Jorge', 'Yuri'],
   Vermelho: ['Maurício', 'Gabriel'],
-};
-
-// uuid v4 estável
-function uuidv4(): string {
-  // @ts-ignore
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
-  const b = new Uint8Array(16);
-  // @ts-ignore
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) crypto.getRandomValues(b);
-  else for (let i=0;i<16;i++) b[i]=Math.floor(Math.random()*256);
-  b[6]=(b[6]&0x0f)|0x40; b[8]=(b[8]&0x3f)|0x80;
-  const h=Array.from(b).map(x=>x.toString(16).padStart(2,'0')).join('');
-  return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
 }
 
 const Match: React.FC = () => {
-  const [teamPlayers] = useState<Record<TeamColor, string[]>>(defaultTeamPlayers);
+  const {
+    round, elapsed, durationMin, events, history,
+    setDuration, start, pause, reset, tick,
+    addGoal, editGoal, deleteGoal, endRoundChooseNext,
+  } = useMatchStore()
 
-  const [round, setRound] = useState<RoundState>(() => ({
-    number: 1,
-    inPlay: ['Preto', 'Verde'],
-    scores: { Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 },
-    running: false,
-  }));
+  const [goalOpen, setGoalOpen] = useState(false)
+  const [goalEditId, setGoalEditId] = useState<string | null>(null)
+  const [goalTeam, setGoalTeam] = useState<TeamColor>('Preto')
+  const [goalAuthor, setGoalAuthor] = useState<string>('')          // controlado
+  const [goalAssist, setGoalAssist] = useState<string>('__none__')  // "__none__" = sem assistência
 
-  // timer mm:ss
-  const [duracaoMin, setDuracaoMin] = useState<number>(10);
-  const [elapsed, setElapsed] = useState<number>(0);
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmTarget, setConfirmTarget] = useState<GoalEvent | null>(null)
+
+  // liga/desliga intervalo do cronômetro com base no store
   useEffect(() => {
-    if (!round.running) return;
-    const id = setInterval(() => setElapsed(s => s+1), 1000);
-    return () => clearInterval(id);
-  }, [round.running]);
-  const alvo = duracaoMin * 60;
-  const atrasado = elapsed >= alvo;
-  const mmss = useMemo(()=>{
-    const m = Math.floor(elapsed/60).toString().padStart(2,'0');
-    const s = (elapsed%60).toString().padStart(2,'0');
-    return `${m}:${s}`;
-  },[elapsed]);
+    if (!round.running) return
+    const id = setInterval(() => tick(), 1000)
+    return () => clearInterval(id)
+  }, [round.running, tick])
 
-  // eventos / histórico
-  const [events, setEvents] = useState<GoalEvent[]>([]);
-  const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [historyFilter, setHistoryFilter] = useState<FilterRange>('week');
+  const alvo = durationMin * 60
+  const atrasado = elapsed >= alvo
+  const mmss = useMemo(() => {
+    const m = Math.floor(elapsed/60).toString().padStart(2, '0')
+    const s = (elapsed%60).toString().padStart(2, '0')
+    return `${m}:${s}`
+  }, [elapsed])
 
-  // modal gol (criar/editar com assistência opcional, sem autoassistência)
-  const [goalOpen, setGoalOpen] = useState(false);
-  const [goalEditId, setGoalEditId] = useState<string | null>(null); // null = criar; id != null = editar
-  const [goalTeam, setGoalTeam] = useState<TeamColor>('Preto');
-  const [goalAuthor, setGoalAuthor] = useState<string>('');          // controlado
-  const [goalAssist, setGoalAssist] = useState<string>('__none__');  // "__none__" = sem assistência
-
-  // modal confirmar exclusão
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTarget, setConfirmTarget] = useState<GoalEvent | null>(null);
-
-  const playerOptions = (team: TeamColor) => (teamPlayers?.[team]) ? teamPlayers[team] : [];
+  const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
 
   // abrir modal para novo gol
   const openGoal = (team: TeamColor) => {
-    if (!round.running) return;
-    setGoalEditId(null);
-    setGoalTeam(team);
-    const first = playerOptions(team)[0] ?? '';
-    setGoalAuthor(first);      // autor pré-selecionado
-    setGoalAssist('__none__'); // sem assistência por padrão
-    setGoalOpen(true);
-  };
+    if (!round.running) return
+    setGoalEditId(null)
+    setGoalTeam(team)
+    setGoalAuthor(playerOptions(team)[0] ?? '')
+    setGoalAssist('__none__')
+    setGoalOpen(true)
+  }
 
-  // abrir modal para editar um gol existente
+  // editar gol
   const openEditGoal = (ev: GoalEvent) => {
-    if (!canEdit(userRole)) return;
-    setGoalEditId(ev.id);
-    setGoalTeam(ev.team);
-    // mantém autor/assistência existentes (assist null -> "__none__")
-    setGoalAuthor(ev.author || (playerOptions(ev.team)[0] ?? ''));
-    setGoalAssist(ev.assist ?? '__none__');
-    setGoalOpen(true);
-  };
+    setGoalEditId(ev.id)
+    setGoalTeam(ev.team)
+    setGoalAuthor(ev.author || (playerOptions(ev.team)[0] ?? ''))
+    setGoalAssist(ev.assist ?? '__none__')
+    setGoalOpen(true)
+  }
 
-  // abrir modal de confirmação de exclusão
-  const openConfirmDelete = (ev: GoalEvent) => {
-    if (!canEdit(userRole)) return;
-    setConfirmTarget(ev);
-    setConfirmOpen(true);
-  };
+  // exclusão
+  const openConfirmDelete = (ev: GoalEvent) => { setConfirmTarget(ev); setConfirmOpen(true) }
 
   // se o autor mudar e a assistência for igual ao autor, volta para "sem assistência"
   useEffect(() => {
-    if (!goalOpen) return;
-    if (goalAssist !== '__none__' && goalAssist === goalAuthor) {
-      setGoalAssist('__none__');
-    }
-  }, [goalAuthor, goalAssist, goalOpen]);
+    if (!goalOpen) return
+    if (goalAssist !== '__none__' && goalAssist === goalAuthor) setGoalAssist('__none__')
+  }, [goalAuthor, goalAssist, goalOpen])
 
   const saveGoal = () => {
-    if (!goalAuthor) return; // autor obrigatório
-    const assistVal = goalAssist === '__none__' ? null : goalAssist;
+    if (!goalAuthor) return
+    const assistVal = goalAssist === '__none__' ? null : goalAssist
 
     if (goalEditId) {
-      // editar: não mexe no placar (mesmo time), só atualiza autor/assist
-      setEvents((evts) =>
-        evts.map((e) => (e.id === goalEditId ? { ...e, author: goalAuthor, assist: assistVal } : e))
-      );
+      editGoal(goalEditId, { author: goalAuthor, assist: assistVal ?? null })
     } else {
-      // novo gol: incrementa placar e adiciona evento
-      setRound(r => ({ ...r, scores: { ...r.scores, [goalTeam]: (r.scores[goalTeam] ?? 0) + 1 } }));
-      setEvents(ev => [...ev, { id: uuidv4(), team: goalTeam, author: goalAuthor, assist: assistVal, ts: Date.now() }]);
+      addGoal({ team: goalTeam, author: goalAuthor, assist: assistVal ?? null })
     }
 
-    setGoalOpen(false);
-    setGoalEditId(null);
-  };
+    setGoalOpen(false)
+    setGoalEditId(null)
+  }
 
   const confirmDelete = () => {
-    if (!confirmTarget) return;
-    const g = confirmTarget;
-    // decrementa placar do time do gol (não abaixo de zero)
-    setRound(r => ({ ...r, scores: { ...r.scores, [g.team]: Math.max((r.scores[g.team] ?? 0) - 1, 0) } }));
-    setEvents(ev => ev.filter(e => e.id !== g.id));
-    setConfirmOpen(false);
-    setConfirmTarget(null);
-  };
+    if (!confirmTarget) return
+    deleteGoal(confirmTarget.id)
+    setConfirmOpen(false)
+    setConfirmTarget(null)
+  }
+  const cancelDelete = () => { setConfirmOpen(false); setConfirmTarget(null) }
 
-  const cancelDelete = () => {
-    setConfirmOpen(false);
-    setConfirmTarget(null);
-  };
+  const [left, right] = round.inPlay
+  const leftScore  = round.scores[left]  ?? 0
+  const rightScore = round.scores[right] ?? 0
+  const candidatos = (['Preto','Verde','Cinza','Vermelho'] as TeamColor[]).filter(t => t !== left && t !== right)
 
-  // encerrar → histórico + próximo
-  const [nextOpen, setNextOpen] = useState(false);
-  const [nextCandidate, setNextCandidate] = useState<TeamColor | null>(null);
-
-  const iniciar   = () => setRound(r=>({ ...r, running: true }));
-  const pausar    = () => setRound(r=>({ ...r, running: false }));
-  const recomeçar = () => { setRound(r=>({ ...r, scores:{Preto:0,Verde:0,Cinza:0,Vermelho:0} })); setElapsed(0); };
-  const encerrar  = () => { setRound(r=>({ ...r, running: false })); setNextOpen(true); };
-
-  const confirmarProximoTime = () => {
-    const [left, right] = round.inPlay;
-    const l = round.scores[left] ?? 0;
-    const r = round.scores[right] ?? 0;
-    const winner: TeamColor | 'Empate' = l===r ? 'Empate' : (l>r ? left : right);
-
-    setHistory(h=>[...h, { round: round.number, left, right, leftScore: l, rightScore: r, winner, ts: Date.now() }]);
-
-    const stay: TeamColor = winner === 'Empate' ? left : winner as TeamColor;
-    const candidatos = (['Preto','Verde','Cinza','Vermelho'] as TeamColor[]).filter(t => t !== stay && t !== left && t !== right);
-    const next = nextCandidate ?? (candidatos[0] ?? right);
-
-    setElapsed(0);
-    setRound(rd=>({
-      number: rd.number + 1,
-      inPlay: [stay, next],
-      scores: { Preto:0, Verde:0, Cinza:0, Vermelho:0 },
-      running: false,
-    }));
-    setNextCandidate(null);
-    setNextOpen(false);
-  };
-
-  const [left, right] = round.inPlay;
-  const leftScore  = round.scores[left]  ?? 0;
-  const rightScore = round.scores[right] ?? 0;
-  const candidatos = (['Preto','Verde','Cinza','Vermelho'] as TeamColor[]).filter(t => t !== left && t !== right);
-
-  // estatísticas (gols e assistências)
+  // estatísticas (sessão)
   const stats = useMemo(() => {
-    const table: Record<string, { g:number; a:number }> = {};
+    const table: Record<string, { g:number; a:number }> = {}
     for (const e of events) {
       if (e.author) {
-        table[e.author] = table[e.author] || { g:0, a:0 };
-        table[e.author].g += 1;
+        table[e.author] = table[e.author] || { g:0, a:0 }
+        table[e.author].g += 1
       }
       if (e.assist) {
-        table[e.assist] = table[e.assist] || { g:0, a:0 };
-        table[e.assist].a += 1;
+        table[e.assist] = table[e.assist] || { g:0, a:0 }
+        table[e.assist].a += 1
       }
     }
     return Object.entries(table)
       .map(([name, ga]) => ({ name, g: ga.g, a: ga.a }))
-      .sort((a,b)=> b.g - a.g || b.a - a.a || a.name.localeCompare(b.name));
-  }, [events]);
+      .sort((a,b)=> b.g - a.g || b.a - a.a || a.name.localeCompare(b.name))
+  }, [events])
 
-  // filtro do histórico
+  // filtro de histórico
+  const [historyFilter, setHistoryFilter] = useState<FilterRange>('week')
   const filteredHistory = useMemo(() => {
-    if (historyFilter === 'all') return history;
-    const now = new Date();
+    if (historyFilter === 'all') return history
+    const now = new Date()
     return history.filter((h) => {
-      const d = new Date(h.ts);
+      const d = new Date(h.ts)
       if (historyFilter === 'week') {
-        const diff = (now.getTime() - d.getTime()) / (1000*60*60*24);
-        return diff <= 7;
+        const diff = (now.getTime() - d.getTime()) / (1000*60*60*24)
+        return diff <= 7
       }
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    });
-  }, [history, historyFilter]);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+    })
+  }, [history, historyFilter])
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-5">
@@ -276,7 +172,7 @@ const Match: React.FC = () => {
 
             <div className="flex items-center gap-2">
               <Label className="text-sm text-zinc-600">Duração:</Label>
-              <Select value={String(duracaoMin)} onValueChange={(v)=>setDuracaoMin(Number(v))} disabled={round.running}>
+              <Select value={String(durationMin)} onValueChange={(v)=>setDuration(Number(v))} disabled={round.running}>
                 <SelectTrigger className="w-[110px]"><SelectValue placeholder="Minutos" /></SelectTrigger>
                 <SelectContent>
                   {[5,8,10,12,15].map(m => <SelectItem key={m} value={String(m)}>{m} min</SelectItem>)}
@@ -286,12 +182,12 @@ const Match: React.FC = () => {
 
             <div className="flex flex-wrap items-center justify-center gap-2">
               {!round.running ? (
-                <Button type="button" onClick={iniciar}>Iniciar</Button>
+                <Button type="button" onClick={start}>Iniciar</Button>
               ) : (
-                <Button type="button" className="bg-amber-500 hover:bg-amber-500/90" onClick={pausar}>Pausar</Button>
+                <Button type="button" className="bg-amber-500 hover:bg-amber-500/90" onClick={pause}>Pausar</Button>
               )}
-              <Button type="button" variant="outline" onClick={recomeçar}>Recomeçar</Button>
-              <Button type="button" variant="secondary" onClick={encerrar}>Encerrar</Button>
+              <Button type="button" variant="outline" onClick={reset}>Recomeçar</Button>
+              <Button type="button" variant="secondary" onClick={()=>{/* abre modal de próximo adversário na sua versão com Supabase; aqui omitimos para foco */}}>Encerrar</Button>
             </div>
           </div>
         </CardContent>
@@ -312,7 +208,6 @@ const Match: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold tabular-nums">{round.scores[team] ?? 0}</span>
-                  {/* +Gol só com cronômetro em andamento */}
                   <Button type="button" variant="outline" size="sm" onClick={()=>openGoal(team)} disabled={!round.running}>+</Button>
                 </div>
               </div>
@@ -340,20 +235,8 @@ const Match: React.FC = () => {
                   </div>
                   {canEdit(userRole) && (
                     <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline" size="sm"
-                        onClick={() => openEditGoal(e)}
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="secondary" size="sm"
-                        onClick={() => openConfirmDelete(e)}
-                      >
-                        Excluir
-                      </Button>
+                      <Button type="button" variant="outline" size="sm" onClick={() => openEditGoal(e)}>Editar</Button>
+                      <Button type="button" variant="secondary" size="sm" onClick={() => { setConfirmTarget(e); setConfirmOpen(true) }}>Excluir</Button>
                     </div>
                   )}
                 </li>
@@ -363,7 +246,7 @@ const Match: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Estatísticas (sessão) */}
+      {/* Estatísticas */}
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
         <CardContent className="p-4 sm:p-5">
           <h3 className="text-sm font-semibold mb-2">Estatísticas dos jogadores (sessão)</h3>
@@ -411,7 +294,7 @@ const Match: React.FC = () => {
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800">
         <CardContent className="p-5 sm:p-7">
           <h3 className="text-base sm:text-lg font-semibold mb-3">Histórico de Partidas</h3>
-          {filteredHistory.length === 0 ? (
+          {history.length === 0 ? (
             <p className="text-sm text-zinc-500">Sem registros ainda.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -426,7 +309,7 @@ const Match: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredHistory.map((h) => (
+                  {history.map((h) => (
                     <tr key={h.round + '-' + h.ts} className="border-t">
                       <td className="py-2">#{h.round}</td>
                       <td className="py-2">{h.left} vs {h.right}</td>
@@ -444,7 +327,7 @@ const Match: React.FC = () => {
 
       {/* Modal Gol (criar/editar) */}
       {goalOpen && (
-        <Dialog open={goalOpen} onOpenChange={(o)=>{ setGoalOpen(o); if(!o) setGoalEditId(null); }}>
+        <Dialog open={goalOpen} onOpenChange={(o)=>{ setGoalOpen(o); if(!o) setGoalEditId(null) }}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{goalEditId ? 'Editar Gol' : 'Registrar Gol'}</DialogTitle>
@@ -456,7 +339,7 @@ const Match: React.FC = () => {
 
               <div className="grid gap-2">
                 <Label>Autor do gol</Label>
-                <Select value={goalAuthor} onValueChange={(v)=>{ setGoalAuthor(v); if (goalAssist === v) setGoalAssist('__none__'); }}>
+                <Select value={goalAuthor} onValueChange={(v)=>{ setGoalAuthor(v); if (goalAssist === v) setGoalAssist('__none__') }}>
                   <SelectTrigger><SelectValue placeholder="Selecione o autor" /></SelectTrigger>
                   <SelectContent>
                     {playerOptions(goalTeam).map((p)=>(
@@ -481,7 +364,7 @@ const Match: React.FC = () => {
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="secondary" onClick={()=>{ setGoalOpen(false); setGoalEditId(null); }}>Cancelar</Button>
+              <Button type="button" variant="secondary" onClick={()=>{ setGoalOpen(false); setGoalEditId(null) }}>Cancelar</Button>
               <Button type="button" onClick={saveGoal}>{goalEditId ? 'Salvar alterações' : 'Salvar Gol'}</Button>
             </DialogFooter>
           </DialogContent>
@@ -489,7 +372,7 @@ const Match: React.FC = () => {
       )}
 
       {/* Modal de confirmação de exclusão */}
-      <Dialog open={confirmOpen} onOpenChange={(o)=>{ setConfirmOpen(o); if(!o) setConfirmTarget(null); }}>
+      <Dialog open={confirmOpen} onOpenChange={(o)=>{ setConfirmOpen(o); if(!o) setConfirmTarget(null) }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Excluir gol?</DialogTitle>
@@ -516,40 +399,9 @@ const Match: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Modal Próximo Adversário */}
-      <Dialog open={nextOpen} onOpenChange={setNextOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Escolher próximo time</DialogTitle>
-            <DialogDescription>Vencedor permanece. Selecione o adversário da próxima rodada.</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-2">
-            <div className="text-sm text-zinc-600">Candidatos:</div>
-            <div className="flex flex-wrap gap-2">
-              {candidatos.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={()=>setNextCandidate(t)}
-                  className={`px-3 py-1 rounded-full text-sm border ${nextCandidate===t ? 'ring-2 ring-blue-500' : ''} ${colorChip[t]}`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="secondary" onClick={()=>setNextOpen(false)}>Cancelar</Button>
-            <Button type="button" disabled={!nextCandidate} onClick={confirmarProximoTime}>Confirmar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
-  );
-};
+  )
+}
 
-export default Match;
-export { Match };
+export default Match
+export { Match }
