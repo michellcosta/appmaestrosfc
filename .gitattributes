@@ -1,0 +1,26 @@
+# --- Normalização de Quebra de Linha ---
+# Força todos os arquivos de texto a usarem LF no repositório
+* text=auto eol=lf
+
+# --- Arquivos específicos ---
+*.sh text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.md text eol=lf
+*.html text eol=lf
+
+# --- Binários (não alterar) ---
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+
+# --- VS Code ---
+.vscode/* linguist-vendored
