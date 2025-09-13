@@ -1,22 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
-/**
- * Times fixos e imutáveis (sem "Coletes")
- */
+/** Times fixos (sem Coletes) */
 export type TeamColor = 'Preto' | 'Verde' | 'Cinza' | 'Vermelho';
 
 type Score = Record<TeamColor, number>;
-
 type RoundState = {
-  number: number;                  // rodada atual (1, 2, 3…)
-  inPlay: [TeamColor, TeamColor];  // os 2 times em campo
-  scores: Score;                   // placar da rodada
-  running: boolean;                // cronômetro/rodada ativa?
+  number: number;
+  inPlay: [TeamColor, TeamColor];
+  scores: Score;
+  running: boolean;
 };
 
-/**
- * Estilos simples por cor
- */
+/** Chips por cor (cores do app) */
 const colorChip: Record<TeamColor, string> = {
   Preto: 'bg-zinc-900 text-white',
   Verde: 'bg-emerald-600 text-white',
@@ -30,24 +27,23 @@ const TeamBadge: React.FC<{ color: TeamColor; className?: string }> = ({ color, 
   </span>
 );
 
-/**
- * Página da partida mostrando APENAS os 2 times atuais.
- * Regra: vencedor permanece; próximo da fila entra.
+/** Página da partida — mostra apenas 2 times em campo (mobile-first)
+ * Regra: vencedor permanece; perdedor vai para o fim da fila; entra o próximo.
  */
-export default function Match() {
-  // Fila inicial (ajuste se quiser outra ordem de começo)
+const Match: React.FC = () => {
+  // fila inicial
   const [queue, setQueue] = useState<TeamColor[]>(['Preto', 'Verde', 'Cinza', 'Vermelho']);
 
-  // Estado da rodada
+  // estado da rodada
   const [round, setRound] = useState<RoundState>(() => ({
     number: 1,
-    inPlay: ['Preto', 'Verde'], // primeiros 2 entram
+    inPlay: ['Preto', 'Verde'],
     scores: { Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 },
     running: false,
   }));
 
-  // Timer simples (opcional). Você pode remover se já tiver o seu timer.
-  const [seconds, setSeconds] = useState(10 * 60); // 10:00 padrão
+  // timer 10:00 padrão
+  const [seconds, setSeconds] = useState(10 * 60);
   useEffect(() => {
     if (!round.running) return;
     const id = setInterval(() => setSeconds((s) => Math.max(s - 1, 0)), 1000);
@@ -60,41 +56,27 @@ export default function Match() {
     return `${m}:${s}`;
   }, [seconds]);
 
-  /**
-   * Reseta placar da rodada e cronômetro, mantendo as equipes em campo.
-   */
-  const resetClockAndScore = () => {
-    setSeconds(10 * 60);
-    setRound((r) => ({
-      ...r,
-      scores: { Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 },
-    }));
-  };
+  const startRound = () => setRound((r) => ({ ...r, running: true }));
+  const pauseRound = () => setRound((r) => ({ ...r, running: false }));
+  const endRound = () => setRound((r) => ({ ...r, running: false }));
+  const resetScore = () =>
+    setRound((r) => ({ ...r, scores: { Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 } }));
 
-  const startRound = () => {
-    setRound((r) => ({ ...r, running: true }));
-  };
-  const pauseRound = () => {
-    setRound((r) => ({ ...r, running: false }));
-  };
-  const endRound = () => {
-    setRound((r) => ({ ...r, running: false }));
-  };
-
-  /**
-   * Marcar gol para um time que está em campo
-   */
   const goal = (team: TeamColor) => {
     if (!round.inPlay.includes(team)) return;
     setRound((r) => ({ ...r, scores: { ...r.scores, [team]: (r.scores[team] ?? 0) + 1 } }));
   };
 
-  /**
-   * Define vencedor da rodada:
-   * - Se empate, abre modal para Cara/Coroa ou Roleta (aqui um prompt simples).
-   * - Vencedor permanece; próximo da fila entra no lugar do perdedor.
-   * - Avança numero da rodada e reseta placar/tempo.
-   */
+  const getNextQueueAfterLoser = (q: TeamColor[], loser: TeamColor) => {
+    const without = q.filter((t) => t !== loser);
+    return [...without, loser];
+  };
+  const pickNextOpponent = (q: TeamColor[], winner: TeamColor): TeamColor => {
+    for (const t of q) if (t !== winner) return t;
+    return q[0];
+  };
+
+  /** Encerrar rodada + rodízio */
   const closeRoundAndRotate = () => {
     const [A, B] = round.inPlay;
     const a = round.scores[A] ?? 0;
@@ -104,162 +86,131 @@ export default function Match() {
     let loser: TeamColor;
 
     if (a === b) {
-      // Empate → tie-break (placeholder). Substitua por modal com animação.
-      const choice = window.prompt('Empate! Digite o vencedor (A ou B) ou "coin" para Cara/Coroa', 'coin');
+      // placeholder: cara/coroa simples (trocaremos por modal animado)
+      const choice = window.prompt('Empate! Digite A ou B (ou "coin" p/ Cara/Coroa):', 'coin');
       if (!choice || choice.toLowerCase() === 'coin') {
-        // Cara/Coroa simplificada
         winner = Math.random() < 0.5 ? A : B;
         loser = winner === A ? B : A;
       } else if (choice.toUpperCase() === 'A') {
-        winner = A;
-        loser = B;
+        winner = A; loser = B;
       } else if (choice.toUpperCase() === 'B') {
-        winner = B;
-        loser = A;
+        winner = B; loser = A;
       } else {
-        // fallback seguro
         winner = Math.random() < 0.5 ? A : B;
         loser = winner === A ? B : A;
       }
-      // ✨ aqui no futuro: gravar tiebreaker_event(method='coin'|'wheel', result_team=winner)
+      // futuro: gravar tiebreaker_event(method, result_team)
     } else if (a > b) {
-      winner = A;
-      loser = B;
+      winner = A; loser = B;
     } else {
-      winner = B;
-      loser = A;
+      winner = B; loser = A;
     }
 
-    // Remove da fila quem perdeu e coloca no fim; o vencedor permanece (ordem: [winner, next])
+    // atualiza fila (perdedor vai pro fim)
     setQueue((q) => {
       const withoutLoser = q.filter((t) => t !== loser);
       return [...withoutLoser, loser];
     });
 
-    // Definir novo par em campo: vencedor + próximo da fila que NÃO seja o vencedor
+    // define novo par (winner + próximo da fila ≠ winner)
     setRound((r) => {
-      const currentQueue = getNextQueueAfterLoser(queue, loser); // snapshot aproximado
+      const currentQueue = getNextQueueAfterLoser(queue, loser);
       const nextOpponent = currentQueue.find((t) => t !== winner) ?? pickNextOpponent(queue, winner);
-      const nextPair: [TeamColor, TeamColor] = [winner, nextOpponent];
-
       return {
         number: r.number + 1,
-        inPlay: nextPair,
+        inPlay: [winner, nextOpponent],
         scores: { Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 },
         running: false,
       };
     });
 
-    resetClockAndScore();
+    // reseta tempo/placar
+    setSeconds(10 * 60);
+    resetScore();
   };
 
-  /**
-   * Helpers para escolher o próximo adversário:
-   * - getNextQueueAfterLoser: representa a fila *após* mover o perdedor para o fim
-   * - pickNextOpponent: fallback para escolher alguém diferente do vencedor
-   */
-  const getNextQueueAfterLoser = (q: TeamColor[], loser: TeamColor) => {
-    const without = q.filter((t) => t !== loser);
-    return [...without, loser];
-  };
-  const pickNextOpponent = (q: TeamColor[], winner: TeamColor): TeamColor => {
-    // procura o primeiro da fila que não seja o vencedor
-    for (const t of q) if (t !== winner) return t;
-    return q[0]; // nunca deve chegar aqui com 4 times
-  };
-
-  /**
-   * Render
-   */
   const [left, right] = round.inPlay;
   const leftScore = round.scores[left] ?? 0;
   const rightScore = round.scores[right] ?? 0;
 
   return (
-    <div className="max-w-screen-sm mx-auto p-4">
+    <div className="mx-auto w-full max-w-3xl px-4 py-5">
       <header className="mb-4">
-        <h1 className="text-xl font-semibold">Partida</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Partida</h1>
         <p className="text-sm text-zinc-500">Rodada #{round.number} — apenas os 2 times em campo</p>
       </header>
 
-      {/* Placar compacto para mobile */}
-      <div className="grid grid-cols-3 items-center gap-3 rounded-2xl bg-white dark:bg-zinc-900 shadow-sm border border-zinc-200 dark:border-zinc-800 p-3 mb-4">
-        <div className="text-center">
-          <TeamBadge color={left} />
-          <div className="text-3xl font-bold mt-1">{leftScore}</div>
-          <button
-            className="mt-2 w-full rounded-lg border px-2 py-1 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800"
-            onClick={() => goal(left)}
-            disabled={!round.running}
-          >
-            + Gol
-          </button>
-        </div>
+      {/* Placar (Card shadcn, cantos 2xl, sombra suave) */}
+      <Card className="rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 mb-4">
+        <CardContent className="p-4 sm:p-6">
+          <div className="grid grid-cols-3 items-center gap-3">
+            <div className="text-center">
+              <TeamBadge color={left} />
+              <div className="text-4xl sm:text-5xl font-bold mt-1 tabular-nums">{leftScore}</div>
+              <Button
+                variant="outline"
+                className="mt-2 w-full"
+                onClick={() => goal(left)}
+                disabled={!round.running}
+              >
+                + Gol
+              </Button>
+            </div>
 
-        <div className="text-center">
-          <div className="text-4xl font-extrabold tabular-nums">{mmss}</div>
-          <div className="mt-2 flex items-center justify-center gap-2">
-            {!round.running ? (
-              <button className="rounded-lg bg-emerald-600 text-white px-3 py-1 text-sm" onClick={startRound}>
-                Start
-              </button>
-            ) : (
-              <button className="rounded-lg bg-amber-500 text-white px-3 py-1 text-sm" onClick={pauseRound}>
-                Pause
-              </button>
-            )}
-            <button className="rounded-lg bg-zinc-200 dark:bg-zinc-700 px-3 py-1 text-sm" onClick={endRound}>
-              End
-            </button>
+            <div className="text-center">
+              <div className="text-4xl sm:text-5xl font-extrabold tabular-nums">{mmss}</div>
+              <div className="mt-3 flex items-center justify-center gap-2">
+                {!round.running ? (
+                  <Button className="px-4" onClick={startRound}>Start</Button>
+                ) : (
+                  <Button className="px-4 bg-amber-500 hover:bg-amber-500/90" onClick={pauseRound}>
+                    Pause
+                  </Button>
+                )}
+                <Button variant="secondary" className="px-4" onClick={endRound}>End</Button>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <TeamBadge color={right} />
+              <div className="text-4xl sm:text-5xl font-bold mt-1 tabular-nums">{rightScore}</div>
+              <Button
+                variant="outline"
+                className="mt-2 w-full"
+                onClick={() => goal(right)}
+                disabled={!round.running}
+              >
+                + Gol
+              </Button>
+            </div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        <div className="text-center">
-          <TeamBadge color={right} />
-          <div className="text-3xl font-bold mt-1">{rightScore}</div>
-          <button
-            className="mt-2 w-full rounded-lg border px-2 py-1 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800"
-            onClick={() => goal(right)}
-            disabled={!round.running}
-          >
-            + Gol
-          </button>
-        </div>
-      </div>
-
-      {/* Ações de rodada */}
-      <div className="flex items-center gap-2 mb-4">
-        <button
-          className="rounded-lg bg-zinc-100 dark:bg-zinc-800 px-3 py-2 text-sm"
-          onClick={() => {
-            setRound((r) => ({ ...r, scores: { Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 } }));
-          }}
-        >
-          Zerar Placar
-        </button>
-        <button
-          className="rounded-lg bg-blue-600 text-white px-3 py-2 text-sm"
-          onClick={closeRoundAndRotate}
-        >
+      {/* Ações */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <Button variant="outline" onClick={resetScore}>Zerar Placar</Button>
+        <Button className="bg-blue-600 hover:bg-blue-600/90" onClick={closeRoundAndRotate}>
           Encerrar Rodada → Rodízio
-        </button>
+        </Button>
       </div>
 
-      {/* Fila (visual) */}
-      <section className="rounded-2xl bg-white dark:bg-zinc-900 shadow-sm border border-zinc-200 dark:border-zinc-800 p-3">
-        <h3 className="text-sm font-medium mb-2">Fila de Times</h3>
-        <div className="flex flex-wrap gap-2">
-          {queue.map((t) => (
-            <TeamBadge key={t} color={t} />
-          ))}
-        </div>
-        <p className="text-xs text-zinc-500 mt-2">
-          Regra: o vencedor permanece; o perdedor vai para o fim da fila; entra o próximo contra o vencedor.
-        </p>
-      </section>
+      {/* Fila (Card shadcn) */}
+      <Card className="rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800">
+        <CardContent className="p-4 sm:p-5">
+          <h3 className="text-sm font-medium mb-2">Fila de Times</h3>
+          <div className="flex flex-wrap gap-2">
+            {queue.map((t) => <TeamBadge key={t} color={t} />)}
+          </div>
+          <p className="text-xs text-zinc-500 mt-2">
+            Regra: o vencedor permanece; o perdedor vai para o fim da fila; entra o próximo contra o vencedor.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
 
-// Named export para compatibilidade com import { Match }
+export default Match;
+// named export para compatibilidade com import { Match }
 export { Match };
