@@ -184,7 +184,7 @@ export const Match: React.FC = () => {
           <ul className="space-y-2">
             {recentGoals.map((g, i) => (
               <li key={i} className="text-sm flex items-center justify-between gap-2">
-                <div className="flex items-center gap-4">
+                <div className="\1 scroll-panel">
                   <span className="font-medium">{g.team}</span>
                   <span>{g.player}{g.assist ? ` (assist.: ${g.assist})` : ''}</span>
                   <span className="tabular-nums text-muted-foreground">{g.time}</span>
@@ -200,8 +200,8 @@ export const Match: React.FC = () => {
       </Card>
 
       <Card className="p-4 mt-4">
-        <h3 className="font-semibold mb-3">Estatísticas dos jogadores (sessão)</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <h3 className="font-semibold mb-3">Estatísticas de jogadores</h3>
+        <div className="\1 scroll-panel">
           {Object.entries(playerStats).length === 0 ? <p className="text-sm text-muted-foreground">Sem registros ainda.</p> : (
             Object.entries(playerStats).map(([pid, s]) => {
               const pl = Object.values(roster).flat().find(p => p?.id === pid);
