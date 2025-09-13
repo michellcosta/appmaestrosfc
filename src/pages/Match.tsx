@@ -2,17 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-/** Times fixos (sem Coletes) */
 export type TeamColor = 'Preto' | 'Verde' | 'Cinza' | 'Vermelho';
 
 type Score = Record<TeamColor, number>;
@@ -31,7 +26,16 @@ type GoalEvent = {
   ts: number;
 };
 
-/** Chips por cor (cores do app) */
+type HistoryItem = {
+  round: number;
+  left: TeamColor;
+  right: TeamColor;
+  leftScore: number;
+  rightScore: number;
+  winner: TeamColor | 'Empate';
+  ts: number;
+};
+
 const colorChip: Record<TeamColor, string> = {
   Preto: 'bg-zinc-900 text-white',
   Verde: 'bg-emerald-600 text-white',
@@ -39,26 +43,17 @@ const colorChip: Record<TeamColor, string> = {
   Vermelho: 'bg-red-600 text-white',
 };
 
-const TeamBadge: React.FC<{ color: TeamColor; className?: string }> = ({ color, className }) => (
-  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${colorChip[color]} ${className ?? ''}`}>
+const TeamBadge: React.FC<{ color: TeamColor }> = ({ color }) => (
+  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${colorChip[color]}`}>
     {color}
   </span>
 );
 
-/** Página da partida — 2 times em campo (mobile-first)
- * Regras atendidas:
- * - Botões: Iniciar / Encerrar / Recomeçar
- * - Encerrar = finaliza a partida atual e pergunta o próximo adversário; vencedor permanece
- * - +Gol abre modal para registrar autor e assistência (opcional), como no modelo anterior
- * - Fila preparada para vir do sorteio (drawTeams)
- */
-const Match: React.FC = () => {
-  // ======= FILA VINDO DO SORTEIO =======
-  // TODO: quando ligar ao Supabase, substitua este estado por resultado de drawTeams (team_draw.teams)
-  // e defina a ordem inicial conforme sorteio.
-  const [queue, setQueue] = useState<TeamColor[]>(['Preto', 'Verde', 'Cinza', 'Vermelho']);
+const userRole: 'owner' | 'admin' | 'aux' | 'mensalista' | 'diarista' = 'owner';
+const canEdit = (role: typeof userRole) => ['owner','admin','aux'].includes(role);
 
-  // ======= ESTADO DA RODADA =======
+const Match: React.FC = () => {
+  const [queue] = useState<TeamColor[]>(['Preto', 'Verde', 'Cinza', 'Vermelho']);
   const [round, setRound] = useState<RoundState>(() => ({
     number: 1,
     inPlay: ['Preto', 'Verde'],
@@ -66,255 +61,130 @@ const Match: React.FC = () => {
     running: false,
   }));
 
-  // ======= TIMER 10:00 =======
-  const [seconds, setSeconds] = useState(10 * 60);
+  const [duracaoMin, setDuracaoMin] = useState<number>(10);
+  const [elapsed, setElapsed] = useState<number>(0);
+
   useEffect(() => {
     if (!round.running) return;
-    const id = setInterval(() => setSeconds((s) => Math.max(s - 1, 0)), 1000);
+    const id = setInterval(() => {
+      setElapsed((s) => s + 1);
+    }, 1000);
     return () => clearInterval(id);
   }, [round.running]);
 
+  const target = duracaoMin * 60;
+  const isOverTime = elapsed >= target;
+
   const mmss = useMemo(() => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  }, [seconds]);
+    const s = elapsed;
+    const m = Math.floor(s / 60).toString().padStart(2,'0');
+    const r = (s % 60).toString().padStart(2,'0');
+    return `${m}:${r}`;
+  }, [elapsed]);
 
-  // ======= GOALS (LOG LOCAL) =======
   const [events, setEvents] = useState<GoalEvent[]>([]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
 
-  // ======= MODAL: Registrar Gol =======
   const [goalOpen, setGoalOpen] = useState(false);
   const [goalTeam, setGoalTeam] = useState<TeamColor>('Preto');
   const [goalAuthor, setGoalAuthor] = useState('');
   const [goalAssist, setGoalAssist] = useState('');
 
-  const openGoalModal = (team: TeamColor) => {
-    setGoalTeam(team);
-    setGoalAuthor('');
-    setGoalAssist('');
+  const openGoal = (team: TeamColor) => {
+    setGoalTeam(team); setGoalAuthor(''); setGoalAssist('');
     setGoalOpen(true);
   };
 
-  const submitGoal = () => {
-    // incrementa o placar do time selecionado
+  const saveGoal = () => {
     setRound((r) => ({ ...r, scores: { ...r.scores, [goalTeam]: (r.scores[goalTeam] ?? 0) + 1 } }));
-    // log local (futuro: persistir em events)
-    setEvents((ev) => [
-      ...ev,
-      { id: crypto.randomUUID(), team: goalTeam, author: goalAuthor || undefined, assist: goalAssist || undefined, ts: Date.now() },
-    ]);
+    setEvents((ev) => [...ev, { id: crypto.randomUUID(), team: goalTeam, author: goalAuthor || undefined, assist: goalAssist || undefined, ts: Date.now() }]);
     setGoalOpen(false);
   };
 
-  // ======= MODAL: Escolher próximo time ao Encerrar =======
+  const removeGoal = (id: string) => {
+    if (!canEdit(userRole)) return;
+    const g = events.find(e => e.id === id);
+    if (g) {
+      setRound((r) => ({ ...r, scores: { ...r.scores, [g.team]: Math.max((r.scores[g.team] ?? 0) - 1, 0) } }));
+    }
+    setEvents((ev) => ev.filter(e => e.id !== id));
+  };
+
   const [nextOpen, setNextOpen] = useState(false);
   const [nextCandidate, setNextCandidate] = useState<TeamColor | null>(null);
 
-  // ======= AÇÕES =======
   const iniciar = () => setRound((r) => ({ ...r, running: true }));
   const pausar = () => setRound((r) => ({ ...r, running: false }));
+  const recomeçar = () => { setElapsed(0); setRound((r)=>({ ...r, scores:{Preto:0,Verde:0,Cinza:0,Vermelho:0} })); };
+  const encerrar = () => { setRound((r)=>({ ...r, running:false })); setNextOpen(true); };
 
-  const recomeçar = () => {
-    // recomeça o mesmo jogo/rodada: zera apenas o placar e o tempo
-    setRound((r) => ({
-      ...r,
-      scores: { Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 },
-    }));
-    setSeconds(10 * 60);
-  };
-
-  const encerrar = () => {
-    // encerra a partida atual e abre o seletor de próximo time (vencedor permanece)
-    setRound((r) => ({ ...r, running: false }));
-    setNextOpen(true);
-  };
-
-  // Ao confirmar o próximo time:
   const confirmarProximoTime = () => {
-    if (!nextCandidate) return;
-    const [A, B] = round.inPlay;
-    const a = round.scores[A] ?? 0;
-    const b = round.scores[B] ?? 0;
-    const winner: TeamColor = a === b ? (Math.random() < 0.5 ? A : B) : (a > b ? A : B);
+    const [left, right] = round.inPlay;
+    const l = round.scores[left] ?? 0;
+    const r = round.scores[right] ?? 0;
+    const winner: TeamColor | 'Empate' = l===r ? 'Empate' : (l>r ? left : right);
 
-    // monta nova fila (mantém ordem do sorteio, removendo quem perdeu — que será escolhido manualmente — é opcional)
-    // aqui não mexemos na fila, pois o operador escolheu manualmente o próximo time
-    const nextPair: [TeamColor, TeamColor] = [winner, nextCandidate];
+    setHistory((h) => [...h, { round: round.number, left, right, leftScore: l, rightScore: r, winner, ts: Date.now() }]);
 
-    setRound((r) => ({
-      number: r.number + 1,
-      inPlay: nextPair,
+    const stay: TeamColor = winner === 'Empate' ? left : (winner as TeamColor);
+    const next = nextCandidate ?? (['Preto','Verde','Cinza','Vermelho'].find(t => t!==stay && t!==left && t!==right) || right);
+
+    setElapsed(0);
+    setRound((rd) => ({
+      number: rd.number + 1,
+      inPlay: [stay, next],
       scores: { Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 },
       running: false,
     }));
-    setSeconds(10 * 60);
-    setNextOpen(false);
     setNextCandidate(null);
+    setNextOpen(false);
   };
 
-  // ======= HELPERS UI =======
   const [left, right] = round.inPlay;
   const leftScore = round.scores[left] ?? 0;
   const rightScore = round.scores[right] ?? 0;
-
-  const candidatos = queue.filter((t) => t !== left && t !== right); // fora os que já estão em campo
+  const candidatos = ['Preto','Verde','Cinza','Vermelho'].filter(t => t !== left && t !== right) as TeamColor[];
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-5">
-      <header className="mb-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Partida</h1>
-        <p className="text-sm text-zinc-500">Rodada #{round.number} — apenas os 2 times em campo</p>
+    <div className="mx-auto w-full max-w-4xl px-4 py-5">
+      <header className="mb-3">
+        <h1 className="text-2xl font-semibold">Partida ao Vivo</h1>
+        <p className="text-sm text-zinc-500">Rodada {round.number}</p>
       </header>
 
-      {/* Placar */}
-      <Card className="rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 mb-4">
+      {/* Cronômetro */}
+      <Card className="mb-3 rounded-2xl shadow-sm border">
         <CardContent className="p-4 sm:p-6">
-          <div className="grid grid-cols-3 items-center gap-3">
-            <div className="text-center">
-              <TeamBadge color={left} />
-              <div className="text-4xl sm:text-5xl font-bold mt-1 tabular-nums">{leftScore}</div>
-              <Button
-                variant="outline"
-                className="mt-2 w-full"
-                onClick={() => openGoalModal(left)}
-                disabled={!round.running}
-              >
-                + Gol
-              </Button>
+          <div className="flex flex-col items-center gap-3">
+            <div className={`text-5xl sm:text-6xl font-extrabold tabular-nums ${isOverTime ? 'text-red-600 animate-pulse' : ''}`}>
+              {mmss}
             </div>
 
-            <div className="text-center">
-              <div className="text-4xl sm:text-5xl font-extrabold tabular-nums">{mmss}</div>
-              <div className="mt-3 flex items-center justify-center gap-2">
-                {!round.running ? (
-                  <Button className="px-4" onClick={iniciar}>Iniciar</Button>
-                ) : (
-                  <Button className="px-4 bg-amber-500 hover:bg-amber-500/90" onClick={pausar}>
-                    Pausar
-                  </Button>
-                )}
-                <Button variant="secondary" className="px-4" onClick={encerrar}>Encerrar</Button>
-              </div>
+            <div className="flex items-center gap-2">
+              <Label>Duração:</Label>
+              <Select value={String(duracaoMin)} onValueChange={(v)=>setDuracaoMin(Number(v))} disabled={round.running}>
+                <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {[5,8,10,12,15].map(m => <SelectItem key={m} value={String(m)}>{m} min</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="text-center">
-              <TeamBadge color={right} />
-              <div className="text-4xl sm:text-5xl font-bold mt-1 tabular-nums">{rightScore}</div>
-              <Button
-                variant="outline"
-                className="mt-2 w-full"
-                onClick={() => openGoalModal(right)}
-                disabled={!round.running}
-              >
-                + Gol
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Ações */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <Button variant="outline" onClick={recomeçar}>Recomeçar</Button>
-        {/* Botão "Encerrar Rodada → Rodízio" removido conforme pedido */}
-      </div>
-
-      {/* Fila (apenas visual; origem será drawTeams) */}
-      <Card className="rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800">
-        <CardContent className="p-4 sm:p-5">
-          <h3 className="text-sm font-medium mb-2">Fila de Times (sorteio)</h3>
-          <div className="flex flex-wrap gap-2">
-            {queue.map((t) => <TeamBadge key={t} color={t} />)}
-          </div>
-          <p className="text-xs text-zinc-500 mt-2">
-            Em breve: esta ordem virá do sorteio (drawTeams). O vencedor permanece; o próximo adversário é escolhido ao encerrar.
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* ===== MODAL Registrar Gol (time + autor + assistência) ===== */}
-      <Dialog open={goalOpen} onOpenChange={setGoalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Registrar Gol</DialogTitle>
-            <DialogDescription>Informe o autor e (opcional) a assistência.</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3">
-            <div className="text-sm">
-              <span className="mr-2">Time:</span>
-              <TeamBadge color={goalTeam} />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="author">Autor do gol</Label>
-              <Input id="author" placeholder="ex.: João #9" value={goalAuthor} onChange={(e) => setGoalAuthor(e.target.value)} />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="assist">Assistência (opcional)</Label>
-              <Input id="assist" placeholder="ex.: Pedro #10" value={goalAssist} onChange={(e) => setGoalAssist(e.target.value)} />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="secondary" onClick={() => setGoalOpen(false)}>Cancelar</Button>
-            <Button onClick={submitGoal}>Salvar Gol</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ===== MODAL Próximo Adversário ao Encerrar ===== */}
-      <Dialog open={nextOpen} onOpenChange={setNextOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Escolher próximo time</DialogTitle>
-            <DialogDescription>Selecione quem enfrenta o vencedor.</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-2">
-            <div className="text-sm text-zinc-600">Vencedor permanece em campo.</div>
             <div className="flex flex-wrap gap-2">
-              {candidatos.length === 0 && <span className="text-sm text-zinc-500">Sem candidatos (verifique a fila).</span>}
-              {candidatos.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setNextCandidate(t)}
-                  className={`px-3 py-1 rounded-full text-sm border ${nextCandidate === t ? 'ring-2 ring-blue-500' : ''} ${colorChip[t].replace('text-white','text-white')}`}
-                >
-                  {t}
-                </button>
-              ))}
+              {!round.running ? (
+                <Button onClick={iniciar}>Iniciar</Button>
+              ) : (
+                <Button className="bg-amber-500" onClick={pausar}>Pausar</Button>
+              )}
+              <Button variant="outline" onClick={recomeçar}>Recomeçar</Button>
+              <Button variant="secondary" onClick={encerrar}>Encerrar</Button>
             </div>
           </div>
-
-          <DialogFooter>
-            <Button variant="secondary" onClick={() => setNextOpen(false)}>Cancelar</Button>
-            <Button disabled={!nextCandidate} onClick={confirmarProximoTime}>Confirmar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Log simples de gols (debug visual) */}
-      {events.length > 0 && (
-        <div className="mt-4 text-sm text-zinc-600">
-          <div className="font-medium mb-1">Gols registrados</div>
-          <ul className="list-disc ml-5 space-y-1">
-            {events.map((e) => (
-              <li key={e.id}>
-                <b>{e.team}</b> — {e.author || 'Autor não informado'}
-                {e.assist ? ` (assistência: ${e.assist})` : ''}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
 export default Match;
-// named export para compatibilidade com import { Match }
 export { Match };
