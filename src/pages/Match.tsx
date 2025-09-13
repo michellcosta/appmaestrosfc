@@ -5,7 +5,6 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trophy } from 'lucide-react';
 
@@ -45,6 +44,7 @@ const colorChip: Record<TeamColor, string> = {
   Cinza: 'bg-slate-400 text-zinc-900',
   Vermelho: 'bg-red-600 text-white',
 };
+
 const TeamBadge: React.FC<{ color: TeamColor; className?: string }> = ({ color, className }) => (
   <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${colorChip[color]} ${className ?? ''}`}>
     {color}
@@ -93,11 +93,9 @@ const Match: React.FC = () => {
 
   useEffect(() => {
     if (round.running) {
-      // iniciar/retomar
       startAtRef.current = performance.now();
       rafRef.current = requestAnimationFrame(tick);
     } else {
-      // pausar
       if (startAtRef.current != null) {
         const now = performance.now();
         pausedAccumRef.current += now - startAtRef.current;
@@ -122,13 +120,15 @@ const Match: React.FC = () => {
     const ms = total % 1000;
     const mm = String(m).padStart(2, '0');
     const ss = String(s).padStart(2, '0');
-    const mmm = String(ms).padStart(3, '0'); // milésimos
+    const mmm = String(ms).padStart(3, '0');
     return `${mm}:${ss}.${mmm}`;
   }, [elapsedMs]);
 
   // ===== Gols / Histórico =====
   const [events, setEvents] = useState<GoalEvent[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+
+  // filtro do histórico (Semana/Mês/Todos) — **apenas UMA declaração**
   const [historyFilter, setHistoryFilter] = useState<FilterRange>('week');
 
   // modal de gol
@@ -168,7 +168,6 @@ const Match: React.FC = () => {
   const iniciar   = () => { setRound((r)=>({ ...r, running:true })); };
   const pausar    = () => { setRound((r)=>({ ...r, running:false })); };
   const recomeçar = () => {
-    // zera o tempo e o placar mantendo o mesmo duelo
     setRound((r)=>({ ...r, scores:{Preto:0,Verde:0,Cinza:0,Vermelho:0} }));
     setElapsedMs(0); pausedAccumRef.current = 0; startAtRef.current = null;
   };
@@ -183,17 +182,14 @@ const Match: React.FC = () => {
     const r = round.scores[right] ?? 0;
     const winner: TeamColor | 'Empate' = l===r ? 'Empate' : (l>r ? left : right);
 
-    // registra no histórico
     setHistory((h)=>[
       ...h,
       { round: round.number, left, right, leftScore: l, rightScore: r, winner, ts: Date.now() }
     ]);
 
-    // define próximo duelo
     const stay: TeamColor = winner === 'Empate' ? left : (winner as TeamColor);
     const next = nextCandidate ?? (['Preto','Verde','Cinza','Vermelho'].find(t => t!==stay && t!==left && t!==right) || right);
 
-    // reseta
     setElapsedMs(0); pausedAccumRef.current = 0; startAtRef.current = null;
     setRound((rd)=>({
       number: rd.number + 1,
@@ -205,13 +201,11 @@ const Match: React.FC = () => {
     setNextOpen(false);
   };
 
-  // helpers
   const [left, right] = round.inPlay;
   const leftScore  = round.scores[left]  ?? 0;
   const rightScore = round.scores[right] ?? 0;
   const candidatos = (['Preto','Verde','Cinza','Vermelho'] as TeamColor[]).filter(t => t !== left && t !== right);
 
-  // estatísticas da sessão
   const stats = useMemo(() => {
     const map = new Map<string, { g:number; a:number }>();
     for (const e of events) {
@@ -222,8 +216,6 @@ const Match: React.FC = () => {
       .sort((x,y)=> y.g - x.g || y.a - x.a);
   }, [events]);
 
-  // filtro do histórico (semana / mês / todos)
-  const [historyFilter, setHistoryFilter] = useState<FilterRange>('week');
   const filteredHistory = useMemo(() => {
     if (historyFilter === 'all') return history;
     const now = new Date();
@@ -264,12 +256,18 @@ const Match: React.FC = () => {
 
             <div className="flex flex-wrap items-center justify-center gap-2">
               {!round.running ? (
-                <Button onClick={iniciar}>Iniciar</Button>
+                <Button onClick={()=>setRound((r)=>({ ...r, running:true }))}>Iniciar</Button>
               ) : (
-                <Button className="bg-amber-500 hover:bg-amber-500/90" onClick={pausar}>Pausar</Button>
+                <Button className="bg-amber-500 hover:bg-amber-500/90" onClick={()=>setRound((r)=>({ ...r, running:false }))}>Pausar</Button>
               )}
-              <Button variant="outline" onClick={recomeçar}>Recomeçar</Button>
-              <Button variant="secondary" onClick={encerrar}>Encerrar</Button>
+              <Button variant="outline" onClick={()=>{
+                setRound((r)=>({ ...r, scores:{Preto:0,Verde:0,Cinza:0,Vermelho:0} }));
+                setElapsedMs(0); pausedAccumRef.current = 0; startAtRef.current = null;
+              }}>Recomeçar</Button>
+              <Button variant="secondary" onClick={()=>{
+                setRound((r)=>({ ...r, running:false }));
+                setNextOpen(true);
+              }}>Encerrar</Button>
             </div>
           </div>
         </CardContent>
@@ -282,28 +280,18 @@ const Match: React.FC = () => {
             <Trophy className="h-4 w-4 text-emerald-600" /> Placar
           </h3>
           <div className="grid sm:grid-cols-2 gap-3">
-            {/* Left */}
-            <div className="flex items-center justify-between gap-2 rounded-xl border px-3 py-2">
-              <div className="flex items-center gap-2">
-                <TeamBadge color={left} />
-                <span className="text-sm">{left}</span>
+            {[round.inPlay[0], round.inPlay[1]].map((team)=>(
+              <div key={team} className="flex items-center justify-between gap-2 rounded-xl border px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <TeamBadge color={team} />
+                  <span className="text-sm">{team}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-bold tabular-nums">{round.scores[team] ?? 0}</span>
+                  <Button variant="outline" size="sm" onClick={()=>openGoal(team)} disabled={!round.running}>+</Button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold tabular-nums">{leftScore}</span>
-                <Button variant="outline" size="sm" onClick={()=>openGoal(left)} disabled={!round.running}>+</Button>
-              </div>
-            </div>
-            {/* Right */}
-            <div className="flex items-center justify-between gap-2 rounded-xl border px-3 py-2">
-              <div className="flex items-center gap-2">
-                <TeamBadge color={right} />
-                <span className="text-sm">{right}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold tabular-nums">{rightScore}</span>
-                <Button variant="outline" size="sm" onClick={()=>openGoal(right)} disabled={!round.running}>+</Button>
-              </div>
-            </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -351,7 +339,7 @@ const Match: React.FC = () => {
       <Card className="rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 mb-3">
         <CardContent className="p-4 sm:p-5">
           <h3 className="text-sm font-semibold mb-2">Estatísticas dos jogadores (sessão)</h3>
-          {stats.length === 0 ? (
+          {events.length === 0 ? (
             <p className="text-sm text-zinc-500">Sem registros ainda.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -364,13 +352,15 @@ const Match: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {stats.map((row) => (
-                    <tr key={row.name} className="border-t">
-                      <td className="py-1">{row.name}</td>
-                      <td className="py-1 text-right tabular-nums">{row.g}</td>
-                      <td className="py-1 text-right tabular-nums">{row.a}</td>
-                    </tr>
-                  ))}
+                  {Array.from(new Map(events.flatMap(e => [
+                    e.author ? [[e.author, { g:1, a:0 }]] : [],
+                    e.assist ? [[e.assist, { g:0, a:1 }]] : [],
+                  ]).map).entries())
+                    .reduce((acc:any, [name, val]: any) => {
+                      const cur = acc.get(name) ?? { name, g:0, a:0 };
+                      return acc.set(name, { name, g: cur.g + (val.g || 0), a: cur.a + (val.a || 0) });
+                    }, new Map())
+                  }
                 </tbody>
               </table>
             </div>
@@ -378,28 +368,13 @@ const Match: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Caixa separada para filtro Semana / Mês / Todos */}
+      {/* Caixa separada: Semana / Mês / Todos */}
       <Card className="rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 mb-0">
         <CardContent className="p-2 sm:p-3">
           <div className="flex rounded-xl overflow-hidden">
-            <button
-              className={`flex-1 text-sm py-2 ${historyFilter==='week' ? 'bg-zinc-100 dark:bg-zinc-800 font-medium' : ''}`}
-              onClick={() => setHistoryFilter('week')}
-            >
-              Semana
-            </button>
-            <button
-              className={`flex-1 text-sm py-2 ${historyFilter==='month' ? 'bg-zinc-100 dark:bg-zinc-800 font-medium' : ''}`}
-              onClick={() => setHistoryFilter('month')}
-            >
-              Mês
-            </button>
-            <button
-              className={`flex-1 text-sm py-2 ${historyFilter==='all' ? 'bg-zinc-100 dark:bg-zinc-800 font-medium' : ''}`}
-              onClick={() => setHistoryFilter('all')}
-            >
-              Todos
-            </button>
+            <button className={`flex-1 text-sm py-2 ${historyFilter==='week' ? 'bg-zinc-100 dark:bg-zinc-800 font-medium' : ''}`} onClick={() => setHistoryFilter('week')}>Semana</button>
+            <button className={`flex-1 text-sm py-2 ${historyFilter==='month' ? 'bg-zinc-100 dark:bg-zinc-800 font-medium' : ''}`} onClick={() => setHistoryFilter('month')}>Mês</button>
+            <button className={`flex-1 text-sm py-2 ${historyFilter==='all' ? 'bg-zinc-100 dark:bg-zinc-800 font-medium' : ''}`} onClick={() => setHistoryFilter('all')}>Todos</button>
           </div>
         </CardContent>
       </Card>
@@ -408,7 +383,7 @@ const Match: React.FC = () => {
       <Card className="rounded-t-none shadow-sm border border-zinc-200 dark:border-zinc-800">
         <CardContent className="p-4 sm:p-5">
           <h3 className="text-sm font-semibold mb-2">Histórico de Partidas</h3>
-          {filteredHistory.length === 0 ? (
+          {history.length === 0 ? (
             <p className="text-sm text-zinc-500">Sem registros ainda.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -423,15 +398,22 @@ const Match: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredHistory.map((h) => (
-                    <tr key={h.round + '-' + h.ts} className="border-t">
-                      <td className="py-1">#{h.round}</td>
-                      <td className="py-1">{h.left} vs {h.right}</td>
-                      <td className="py-1 text-right">{h.leftScore} - {h.rightScore}</td>
-                      <td className="py-1 text-right">{h.winner}</td>
-                      <td className="py-1 text-right">{new Date(h.ts).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
+                  {history
+                    .filter(h=>{
+                      if (historyFilter==='all') return true;
+                      const now = new Date(); const d = new Date(h.ts);
+                      if (historyFilter==='week') { return (now.getTime()-d.getTime())/(1000*60*60*24) <= 7; }
+                      return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+                    })
+                    .map((h) => (
+                      <tr key={h.round + '-' + h.ts} className="border-t">
+                        <td className="py-1">#{h.round}</td>
+                        <td className="py-1">{h.left} vs {h.right}</td>
+                        <td className="py-1 text-right">{h.leftScore} - {h.rightScore}</td>
+                        <td className="py-1 text-right">{h.winner}</td>
+                        <td className="py-1 text-right">{new Date(h.ts).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
@@ -439,7 +421,7 @@ const Match: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Modal: Registrar Gol (autor/assist da lista do time via sorteio) */}
+      {/* Modal: Registrar Gol */}
       <Dialog open={goalOpen} onOpenChange={setGoalOpen}>
         <DialogContent>
           <DialogHeader>
@@ -518,5 +500,4 @@ const Match: React.FC = () => {
 };
 
 export default Match;
-// compat com import { Match } usado no App.tsx
 export { Match };
