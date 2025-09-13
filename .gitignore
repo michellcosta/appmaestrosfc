@@ -33,3 +33,6 @@ create_*.sh
 *.bak
 fix_*.sh
 update_match_page_v*.sh
+.vscode/
+node_modules/
+dist/
