@@ -444,9 +444,11 @@ const Match: React.FC = () => {
 
           <div className="grid gap-2">
             <Label>Próximo time a entrar</Label>
-            <Select value={nextTeamChoice} onValueChange={(v)=>setNextTeamChoice(v as TeamColor)}>
+            <Select value={nextTeamChoice} onValueChange={(v)=>setNextTeamChoice(v as any)}>
               <SelectTrigger><SelectValue placeholder="Selecione o próximo" /></SelectTrigger>
-              <SelectContent>                {candidatos.map((t)=>(
+              <SelectContent>
+                <SelectItem value="_auto_">Automático</SelectItem>
+                {candidatos.map((t)=>(
                   <SelectItem key={t} value={t}>{t}</SelectItem>
                 ))}
               </SelectContent>
