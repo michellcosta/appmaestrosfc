@@ -1,3 +1,4 @@
+import { Pencil, Trash2 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -16,9 +17,22 @@ const colorChip: Record<TeamColor, string> = {
   Cinza: 'bg-slate-400 text-zinc-900',
   Vermelho: 'bg-red-600 text-white',
 }
+/*  >>> BLOCO ANTIGO (QUEBRADO) <<<
 const TeamBadge: React.FC<{ color: TeamColor; className?: string }> = ({ color, className }) => (
   <span
-    className={inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${colorChip[color]} ${className ?? ""}}
+      className={inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${colorChip[color]} ${className ?? ""}}
+    >
+      {color}
+  </span>
+)
+*/
+const TeamBadge: React.FC<{ color: TeamColor; className?: string }> = ({ color, className }) => (
+  <span
+    className={[
+      "inline-flex items-center px-3 py-1 rounded-full text-sm font-medium",
+      colorChip[color],
+      className || ""
+    ].join(" ")}
   >
     {color}
   </span>
@@ -431,11 +445,9 @@ const Match: React.FC = () => {
 
           <div className="grid gap-2">
             <Label>Próximo time a entrar</Label>
-            <Select value={nextTeamChoice} onValueChange={(v)=>setNextTeamChoice(v as any)}>
+            <Select value={nextTeamChoice} onValueChange={(v)=>setNextTeamChoice(v as TeamColor)}>
               <SelectTrigger><SelectValue placeholder="Selecione o próximo" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_auto_">Automático</SelectItem>
-                {candidatos.map((t)=>(
+              <SelectContent>                {candidatos.map((t)=>(
                   <SelectItem key={t} value={t}>{t}</SelectItem>
                 ))}
               </SelectContent>

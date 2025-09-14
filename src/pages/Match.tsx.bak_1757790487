@@ -261,7 +261,7 @@ const Match: React.FC = () => {
             <ul className="space-y-2">
               {events.slice().reverse().map((e) => (
                 <li key={e.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2">
-                  <div className="\1 scroll-panel">
+                  <div className="flex items-center gap-2">
                     <TeamBadge color={e.team} />
                     <div className="text-sm">
                       <div><strong>{e.author}</strong></div>
