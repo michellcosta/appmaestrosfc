@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from "lucide-react";
+﻿import { Pencil, Trash2 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -115,7 +115,7 @@ const Match: React.FC = () => {
   // se o autor mudar e a assistência for igual ao autor, volta para "sem assistência"
   useEffect(() => {
     if (!goalOpen) return
-    if (goalAssist !== '_none' && goalAssist === goalAuthor) setGoalAssist('none_')
+    if (goalAssist !== '_none' && goalAssist === goalAuthor) setGoalAssist('none')
   }, [goalAuthor, goalAssist, goalOpen])
 
   const saveGoal = () => {
@@ -221,8 +221,8 @@ const Match: React.FC = () => {
               ) : (
                 <Button type="button" className="bg-amber-500 hover:bg-amber-500/90" onClick={pause}>Pausar</Button>
               )}
-              <Button type="button" variant="outline" onClick={reset}>Recomeçar</Button>
-              <Button type="button" variant="secondary" onClick={openEnd}>Encerrar</Button>
+              <Button type="button" onClick={reset} className="bg-blue-600 hover:bg-blue-700 text-white">Recomeçar</Button>
+              <Button type="button" onClick={openEnd} className="bg-red-600 hover:bg-red-700 text-white">Encerrar</Button>
             </div>
           </div>
         </CardContent>
@@ -466,3 +466,4 @@ const Match: React.FC = () => {
 
 export default Match
 export { Match }
+
