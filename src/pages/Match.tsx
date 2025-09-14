@@ -1,4 +1,4 @@
-﻿// src/pages/Match.tsx
+// src/pages/Match.tsx
 import React, { useState, useEffect } from 'react';
 import { Play, Pause, StopCircle, Plus, Users, Shuffle, Trophy, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ export default function Match() {
   const [roster] = useState<Partial<Record<TeamColor, Player[]>>>({
     Preto: [{ id: 'p1', name: 'Michell', team: 'Preto' }, { id: 'p2', name: 'Rafael', team: 'Preto' }],
     Verde: [{ id: 'v1', name: 'Gui', team: 'Verde' }, { id: 'v2', name: 'Dudu', team: 'Verde' }],
-    Cinza: [{ id: 'c1', name: 'JoÃ£o', team: 'Cinza' }, { id: 'c2', name: 'Pedro', team: 'Cinza' }],
+    Cinza: [{ id: 'c1', name: 'João', team: 'Cinza' }, { id: 'c2', name: 'Pedro', team: 'Cinza' }],
     Vermelho: [{ id: 'r1', name: 'Lucas', team: 'Vermelho' }, { id: 'r2', name: 'Carlos', team: 'Vermelho' }],
   });
 
@@ -46,7 +46,8 @@ export default function Match() {
     return () => interval && clearInterval(interval);
   }, [matchState]);
 
-  const formatTime = (s: number) => ${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')};
+  const formatTime = (s: number) =>
+    ${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')};
 
   const handleStartPause = () => {
     if (matchState === 'idle') setMatchState('running');
@@ -92,7 +93,7 @@ export default function Match() {
         </p>
       </header>
 
-      {/* CronÃ´metro */}
+      {/* Cronômetro */}
       <Card className="p-8 text-center shadow-xl bg-gradient-card">
         <div
           className={cn(
@@ -122,20 +123,20 @@ export default function Match() {
             )}
           </Button>
 
-          {/* RecomeÃ§ar azul */}
+          {/* Recomeçar azul */}
           {matchState !== 'idle' && (
             <Button
-              onClick={handleRestart} className="min-w-[140px] bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={handleRestart}
               className="min-w-[140px] bg-blue-600 hover:bg-blue-700 text-white"
             >
-              RecomeÃ§ar
+              Recomeçar
             </Button>
           )}
 
           {/* Encerrar vermelho */}
           {matchState !== 'idle' && (
             <Button
-              onClick={handleEnd} className="min-w-[140px] bg-red-600 hover:bg-red-700 text-white"
+              onClick={handleEnd}
               className="min-w-[140px] bg-red-600 hover:bg-red-700 text-white"
             >
               <StopCircle className="w-5 h-5" /> Encerrar
@@ -185,7 +186,7 @@ export default function Match() {
             {recentGoals.map((g, i) => (
               <li key={i} className="text-sm flex items-center justify-between gap-2">
                 <div>
-                  <span className="font-medium">{g.team}</span> â€“ {g.player}{' '}
+                  <span className="font-medium">{g.team}</span> – {g.player}{' '}
                   <span className="tabular-nums text-muted-foreground">{g.time}</span>
                 </div>
               </li>
@@ -218,4 +219,3 @@ export default function Match() {
     </div>
   );
 }
-
