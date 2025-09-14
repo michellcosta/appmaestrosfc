@@ -38,16 +38,16 @@ const TeamBadge: React.FC<{ color: TeamColor; className?: string }> = ({ color, 
   </span>
 )
 
-// mock: permissÃµes locais
+// mock: permissões locais
 const userRole: 'owner'|'admin'|'aux'|'mensalista'|'diarista' = 'owner'
 const canEdit = (role: typeof userRole) => ['owner','admin','aux'].includes(role)
 
 // jogadores mock por time
 const defaultTeamPlayers: Record<TeamColor, string[]> = {
   Preto:    ['Michell', 'Thiago'],
-  Verde:    ['SÃ©rgio Jr', 'Oton'],
+  Verde:    ['Sérgio Jr', 'Oton'],
   Cinza:    ['Jorge', 'Yuri'],
-  Vermelho: ['MaurÃ­cio', 'Gabriel'],
+  Vermelho: ['Maurício', 'Gabriel'],
 }
 
 const Match: React.FC = () => {
@@ -57,7 +57,7 @@ const Match: React.FC = () => {
     addGoal, editGoal, deleteGoal, endRoundChooseNext,
   } = useMatchStore()
 
-  // â± elapsed derivado (anti-NaN) â€” conta em background
+  // ⏱ elapsed derivado (anti-NaN) �?" conta em background
   const elapsed = useMatchStore(s => {
     const now = (typeof s.now === 'number' ? s.now : Date.now())
     const acc = (typeof s.accumulatedSec === 'number' ? s.accumulatedSec : 0)
@@ -70,9 +70,9 @@ const Match: React.FC = () => {
   const [goalEditId, setGoalEditId] = useState<string | null>(null)
   const [goalTeam, setGoalTeam] = useState<TeamColor>('Preto')
   const [goalAuthor, setGoalAuthor] = useState<string>('')          // controlado
-  const [goalAssist, setGoalAssist] = useState<string>('_none')  // "none_" = sem assistÃªncia
+  const [goalAssist, setGoalAssist] = useState<string>('_none')  // "none_" = sem assistência
 
-  // ---------- Modal de confirmaÃ§Ã£o de exclusÃ£o ----------
+  // ---------- Modal de confirmação de exclusão ----------
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [confirmTarget, setConfirmTarget] = useState<GoalEvent | null>(null)
 
@@ -109,10 +109,10 @@ const Match: React.FC = () => {
     setGoalOpen(true)
   }
 
-  // exclusÃ£o
+  // exclusão
   const openConfirmDelete = (ev: GoalEvent) => { setConfirmTarget(ev); setConfirmOpen(true) }
 
-  // se o autor mudar e a assistÃªncia for igual ao autor, volta para "sem assistÃªncia"
+  // se o autor mudar e a assistência for igual ao autor, volta para "sem assistência"
   useEffect(() => {
     if (!goalOpen) return
     if (goalAssist !== '_none' && goalAssist === goalAuthor) setGoalAssist('none_')
@@ -140,13 +140,13 @@ const Match: React.FC = () => {
   }
   const cancelDelete = () => { setConfirmOpen(false); setConfirmTarget(null) }
 
-  // times em jogo e candidatos para prÃ³xima rodada
+  // times em jogo e candidatos para próxima rodada
   const [left, right] = round.inPlay
   const leftScore  = round.scores[left]  ?? 0
   const rightScore = round.scores[right] ?? 0
   const candidatos = (['Preto','Verde','Cinza','Vermelho'] as TeamColor[]).filter(t => t !== left && t !== right)
 
-  // estatÃ­sticas (sessÃ£o)
+  // estatísticas (sessão)
   const stats = useMemo(() => {
     const table: Record<string, { g:number; a:number }> = {}
     for (const e of events) {
@@ -164,7 +164,7 @@ const Match: React.FC = () => {
       .sort((a,b)=> b.g - a.g || b.a - a.a || a.name.localeCompare(b.name))
   }, [events])
 
-  // filtro de histÃ³rico
+  // filtro de histórico
   const [historyFilter, setHistoryFilter] = useState<FilterRange>('week')
   const filteredHistory = useMemo(() => {
     if (historyFilter === 'all') return history
@@ -197,7 +197,7 @@ const Match: React.FC = () => {
         <p className="text-sm text-zinc-500">Rodada {round.number}</p>
       </header>
 
-      {/* CronÃ´metro */}
+      {/* Cronômetro */}
       <Card className="mb-3 rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800">
         <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col items-center gap-3">
@@ -206,7 +206,7 @@ const Match: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <Label className="text-sm text-zinc-600">DuraÃ§Ã£o:</Label>
+              <Label className="text-sm text-zinc-600">Duração:</Label>
               <Select value={String(durationMin)} onValueChange={(v)=>setDuration(Number(v))} disabled={round.running}>
                 <SelectTrigger className="w-[110px]"><SelectValue placeholder="Minutos" /></SelectTrigger>
                 <SelectContent>
@@ -221,7 +221,7 @@ const Match: React.FC = () => {
               ) : (
                 <Button type="button" className="bg-amber-500 hover:bg-amber-500/90" onClick={pause}>Pausar</Button>
               )}
-              <Button type="button" variant="outline" onClick={reset}>RecomeÃ§ar</Button>
+              <Button type="button" variant="outline" onClick={reset}>Recomeçar</Button>
               <Button type="button" variant="secondary" onClick={openEnd}>Encerrar</Button>
             </div>
           </div>
@@ -265,7 +265,7 @@ const Match: React.FC = () => {
                     <TeamBadge color={e.team} />
                     <div className="text-sm">
                       <div><strong>{e.author}</strong></div>
-                      {e.assist && <div className="text-xs text-zinc-500">assistÃªncia: {e.assist}</div>}
+                      {e.assist && <div className="text-xs text-zinc-500">assistência: {e.assist}</div>}
                     </div>
                   </div>
                   {canEdit(userRole) && (
@@ -281,10 +281,10 @@ const Match: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* EstatÃ­sticas */}
+      {/* Estatísticas */}
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
         <CardContent className="p-4 sm:p-5">
-          <h3 className="text-sm font-semibold mb-2">EstatÃ­sticas dos jogadores (sessÃ£o)</h3>
+          <h3 className="text-sm font-semibold mb-2">Estatísticas dos jogadores (sessão)</h3>
           {events.length === 0 ? (
             <p className="text-sm text-zinc-500">Sem registros ainda.</p>
           ) : (
@@ -312,23 +312,23 @@ const Match: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Tabs â€” Semana / MÃªs / Todos */}
+      {/* Tabs �?" Semana / Mês / Todos */}
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
         <CardContent className="p-2 sm:p-3">
           <Tabs value={historyFilter} onValueChange={(v)=>setHistoryFilter(v as FilterRange)}>
             <TabsList className="grid grid-cols-3 w-full rounded-xl">
               <TabsTrigger value="week"  className="rounded-xl">Semana</TabsTrigger>
-              <TabsTrigger value="month" className="rounded-xl">MÃªs</TabsTrigger>
+              <TabsTrigger value="month" className="rounded-xl">Mês</TabsTrigger>
               <TabsTrigger value="all"   className="rounded-xl">Todos</TabsTrigger>
             </TabsList>
           </Tabs>
         </CardContent>
       </Card>
 
-      {/* HistÃ³rico de Partidas */}
+      {/* Histórico de Partidas */}
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800">
         <CardContent className="p-5 sm:p-7">
-          <h3 className="text-base sm:text-lg font-semibold mb-3">HistÃ³rico de Partidas</h3>
+          <h3 className="text-base sm:text-lg font-semibold mb-3">Histórico de Partidas</h3>
           {history.length === 0 ? (
             <p className="text-sm text-zinc-500">Sem registros ainda.</p>
           ) : (
@@ -366,7 +366,7 @@ const Match: React.FC = () => {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{goalEditId ? 'Editar Gol' : 'Registrar Gol'}</DialogTitle>
-              <DialogDescription>Autor prÃ©-selecionado; assistÃªncia Ã© opcional. AutoassistÃªncia nÃ£o Ã© permitida.</DialogDescription>
+              <DialogDescription>Autor pré-selecionado; assistência é opcional. Autoassistência não é permitida.</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-3">
@@ -385,11 +385,11 @@ const Match: React.FC = () => {
               </div>
 
               <div className="grid gap-2">
-                <Label>AssistÃªncia (opcional)</Label>
+                <Label>Assistência (opcional)</Label>
                 <Select value={goalAssist} onValueChange={(v)=>setGoalAssist(v)}>
                   <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="_none_">Sem assistÃªncia</SelectItem>
+                    <SelectItem value="_none_">Sem assistência</SelectItem>
                     {playerOptions(goalTeam).filter(p => p !== goalAuthor).map((p)=>(
                       <SelectItem key={p} value={p}>{p}</SelectItem>
                     ))}
@@ -400,18 +400,18 @@ const Match: React.FC = () => {
 
             <DialogFooter>
               <Button type="button" variant="secondary" onClick={()=>{ setGoalOpen(false); setGoalEditId(null) }}>Cancelar</Button>
-              <Button type="button" onClick={saveGoal}>{goalEditId ? 'Salvar alteraÃ§Ãµes' : 'Salvar Gol'}</Button>
+              <Button type="button" onClick={saveGoal}>{goalEditId ? 'Salvar alterações' : 'Salvar Gol'}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
 
-      {/* Modal de confirmaÃ§Ã£o de exclusÃ£o */}
+      {/* Modal de confirmação de exclusão */}
       <Dialog open={confirmOpen} onOpenChange={(o)=>{ setConfirmOpen(o); if(!o) setConfirmTarget(null) }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Excluir gol?</DialogTitle>
-            <DialogDescription>Essa aÃ§Ã£o nÃ£o pode ser desfeita. O placar serÃ¡ atualizado.</DialogDescription>
+            <DialogDescription>Essa ação não pode ser desfeita. O placar será atualizado.</DialogDescription>
           </DialogHeader>
 
           {confirmTarget && (
@@ -422,31 +422,31 @@ const Match: React.FC = () => {
               </div>
               <div className="text-sm">
                 <div><strong>Autor:</strong> {confirmTarget.author}</div>
-                {confirmTarget.assist && <div className="text-zinc-600"><strong>AssistÃªncia:</strong> {confirmTarget.assist}</div>}
-                <div className="text-zinc-600"><strong>HorÃ¡rio:</strong> {new Date(confirmTarget.ts).toLocaleTimeString()}</div>
+                {confirmTarget.assist && <div className="text-zinc-600"><strong>Assistência:</strong> {confirmTarget.assist}</div>}
+                <div className="text-zinc-600"><strong>Horário:</strong> {new Date(confirmTarget.ts).toLocaleTimeString()}</div>
               </div>
             </div>
           )}
 
           <DialogFooter>
-            <Button type="button" variant="secondary" onClick={cancelDelete}>NÃ£o</Button>
+            <Button type="button" variant="secondary" onClick={cancelDelete}>Não</Button>
             <Button type="button" className="bg-red-600 hover:bg-red-600/90" onClick={confirmDelete}>Sim, excluir</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Modal Encerrar Rodada â†’ escolher prÃ³ximo adversÃ¡rio */}
+      {/* Modal Encerrar Rodada �?' escolher próximo adversário */}
       <Dialog open={endOpen} onOpenChange={setEndOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Encerrar rodada</DialogTitle>
-            <DialogDescription>O vencedor permanece. Escolha o prÃ³ximo adversÃ¡rio ou deixe automÃ¡tico.</DialogDescription>
+            <DialogDescription>O vencedor permanece. Escolha o próximo adversário ou deixe automático.</DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-2">
-            <Label>PrÃ³ximo time a entrar</Label>
+            <Label>Próximo time a entrar</Label>
             <Select value={nextTeamChoice} onValueChange={(v)=>setNextTeamChoice(v as TeamColor)}>
-              <SelectTrigger><SelectValue placeholder="Selecione o prÃ³ximo" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Selecione o próximo" /></SelectTrigger>
               <SelectContent>                {candidatos.map((t)=>(
                   <SelectItem key={t} value={t}>{t}</SelectItem>
                 ))}
@@ -466,4 +466,5 @@ const Match: React.FC = () => {
 
 export default Match
 export { Match }
+
 
