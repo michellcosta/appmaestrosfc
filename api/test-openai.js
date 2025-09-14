@@ -1,4 +1,4 @@
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   const key = process.env.OPENAI_API_KEY;
   if (!key) {
     res.status(500).json({ ok: false, message: "OPENAI_API_KEY não encontrada" });
@@ -20,9 +20,9 @@ module.exports = async (req, res) => {
     res.status(200).json({
       ok: true,
       models: Array.isArray(data?.data) ? data.data.slice(0, 3).map((m) => m.id) : [],
-      runtime: "vercel-node-js",
+      runtime: "vercel-esm",
     });
   } catch (err) {
     res.status(500).json({ ok: false, message: err.message || "erro desconhecido" });
   }
-};
+}
