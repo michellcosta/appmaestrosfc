@@ -1,3 +1,5 @@
+﻿import Match from "./pages/Match";
+import { Routes, Route, Navigate } from "react-router-dom";
 import ChatBox from "./components/ChatBox";
 
 export default function App() {
@@ -8,4 +10,5 @@ export default function App() {
     </div>
   );
 }
+
 
