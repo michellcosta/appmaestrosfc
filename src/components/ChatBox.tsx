@@ -67,7 +67,7 @@ export default function ChatBox() {
       >
         {msgs.length === 0 && (
           <p className="text-center text-sm text-gray-500">
-            diga “olá” para começar o bate-papo ���
+            diga “olá” para começar o bate-papo 👋
           </p>
         )}
         <div className="space-y-3">
