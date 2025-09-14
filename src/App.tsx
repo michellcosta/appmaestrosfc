@@ -1,14 +1,13 @@
-﻿import Match from "./pages/Match";
+﻿import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import ChatBox from "./components/ChatBox";
+import Match from "./pages/Match";
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="mb-4 text-center text-2xl font-bold">Chat • Maestros FC</h1>
-      <ChatBox />
-    </div>
+    <Routes>
+      <Route path="/" element={<Navigate to="/partida" replace />} />
+      <Route path="/partida" element={<Match />} />
+      <Route path="*" element={<Navigate to="/partida" replace />} />
+    </Routes>
   );
 }
-
-
