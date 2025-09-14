@@ -1,5 +1,3 @@
-import { Pencil, Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import React, { useState, useEffect } from 'react';
 import { Play, Pause, StopCircle, Plus, Users, Shuffle, Trophy, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,7 +13,7 @@ import { TeamColor } from '@/types';
 interface TeamScore { Preto: number; Verde: number; Cinza: number; Vermelho: number; }
 interface Player { id: string; name: string; team: TeamColor }
 
-export const Match: React.FC = () => {
+export default function Match() {
   const [matchState, setMatchState] = useState<'idle' | 'running' | 'paused'>('idle');
   const [elapsedTime, setElapsedTime] = useState(0);
   const [openEnd, setOpenEnd] = useState<boolean>(false);
