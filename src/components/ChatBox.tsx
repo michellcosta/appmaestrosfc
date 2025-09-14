@@ -37,7 +37,7 @@ export default function ChatBox() {
 
       const json = await res.json();
       if (!res.ok || !json.ok) {
-        // AQUI estava o erro: usar template literal com crases
+        // uso de template literal com crase:
         throw new Error(json?.error?.message || json?.message || HTTP ${res.status});
       }
 
@@ -68,7 +68,7 @@ export default function ChatBox() {
       >
         {msgs.length === 0 && (
           <p className="text-center text-sm text-gray-500">
-            diga “olá” para começar o bate-papo ���
+            diga “olá” para começar o bate-papo 👋
           </p>
         )}
         <div className="space-y-3">
