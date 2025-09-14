@@ -1,7 +1,6 @@
 /**
- * Rota de diagnóstico da OpenAI em CommonJS.
- * - Sem ESM / export default
- * - Sem template strings (evita '$' fora de contexto)
+ * CommonJS handler para projetos ESM ("type":"module").
+ * Mantém a URL /api/test-openai (Vercel resolve .cjs automaticamente).
  */
 module.exports = async function (req, res) {
   try {
@@ -11,7 +10,7 @@ module.exports = async function (req, res) {
       return;
     }
 
-    // Chama a API de modelos
+    // Chamada simples à API de modelos (retorna texto para evitar JSON malformado)
     var r = await fetch("https://api.openai.com/v1/models", {
       method: "GET",
       headers: {
@@ -21,14 +20,14 @@ module.exports = async function (req, res) {
     });
 
     var text = await r.text();
-    var body;
-    try { body = JSON.parse(text); } catch (e) { body = text; }
+    var parsed;
+    try { parsed = JSON.parse(text); } catch (e) { parsed = text; }
 
     res.status(r.status).json({
       ok: r.ok,
       status: r.status,
-      body: body,
-      runtime: "vercel-commonjs"
+      body: parsed,
+      runtime: "vercel-commonjs(.cjs)"
     });
   } catch (err) {
     res.status(500).json({
