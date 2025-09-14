@@ -1,3 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BRANCH="feature/test-openai"
+FILE="src/components/ChatBox.tsx"
+
+echo "==> Trocando para a branch $BRANCH..."
+git checkout "$BRANCH"
+
+echo "==> Regravando $FILE com o template literal correto..."
+cat > "$FILE" <<'TSX'
 import { useState, useRef, useEffect } from "react";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -37,12 +48,8 @@ export default function ChatBox() {
 
       const json = await res.json();
       if (!res.ok || !json.ok) {
-        // sem template literal (usa concatenação) para evitar erro do build:
-        throw new Error(
-          (json && json.error && json.error.message) ||
-          json?.message ||
-          ("HTTP " + res.status)
-        );
+        // uso de template literal com crase:
+        throw new Error(json?.error?.message || json?.message || HTTP ${res.status});
       }
 
       const reply: string =
@@ -72,7 +79,7 @@ export default function ChatBox() {
       >
         {msgs.length === 0 && (
           <p className="text-center text-sm text-gray-500">
-            diga “olá” para começar o bate-papo ���
+            diga “olá” para começar o bate-papo 👋
           </p>
         )}
         <div className="space-y-3">
@@ -122,3 +129,11 @@ export default function ChatBox() {
     </div>
   );
 }
+TSX
+
+echo "==> Commitando e fazendo push..."
+git add "$FILE"
+git commit -m "fix(ui): corrige string para template literal no ChatBox (Vite build)"
+git push origin "$BRANCH"
+
+echo "✅ Correção enviada. Aguarde o Preview ficar Ready no Vercel e atualize."

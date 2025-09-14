@@ -1,5 +1,3 @@
-import { Pencil, Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import React, { useState, useEffect } from 'react';
 import { Play, Pause, StopCircle, Plus, Users, Shuffle, Trophy, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';

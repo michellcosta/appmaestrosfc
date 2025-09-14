@@ -1,4 +1,4 @@
-﻿// src/pages/Match.tsx
+// src/pages/Match.tsx
 import React, { useState, useEffect } from 'react';
 import { Play, Pause, StopCircle, Plus, Users, Shuffle, Trophy, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -46,7 +46,8 @@ export default function Match() {
     return () => interval && clearInterval(interval);
   }, [matchState]);
 
-  const formatTime = (s: number) => ${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')};
+  const formatTime = (s: number) =>
+    ${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')};
 
   const handleStartPause = () => {
     if (matchState === 'idle') setMatchState('running');
