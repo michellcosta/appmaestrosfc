@@ -205,8 +205,8 @@ const playerOptions = (team: TeamColor) => (defaultTeamPlayers[team] ?? [])
 
   // times em jogo e candidatos para próxima rodada
   const [left, right] = round.inPlay
-  const leftScore  = round.scores[left]  ?? 0
-  const rightScore = round.scores[right] ?? 0
+  const leftScore  = roundSafe.scores[left]  ?? 0
+  const rightScore = roundSafe.scores[right] ?? 0
   const candidatos = (['Preto','Verde','Cinza','Vermelho'] as TeamColor[]).filter(t => t !== left && t !== right)
 
   // estatísticas (sessão)
@@ -313,7 +313,7 @@ const playerOptions = (team: TeamColor) => (defaultTeamPlayers[team] ?? [])
                   <span className="text-sm">{team}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold tabular-nums">{round.scores[team] ?? 0}</span>
+                  <span className="text-lg font-bold tabular-nums">{roundSafe.scores[team] ?? 0}</span>
                   <Button type="button" variant="outline" size="sm" onClick={()=>openGoal(team)} disabled={!round.running}>+</Button>
                 </div>
               </div>
@@ -537,6 +537,7 @@ const playerOptions = (team: TeamColor) => (defaultTeamPlayers[team] ?? [])
 
 export default Match
 export { Match }
+
 
 
 
