@@ -290,9 +290,7 @@ const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
               )}
 <Button type="button" className="min-w-[140px] bg-sky-500 hover:bg-sky-600 text-white" onClick={onRestart}>Recomeçar</Button>
 <Button type="button" className="min-w-[140px] bg-rose-500 hover:bg-rose-600 text-white" onClick={openEnd}>Encerrar</Button>
-            </div>
-          </div>
-        </CardContent>
+            </div></CardContent>
       </Card>
 
       {/* Placar (2 times) */}
@@ -313,9 +311,7 @@ const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
                   <Button type="button" variant="outline" size="sm" onClick={()=>openGoal(team)} disabled={!round.running}>+</Button>
                 </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
+            ))}</CardContent>
       </Card>
 
       {/* Gols recentes */}
@@ -533,6 +529,7 @@ const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
 
 export default Match
 export { Match }
+
 
 
 
