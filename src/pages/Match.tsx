@@ -210,8 +210,9 @@ const playerOptions = (team: TeamColor) => (defaultTeamPlayers[team] ?? [])
   const cancelDelete = () => { setConfirmOpen(false); setConfirmTarget(null) }
 
   // times em jogo e candidatos para próxima rodada
-  const [left, right] = (roundSafe.inPlay as TeamColor[]); a:number }> = {}
-    for (const e of eventsSafe) {
+  const [left, right] = (roundSafe.inPlay as TeamColor[]);
+    const leftScore  = roundSafe.scores[left]  ?? 0;
+const rightScore = roundSafe.scores[right] ?? 0;for (const e of eventsSafe) {
       if (e.author) {
         table[e.author] = table[e.author] || { g:0, a:0 }
         table[e.author].g += 1
@@ -536,6 +537,7 @@ const playerOptions = (team: TeamColor) => (defaultTeamPlayers[team] ?? [])
 
 export default Match
 export { Match }
+
 
 
 
