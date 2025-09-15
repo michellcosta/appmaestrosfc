@@ -386,7 +386,7 @@ const Match: React.FC = () => {
                     size="sm"
                     onClick={() => openGoal(team)}
                     disabled={!roundSafe.running}
-                    aria-label={"Adicionar gol do " + team}
+                    aria-label={Adicionar gol do ${team}}
                   >
                     +
                   </Button>
@@ -731,6 +731,5 @@ const Match: React.FC = () => {
 
 export default Match;
 export { Match };
-
 
 
