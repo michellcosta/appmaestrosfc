@@ -57,9 +57,15 @@ const Match: React.FC = () => {
     addGoal, editGoal, deleteGoal, endRoundChooseNext,
   } = useMatchStore()
 
-  
-  
-  // sempre arrays, mesmo se vierem undefined/null
+  // --- round seguro contra estrutura incompleta ---
+  const roundSafe = (round && Array.isArray(roundSafe.inPlay) && (roundSafe.inPlay as any[]).length === 2)
+    ? round
+    : {
+        inPlay: ['Preto','Verde'] as TeamColor[],
+        scores: {} as Record<TeamColor, number>,
+        number: (round?.number ?? 1),
+        running: !!(round?.running)
+      };// sempre arrays, mesmo se vierem undefined/null
   const eventsSafe  = Array.isArray(events)  ? events  : [];
   const historySafe = Array.isArray(history) ? history : [];
 // arrays seguros contra undefined
@@ -114,19 +120,19 @@ const Match: React.FC = () => {
   const mmss = useMemo(() => {
 
   useEffect(() => {
-    if (round.running && elapsed >= alvo) {
+    if (roundSafe.running && elapsed >= alvo) {
       pause()
       setAlarmOn(true)
       startAlarm()
     }
-  }, [elapsed, alvo, round.running])
+  }, [elapsed, alvo, roundSafe.running])
 
   useEffect(() => {
-    if (round.running && alarmOn) {
+    if (roundSafe.running && alarmOn) {
       stopAlarm()
       setAlarmOn(false)
     }
-  }, [round.running])
+  }, [roundSafe.running])
 
   useEffect(() => () => stopAlarm(), [])
   const m = Math.floor(elapsed/60).toString().padStart(2, '0')
@@ -139,7 +145,7 @@ const beepRef = React.useRef<HTMLAudioElement | null>(null);
 
 React.useEffect(() => {
   const estourou = elapsed >= alvo;     // tempo estourou?
-  const parado   = !round.running;       // cronômetro parado?
+  const parado   = !roundSafe.running;       // cronômetro parado?
   const a = beepRef.current;
   if (!a) return;
 
@@ -150,12 +156,12 @@ React.useEffect(() => {
   } else {
     try { a.pause(); a.currentTime = 0; } catch {}
   }
-}, [elapsed, round.running, alvo]);
+}, [elapsed, roundSafe.running, alvo]);
 const playerOptions = (team: TeamColor) => (defaultTeamPlayers[team] ?? [])
 
   // abrir modal para novo gol
   const openGoal = (team: TeamColor) => {
-    if (!round.running) return
+    if (!roundSafe.running) return
     setGoalEditId(null)
     setGoalTeam(team)
     setGoalAuthor(playerOptions(team)[0] ?? '')
@@ -204,14 +210,7 @@ const playerOptions = (team: TeamColor) => (defaultTeamPlayers[team] ?? [])
   const cancelDelete = () => { setConfirmOpen(false); setConfirmTarget(null) }
 
   // times em jogo e candidatos para próxima rodada
-  const [left, right] = round.inPlay
-  const leftScore  = roundSafe.scores[left]  ?? 0
-  const rightScore = roundSafe.scores[right] ?? 0
-  const candidatos = (['Preto','Verde','Cinza','Vermelho'] as TeamColor[]).filter(t => t !== left && t !== right)
-
-  // estatísticas (sessão)
-  const stats = useMemo(() => {
-    const table: Record<string, { g:number; a:number }> = {}
+  const [left, right] = (roundSafe.inPlay as TeamColor[]); a:number }> = {}
     for (const e of eventsSafe) {
       if (e.author) {
         table[e.author] = table[e.author] || { g:0, a:0 }
@@ -263,7 +262,7 @@ const playerOptions = (team: TeamColor) => (defaultTeamPlayers[team] ?? [])
     <div className="mx-auto w-full max-w-4xl px-4 py-5">
       <header className="mb-3">
         <h1 className="text-2xl font-semibold">Partida ao Vivo</h1>
-        <p className="text-sm text-zinc-500">Rodada {round.number}</p>
+        <p className="text-sm text-zinc-500">Rodada {roundSafe.number}</p>
       </header>
 
       {/* Cronômetro */}
@@ -272,7 +271,7 @@ const playerOptions = (team: TeamColor) => (defaultTeamPlayers[team] ?? [])
           <div className="flex flex-col items-center gap-3">
             <div className={[
               "text-5xl sm:text-6xl font-extrabold tabular-nums",
-              (alarmOn || (!round.running && elapsed >= alvo)) ? "text-red-600 motion-safe:animate-pulse [animation-duration:350ms]" : ""
+              (alarmOn || (!roundSafe.running && elapsed >= alvo)) ? "text-red-600 motion-safe:animate-pulse [animation-duration:350ms]" : ""
             ].join(" ")} aria-live="polite">
             </div>
             </div>
@@ -280,7 +279,7 @@ const playerOptions = (team: TeamColor) => (defaultTeamPlayers[team] ?? [])
 
             <div className="flex items-center gap-2">
               <Label className="text-sm text-zinc-600">Duração:</Label>
-              <Select value={String(durationMin)} onValueChange={(v)=>setDuration(Number(v))} disabled={round.running}>
+              <Select value={String(durationMin)} onValueChange={(v)=>setDuration(Number(v))} disabled={roundSafe.running}>
                 <SelectTrigger className="w-[110px]"><SelectValue placeholder="Minutos" /></SelectTrigger>
                 <SelectContent>
                   {[5,8,10,12,15].map(m => <SelectItem key={m} value={String(m)}>{m} min</SelectItem>)}
@@ -289,7 +288,7 @@ const playerOptions = (team: TeamColor) => (defaultTeamPlayers[team] ?? [])
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-2">
-              {!round.running ? (
+              {!roundSafe.running ? (
                 <Button type="button" onClick={start}>Iniciar</Button>
               ) : (
                 <Button type="button" className="bg-amber-500 hover:bg-amber-500/90" onClick={pause}>Pausar</Button>
@@ -314,7 +313,7 @@ const playerOptions = (team: TeamColor) => (defaultTeamPlayers[team] ?? [])
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold tabular-nums">{roundSafe.scores[team] ?? 0}</span>
-                  <Button type="button" variant="outline" size="sm" onClick={()=>openGoal(team)} disabled={!round.running}>+</Button>
+                  <Button type="button" variant="outline" size="sm" onClick={()=>openGoal(team)} disabled={!roundSafe.running}>+</Button>
                 </div>
               </div>
             ))}
@@ -537,6 +536,7 @@ const playerOptions = (team: TeamColor) => (defaultTeamPlayers[team] ?? [])
 
 export default Match
 export { Match }
+
 
 
 
