@@ -225,7 +225,7 @@ const rightScore = roundSafe.scores[right] ?? 0;for (const e of eventsSafe) {
     return Object.entries(table)
       .map(([name, ga]) => ({ name, g: ga.g, a: ga.a }))
       .sort((a,b)=> b.g - a.g || b.a - a.a || a.name.localeCompare(b.name))
-  }, [events])
+  }, [eventsSafe]);;
 
   // filtro de histórico
   const [historyFilter, setHistoryFilter] = useState<FilterRange>('week')
@@ -537,6 +537,7 @@ const rightScore = roundSafe.scores[right] ?? 0;for (const e of eventsSafe) {
 
 export default Match
 export { Match }
+
 
 
 
