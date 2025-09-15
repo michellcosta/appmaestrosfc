@@ -57,7 +57,11 @@ const Match: React.FC = () => {
     addGoal, editGoal, deleteGoal, endRoundChooseNext,
   } = useMatchStore()
 
-  // ⏱ elapsed derivado (anti-NaN) �?" conta em background
+  
+  // arrays seguros contra undefined
+  const eventsSafe = Array.isArray(events) ? events : [];
+  const historySafe = Array.isArray(history) ? history : [];
+// ⏱ elapsed derivado (anti-NaN) �?" conta em background
   const elapsed = useMatchStore(s => {
     const now = (typeof s.now === 'number' ? s.now : Date.now())
     const acc = (typeof s.accumulatedSec === 'number' ? s.accumulatedSec : 0)
@@ -145,7 +149,7 @@ React.useEffect(() => {
     try { a.pause(); a.currentTime = 0; } catch {}
   }
 }, [elapsed, round.running, alvo]);
-const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
+const playerOptions = (team: TeamColor) => (defaultTeamPlayers[team] ?? [])
 
   // abrir modal para novo gol
   const openGoal = (team: TeamColor) => {
@@ -206,7 +210,7 @@ const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
   // estatísticas (sessão)
   const stats = useMemo(() => {
     const table: Record<string, { g:number; a:number }> = {}
-    for (const e of events) {
+    for (const e of eventsSafe) {
       if (e.author) {
         table[e.author] = table[e.author] || { g:0, a:0 }
         table[e.author].g += 1
@@ -226,7 +230,7 @@ const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
   const filteredHistory = useMemo(() => {
     if (historyFilter === 'all') return history
     const now = new Date()
-    return history.filter((h) => {
+    return historySafe.filter((h) => {
       const d = new Date(h.ts)
       if (historyFilter === 'week') {
         const diff = (now.getTime() - d.getTime()) / (1000*60*60*24)
@@ -320,11 +324,11 @@ const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
         <CardContent className="p-4 sm:p-5">
           <h3 className="text-sm font-semibold mb-2">Gols recentes</h3>
-          {events.length === 0 ? (
+          {eventsSafe.length === 0 ? (
             <p className="text-sm text-zinc-500">Nenhum gol registrado ainda.</p>
           ) : (
             <ul className="space-y-2">
-              {events.slice().reverse().map((e) => (
+              {eventsSafe.slice().reverse().map((e) => (
                 <li key={e.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2">
                   <div className="flex items-center gap-2">
                     <TeamBadge color={e.team} />
@@ -350,7 +354,7 @@ const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
         <CardContent className="p-4 sm:p-5">
           <h3 className="text-sm font-semibold mb-2">Estatísticas dos jogadores (sessão)</h3>
-          {events.length === 0 ? (
+          {eventsSafe.length === 0 ? (
             <p className="text-sm text-zinc-500">Sem registros ainda.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -394,7 +398,7 @@ const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800">
         <CardContent className="p-5 sm:p-7">
           <h3 className="text-base sm:text-lg font-semibold mb-3">Histórico de Partidas</h3>
-          {history.length === 0 ? (
+          {historySafe.length === 0 ? (
             <p className="text-sm text-zinc-500">Sem registros ainda.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -531,6 +535,7 @@ const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
 
 export default Match
 export { Match }
+
 
 
 
