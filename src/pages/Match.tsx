@@ -311,7 +311,10 @@ const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
                   <Button type="button" variant="outline" size="sm" onClick={()=>openGoal(team)} disabled={!round.running}>+</Button>
                 </div>
               </div>
-            ))}</CardContent>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
       </Card>
 
       {/* Gols recentes */}
@@ -529,6 +532,7 @@ const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
 
 export default Match
 export { Match }
+
 
 
 
