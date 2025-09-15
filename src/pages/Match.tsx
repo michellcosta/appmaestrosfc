@@ -1,5 +1,5 @@
 ﻿import { Pencil, Trash2 } from "lucide-react";
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useRef, useEffect, useMemo, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
@@ -78,11 +78,51 @@ const Match: React.FC = () => {
 
   // ---------- Modal de Encerrar Rodada ----------
   const [endOpen, setEndOpen] = useState(false)
+  const [alarmOn, setAlarmOn] = useState(false)
+  const alarmRef = useRef<HTMLAudioElement | null>(null)
+  // áudio inline (beep curto). Troque por "/beep.wav" em /public se preferir.
+  const ensureAlarm = () => {
+    if (!alarmRef.current) {
+      alarmRef.current = new Audio(
+        "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAAA//8AAP//AAD//wAA//8AAP8A"
+      );
+      alarmRef.current.loop = true;
+      alarmRef.current.volume = 0.6;
+    }
+    return alarmRef.current
+  }
+  const startAlarm = async () => {
+    try {
+      const a = ensureAlarm()
+      await a.play()
+    } catch {}
+  }
+  const stopAlarm = () => {
+    const a = alarmRef.current
+    if (a) { a.pause(); a.currentTime = 0 }
+  }
   const [nextTeamChoice, setNextTeamChoice] = useState<TeamColor | '_auto'>('_auto')
 
   const alvo = durationMin * 60
   const atrasado = elapsed >= alvo
   const mmss = useMemo(() => {
+
+  useEffect(() => {
+    if (round.running && elapsed >= alvo) {
+      pause()
+      setAlarmOn(true)
+      startAlarm()
+    }
+  }, [elapsed, alvo, round.running])
+
+  useEffect(() => {
+    if (round.running && alarmOn) {
+      stopAlarm()
+      setAlarmOn(false)
+    }
+  }, [round.running])
+
+  useEffect(() => () => stopAlarm(), [])
   const m = Math.floor(elapsed/60).toString().padStart(2, '0')
   const s = (elapsed%60).toString().padStart(2, '0')
   return `${m}:${s}`
@@ -197,6 +237,12 @@ const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
   }, [history, historyFilter])
 
   // abrir modal de Encerrar
+  const onRestart = () => {
+    stopAlarm()
+    setAlarmOn(false)
+    reset()
+  }
+
   const openEnd = () => {
   setNextTeamChoice('_auto')
     setEndOpen(true)
@@ -218,7 +264,12 @@ const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
       <Card className="mb-3 rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800">
         <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col items-center gap-3">
-            <div className={`text-5xl sm:text-6xl font-extrabold tabular-nums ${atrasado ? 'text-red-600 motion-safe:animate-pulse [animation-duration:.25s]' : ''}`}>
+            <div className={[
+              "text-5xl sm:text-6xl font-extrabold tabular-nums",
+              (alarmOn || (!round.running && elapsed >= alvo)) ? "text-red-600 motion-safe:animate-pulse [animation-duration:350ms]" : ""
+            ].join(" ")} aria-live="polite">
+              {mmss}
+            </div>
               {mmss}
             </div>
             <audio ref={beepRef} src="data:audio/wav;base64,UklGRm4AAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYAAAChAAAAAAAaAABSUQAA////AP///wD///8A////AP///wD///8A////AP///wD///8A" preload="auto" className="hidden" />
@@ -239,8 +290,8 @@ const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
               ) : (
                 <Button type="button" className="bg-amber-500 hover:bg-amber-500/90" onClick={pause}>Pausar</Button>
               )}
-              <Button type="button" variant="outline" onClick={reset}>Recomeçar</Button>
-              <Button type="button" variant="secondary" onClick={openEnd}>Encerrar</Button>
+<Button type="button" className="min-w-[140px] bg-sky-500 hover:bg-sky-600 text-white" onClick={onRestart}>Recomeçar</Button>
+<Button type="button" className="min-w-[140px] bg-rose-500 hover:bg-rose-600 text-white" onClick={openEnd}>Encerrar</Button>
             </div>
           </div>
         </CardContent>
