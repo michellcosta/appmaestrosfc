@@ -88,7 +88,24 @@ const Match: React.FC = () => {
   return `${m}:${s}`
   }, [elapsed])
 
-  const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
+  
+const beepRef = React.useRef<HTMLAudioElement | null>(null);
+
+React.useEffect(() => {
+  const estourou = elapsed >= alvo;     // tempo estourou?
+  const parado   = !round.running;       // cronômetro parado?
+  const a = beepRef.current;
+  if (!a) return;
+
+  if (estourou && parado) {
+    a.loop = true;
+    a.volume = 0.4;
+    a.play().catch(() => {});
+  } else {
+    try { a.pause(); a.currentTime = 0; } catch {}
+  }
+}, [elapsed, round.running, alvo]);
+const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
 
   // abrir modal para novo gol
   const openGoal = (team: TeamColor) => {
@@ -201,9 +218,10 @@ const Match: React.FC = () => {
       <Card className="mb-3 rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800">
         <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col items-center gap-3">
-            <div className={`text-5xl sm:text-6xl font-extrabold tabular-nums ${atrasado ? 'text-red-600 motion-safe:animate-pulse [animation-duration:500ms]' : ''}`}>
+            <div className={`text-5xl sm:text-6xl font-extrabold tabular-nums ${atrasado ? 'text-red-600 motion-safe:animate-pulse [animation-duration:.25s]' : ''}`}>
               {mmss}
             </div>
+            <audio ref={beepRef} src="data:audio/wav;base64,UklGRm4AAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYAAAChAAAAAAAaAABSUQAA////AP///wD///8A////AP///wD///8A////AP///wD///8A" preload="auto" className="hidden" />
 
             <div className="flex items-center gap-2">
               <Label className="text-sm text-zinc-600">Duração:</Label>
@@ -466,5 +484,6 @@ const Match: React.FC = () => {
 
 export default Match
 export { Match }
+
 
 
