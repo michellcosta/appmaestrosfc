@@ -149,6 +149,7 @@ const Match: React.FC = () => {
 
   const [endOpen, setEndOpen] = useState(false);
   const [nextTeamChoice, setNextTeamChoice] = useState<TeamColor | "_auto">("_auto");
+const anyModalOpen = goalOpen || confirmOpen || endOpen;
 
   /* Helpers */
   const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? [];
@@ -607,4 +608,5 @@ const Match: React.FC = () => {
 
 export default Match;
 export { Match };
+
 
