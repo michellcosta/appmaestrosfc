@@ -1,4 +1,4 @@
-ï»¿import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Pencil, Trash2, Trophy } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -49,16 +49,16 @@ const TeamBadge: React.FC<{ color: TeamColor; className?: string }> = ({
   </span>
 );
 
-/* mock de permissÃ£o local (seu app pode trocar por auth real) */
+/* mock de permissão local (seu app pode trocar por auth real) */
 const userRole: "owner" | "admin" | "aux" | "mensalista" | "diarista" = "owner";
 const canEdit = (role: typeof userRole) => ["owner", "admin", "aux"].includes(role);
 
 /* mock de jogadores por time */
 const defaultTeamPlayers: Record<TeamColor, string[]> = {
   Preto: ["Michell", "Thiago"],
-  Verde: ["SÃ©rgio Jr", "Oton"],
+  Verde: ["Sérgio Jr", "Oton"],
   Cinza: ["Jorge", "Yuri"],
-  Vermelho: ["MaurÃ­cio", "Gabriel"],
+  Vermelho: ["Maurício", "Gabriel"],
 };
 
 const Match: React.FC = () => {
@@ -77,7 +77,7 @@ const Match: React.FC = () => {
     endRoundChooseNext,
   } = useMatchStore();
 
-  /* Safeguards para nÃ£o quebrar caso algo venha undefined */
+  /* Safeguards para não quebrar caso algo venha undefined */
   const roundSafe =
     round && Array.isArray(round.inPlay) && (round.inPlay as any[]).length === 2
       ? round
@@ -108,7 +108,7 @@ const Match: React.FC = () => {
     const a = beepRef.current;
     if (!a) return;
 
-    // toca se o tempo estourou e o cronÃ´metro estÃ¡ parado
+    // toca se o tempo estourou e o cronômetro está parado
     if (exceeded && !roundSafe.running) {
       a.loop = true;
       a.volume = 0.5;
@@ -121,20 +121,20 @@ const Match: React.FC = () => {
     }
   }, [exceeded, roundSafe.running]);
 
-  // se estourar durante a contagem, pausa automaticamente (trava o cronÃ´metro)
+  // se estourar durante a contagem, pausa automaticamente (trava o cronômetro)
   useEffect(() => {
     if (roundSafe.running && exceeded) {
       pause();
     }
   }, [exceeded, roundSafe.running, pause]);
 
-  /* CronÃ´metro mm:ss */
+  /* Cronômetro mm:ss */
   const mmss = useMemo(() => {
     const m = Math.floor(elapsed / 60)
       .toString()
       .padStart(2, "0");
     const s = (elapsed % 60).toString().padStart(2, "0");
-    return m + ":" + s;
+    return ${m}:${s};
   }, [elapsed]);
 
   /* Modais: Gol / Deletar / Encerrar */
@@ -175,7 +175,7 @@ const Match: React.FC = () => {
     setConfirmOpen(true);
   };
 
-  // evita autoassistÃªncia
+  // evita autoassistência
   useEffect(() => {
     if (!goalOpen) return;
     if (goalAssist !== "none" && goalAssist === goalAuthor) setGoalAssist("none");
@@ -211,12 +211,12 @@ const Match: React.FC = () => {
   const leftScore = roundSafe.scores[left] ?? 0;
   const rightScore = roundSafe.scores[right] ?? 0;
 
-  // candidatos para prÃ³xima rodada
+  // candidatos para próxima rodada
   const candidatos = (["Preto", "Verde", "Cinza", "Vermelho"] as TeamColor[]).filter(
     (t) => t !== left && t !== right
   );
 
-  // estatÃ­sticas da sessÃ£o
+  // estatísticas da sessão
   const stats = useMemo(() => {
     const table: Record<string, { g: number; a: number }> = {};
     for (const e of eventsSafe) {
@@ -234,7 +234,7 @@ const Match: React.FC = () => {
       .sort((a, b) => b.g - a.g || b.a - a.a || a.name.localeCompare(b.name));
   }, [eventsSafe]);
 
-  // filtro histÃ³rico
+  // filtro histórico
   const [historyFilter, setHistoryFilter] = useState<FilterRange>("week");
   const filteredHistory = useMemo(() => {
     const list = historySafe;
@@ -251,7 +251,7 @@ const Match: React.FC = () => {
     });
   }, [historySafe, historyFilter]);
 
-  // aÃ§Ãµes de topo
+  // ações de topo
   const onRestart = () => {
     try {
       const a = beepRef.current;
@@ -281,7 +281,7 @@ const Match: React.FC = () => {
         <p className="text-sm text-zinc-500">Rodada {roundSafe.number}</p>
       </header>
 
-      {/* CronÃ´metro */}
+      {/* Cronômetro */}
       <Card className="mb-3 rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800">
         <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col items-center gap-3">
@@ -307,7 +307,7 @@ const Match: React.FC = () => {
             />
 
             <div className="flex items-center gap-2">
-              <Label className="text-sm text-zinc-600">DuraÃ§Ã£o:</Label>
+              <Label className="text-sm text-zinc-600">Duração:</Label>
               <Select
                 value={String(durationMin)}
                 onValueChange={(v) => setDuration(Number(v))}
@@ -346,7 +346,7 @@ const Match: React.FC = () => {
                 className="min-w-[140px] bg-sky-500 hover:bg-sky-600 text-white"
                 onClick={onRestart}
               >
-                RecomeÃ§ar
+                Recomeçar
               </Button>
               <Button
                 type="button"
@@ -421,7 +421,7 @@ const Match: React.FC = () => {
                         </div>
                         {e.assist && (
                           <div className="text-xs text-zinc-500">
-                            assistÃªncia: {e.assist}
+                            assistência: {e.assist}
                           </div>
                         )}
                       </div>
@@ -453,11 +453,11 @@ const Match: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* EstatÃ­sticas */}
+      {/* Estatísticas */}
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
         <CardContent className="p-4 sm:p-5">
           <h3 className="text-sm font-semibold mb-2">
-            EstatÃ­sticas dos jogadores (sessÃ£o)
+            Estatísticas dos jogadores (sessão)
           </h3>
           {eventsSafe.length === 0 ? (
             <p className="text-sm text-zinc-500">Sem registros ainda.</p>
@@ -486,7 +486,7 @@ const Match: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Tabs (Semana/MÃªs/Todos) */}
+      {/* Tabs (Semana/Mês/Todos) */}
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
         <CardContent className="p-2 sm:p-3">
           <Tabs value={historyFilter} onValueChange={(v) => setHistoryFilter(v as FilterRange)}>
@@ -495,7 +495,7 @@ const Match: React.FC = () => {
                 Semana
               </TabsTrigger>
               <TabsTrigger value="month" className="rounded-xl">
-                MÃªs
+                Mês
               </TabsTrigger>
               <TabsTrigger value="all" className="rounded-xl">
                 Todos
@@ -505,11 +505,11 @@ const Match: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* HistÃ³rico de Partidas */}
+      {/* Histórico de Partidas */}
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800">
         <CardContent className="p-5 sm:p-7">
           <h3 className="text-base sm:text-lg font-semibold mb-3">
-            HistÃ³rico de Partidas
+            Histórico de Partidas
           </h3>
           {historySafe.length === 0 ? (
             <p className="text-sm text-zinc-500">Sem registros ainda.</p>
@@ -561,7 +561,7 @@ const Match: React.FC = () => {
             <DialogHeader>
               <DialogTitle>{goalEditId ? "Editar Gol" : "Registrar Gol"}</DialogTitle>
               <DialogDescription>
-                Autor prÃ©-selecionado; assistÃªncia Ã© opcional. AutoassistÃªncia nÃ£o Ã©
+                Autor pré-selecionado; assistência é opcional. Autoassistência não é
                 permitida.
               </DialogDescription>
             </DialogHeader>
@@ -595,13 +595,13 @@ const Match: React.FC = () => {
               </div>
 
               <div className="grid gap-2">
-                <Label>AssistÃªncia (opcional)</Label>
+                <Label>Assistência (opcional)</Label>
                 <Select value={goalAssist} onValueChange={(v) => setGoalAssist(v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Sem assistÃªncia</SelectItem>
+                    <SelectItem value="none">Sem assistência</SelectItem>
                     {playerOptions(goalTeam)
                       .filter((p) => p !== goalAuthor)
                       .map((p) => (
@@ -626,14 +626,14 @@ const Match: React.FC = () => {
                 Cancelar
               </Button>
               <Button type="button" onClick={saveGoal}>
-                {goalEditId ? "Salvar alteraÃ§Ãµes" : "Salvar Gol"}
+                {goalEditId ? "Salvar alterações" : "Salvar Gol"}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
 
-      {/* Modal de confirmaÃ§Ã£o de exclusÃ£o */}
+      {/* Modal de confirmação de exclusão */}
       <Dialog
         open={confirmOpen}
         onOpenChange={(o) => {
@@ -645,7 +645,7 @@ const Match: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Excluir gol?</DialogTitle>
             <DialogDescription>
-              Essa aÃ§Ã£o nÃ£o pode ser desfeita. O placar serÃ¡ atualizado.
+              Essa ação não pode ser desfeita. O placar será atualizado.
             </DialogDescription>
           </DialogHeader>
 
@@ -661,11 +661,11 @@ const Match: React.FC = () => {
                 </div>
                 {confirmTarget.assist && (
                   <div className="text-zinc-600">
-                    <strong>AssistÃªncia:</strong> {confirmTarget.assist}
+                    <strong>Assistência:</strong> {confirmTarget.assist}
                   </div>
                 )}
                 <div className="text-zinc-600">
-                  <strong>HorÃ¡rio:</strong>{" "}
+                  <strong>Horário:</strong>{" "}
                   {new Date(confirmTarget.ts).toLocaleTimeString()}
                 </div>
               </div>
@@ -674,7 +674,7 @@ const Match: React.FC = () => {
 
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={cancelDelete}>
-              NÃ£o
+              Não
             </Button>
             <Button
               type="button"
@@ -687,27 +687,27 @@ const Match: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal Encerrar Rodada ? escolher prÃ³ximo adversÃ¡rio */}
+      {/* Modal Encerrar Rodada ? escolher próximo adversário */}
       <Dialog open={endOpen} onOpenChange={setEndOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Encerrar rodada</DialogTitle>
             <DialogDescription>
-              O vencedor permanece. Escolha o prÃ³ximo adversÃ¡rio ou deixe automÃ¡tico.
+              O vencedor permanece. Escolha o próximo adversário ou deixe automático.
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-2">
-            <Label>PrÃ³ximo time a entrar</Label>
+            <Label>Próximo time a entrar</Label>
             <Select
               value={nextTeamChoice}
               onValueChange={(v) => setNextTeamChoice(v as TeamColor | "_auto")}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Selecione o prÃ³ximo" />
+                <SelectValue placeholder="Selecione o próximo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="_auto">AutomÃ¡tico</SelectItem>
+                <SelectItem value="_auto">Automático</SelectItem>
                 {candidatos.map((t) => (
                   <SelectItem key={t} value={t}>
                     {t}
@@ -731,5 +731,4 @@ const Match: React.FC = () => {
 
 export default Match;
 export { Match };
-
 
