@@ -268,9 +268,7 @@ const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
               "text-5xl sm:text-6xl font-extrabold tabular-nums",
               (alarmOn || (!round.running && elapsed >= alvo)) ? "text-red-600 motion-safe:animate-pulse [animation-duration:350ms]" : ""
             ].join(" ")} aria-live="polite">
-              {mmss}
             </div>
-              {mmss}
             </div>
             <audio ref={beepRef} src="data:audio/wav;base64,UklGRm4AAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYAAAChAAAAAAAaAABSUQAA////AP///wD///8A////AP///wD///8A////AP///wD///8A" preload="auto" className="hidden" />
 
