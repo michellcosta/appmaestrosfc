@@ -58,7 +58,11 @@ const Match: React.FC = () => {
   } = useMatchStore()
 
   
-  // arrays seguros contra undefined
+  
+  // sempre arrays, mesmo se vierem undefined/null
+  const eventsSafe  = Array.isArray(events)  ? events  : [];
+  const historySafe = Array.isArray(history) ? history : [];
+// arrays seguros contra undefined
   const eventsSafe = Array.isArray(events) ? events : [];
   const historySafe = Array.isArray(history) ? history : [];
 // ⏱ elapsed derivado (anti-NaN) �?" conta em background
@@ -535,6 +539,7 @@ const playerOptions = (team: TeamColor) => (defaultTeamPlayers[team] ?? [])
 
 export default Match
 export { Match }
+
 
 
 
