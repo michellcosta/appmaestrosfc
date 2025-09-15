@@ -315,7 +315,6 @@ const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
           </div>
         </CardContent>
       </Card>
-      </Card>
 
       {/* Gols recentes */}
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
@@ -532,6 +531,7 @@ const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? []
 
 export default Match
 export { Match }
+
 
 
 
