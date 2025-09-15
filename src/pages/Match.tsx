@@ -63,8 +63,6 @@ const Match: React.FC = () => {
   const eventsSafe  = Array.isArray(events)  ? events  : [];
   const historySafe = Array.isArray(history) ? history : [];
 // arrays seguros contra undefined
-  const eventsSafe = Array.isArray(events) ? events : [];
-  const historySafe = Array.isArray(history) ? history : [];
 // ⏱ elapsed derivado (anti-NaN) �?" conta em background
   const elapsed = useMatchStore(s => {
     const now = (typeof s.now === 'number' ? s.now : Date.now())
