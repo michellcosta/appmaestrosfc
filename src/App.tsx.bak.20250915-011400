@@ -1,4 +1,4 @@
-﻿import {Routes, Route, Routes,  Route,  Routes, Route } from "react-router-dom";
+﻿import { Routes, Route } from "react-router-dom";
 import Match from "src/pages/Match";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -39,3 +39,5 @@ const App = () => (
 );
 
 export default App;
+
+
