@@ -77,7 +77,7 @@ const Match: React.FC = () => {
     endRoundChooseNext,
   } = useMatchStore();
 
-  /* Safeguards para não quebrar caso algo venha undefined */
+  /* Safeguards */
   const roundSafe =
     round && Array.isArray(round.inPlay) && (round.inPlay as any[]).length === 2
       ? round
@@ -91,7 +91,7 @@ const Match: React.FC = () => {
   const eventsSafe: GoalEvent[] = Array.isArray(events) ? events : [];
   const historySafe = Array.isArray(history) ? history : [];
 
-  /* Elapsed derivado do store (anti-NaN) */
+  /* Elapsed derivado do store */
   const elapsed = useMatchStore((s) => {
     const now = typeof s.now === "number" ? s.now : Date.now();
     const acc = typeof s.accumulatedSec === "number" ? s.accumulatedSec : 0;
@@ -99,7 +99,7 @@ const Match: React.FC = () => {
     return acc + live;
   });
 
-  /* Estado e helpers do beep/alarme */
+  /* Beep/alarme */
   const alvo = durationMin * 60;
   const exceeded = elapsed >= alvo;
   const beepRef = useRef<HTMLAudioElement | null>(null);
@@ -107,8 +107,6 @@ const Match: React.FC = () => {
   useEffect(() => {
     const a = beepRef.current;
     if (!a) return;
-
-    // toca se o tempo estourou e o cronômetro está parado
     if (exceeded && !roundSafe.running) {
       a.loop = true;
       a.volume = 0.5;
@@ -121,18 +119,13 @@ const Match: React.FC = () => {
     }
   }, [exceeded, roundSafe.running]);
 
-  // se estourar durante a contagem, pausa automaticamente (trava o cronômetro)
   useEffect(() => {
-    if (roundSafe.running && exceeded) {
-      pause();
-    }
+    if (roundSafe.running && exceeded) pause();
   }, [exceeded, roundSafe.running, pause]);
 
   /* Cronômetro mm:ss */
   const mmss = useMemo(() => {
-    const m = Math.floor(elapsed / 60)
-      .toString()
-      .padStart(2, "0");
+    const m = Math.floor(elapsed / 60).toString().padStart(2, "0");
     const s = (elapsed % 60).toString().padStart(2, "0");
     return m + ":" + s;
   }, [elapsed]);
@@ -206,17 +199,17 @@ const Match: React.FC = () => {
     setConfirmTarget(null);
   };
 
-  // times da rodada e scores
+  // times e placar
   const [left, right] = roundSafe.inPlay as TeamColor[];
   const leftScore = roundSafe.scores[left] ?? 0;
   const rightScore = roundSafe.scores[right] ?? 0;
 
-  // candidatos para próxima rodada
+  // candidatos próxima rodada
   const candidatos = (["Preto", "Verde", "Cinza", "Vermelho"] as TeamColor[]).filter(
     (t) => t !== left && t !== right
   );
 
-  // estatísticas da sessão
+  // estatísticas sessão
   const stats = useMemo(() => {
     const table: Record<string, { g: number; a: number }> = {};
     for (const e of eventsSafe) {
@@ -251,7 +244,7 @@ const Match: React.FC = () => {
     });
   }, [historySafe, historyFilter]);
 
-  // ações de topo
+  // ações topo
   const onRestart = () => {
     try {
       const a = beepRef.current;
@@ -274,7 +267,7 @@ const Match: React.FC = () => {
     setEndOpen(false);
   };
 
-  // quando há qualquer modal aberto, escondemos a barra flutuante para não atrapalhar cliques
+  // esconder barra quando qualquer modal aberto
   const anyModalOpen = goalOpen || confirmOpen || endOpen;
 
   return (
@@ -519,15 +512,9 @@ const Match: React.FC = () => {
         <CardContent className="p-2 sm:p-3">
           <Tabs value={historyFilter} onValueChange={(v) => setHistoryFilter(v as FilterRange)}>
             <TabsList className="grid grid-cols-3 w-full rounded-xl">
-              <TabsTrigger value="week" className="rounded-xl">
-                Semana
-              </TabsTrigger>
-              <TabsTrigger value="month" className="rounded-xl">
-                Mês
-              </TabsTrigger>
-              <TabsTrigger value="all" className="rounded-xl">
-                Todos
-              </TabsTrigger>
+              <TabsTrigger value="week" className="rounded-xl">Semana</TabsTrigger>
+              <TabsTrigger value="month" className="rounded-xl">Mês</TabsTrigger>
+              <TabsTrigger value="all" className="rounded-xl">Todos</TabsTrigger>
             </TabsList>
           </Tabs>
         </CardContent>
@@ -577,4 +564,226 @@ const Match: React.FC = () => {
       {/* ==== BARRA FLUTUANTE (MOBILE) ==== */}
       {!anyModalOpen && (
         <div
-          className="md:hidd
+          className="md:hidden fixed inset-x-0 z-[9999] pointer-events-none"
+          style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
+        >
+          <div className="mx-auto max-w-4xl px-4 pb-3">
+            <div
+              className={`rounded-2xl border border-zinc-200 backdrop-blur shadow-lg transition-opacity pointer-events-auto
+              ${roundSafe.running ? "bg-white/90 dark:bg-zinc-900/80 opacity-100" : "bg-white/70 dark:bg-zinc-900/60 opacity-80"}`}
+            >
+              <div className="grid grid-cols-3 gap-2 p-3">
+                {!roundSafe.running ? (
+                  <Button type="button" onClick={start} className="h-12 w-full">
+                    Iniciar
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={pause}
+                    className="h-12 w-full bg-amber-500 hover:bg-amber-500/90"
+                  >
+                    Pausar
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  onClick={onRestart}
+                  className="h-12 w-full bg-sky-500 hover:bg-sky-600 text-white"
+                >
+                  Recomeçar
+                </Button>
+                <Button
+                  type="button"
+                  onClick={openEnd}
+                  className="h-12 w-full bg-rose-500 hover:bg-rose-600 text-white"
+                >
+                  Encerrar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ==== /BARRA FLUTUANTE ==== */}
+
+      {/* Modal: Registrar/Editar Gol (sempre montado) */}
+      <Dialog
+        open={goalOpen}
+        onOpenChange={(o) => {
+          setGoalOpen(o);
+          if (!o) setGoalEditId(null);
+        }}
+      >
+        <DialogContent className="z-[99999]">
+          <DialogHeader>
+            <DialogTitle>{goalEditId ? "Editar Gol" : "Registrar Gol"}</DialogTitle>
+            <DialogDescription>
+              Autor pré-selecionado; assistência é opcional. Autoassistência não é permitida.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="text-sm">
+              <span className="mr-2">Time:</span>
+              <TeamBadge color={goalTeam} />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Autor do gol</Label>
+              <Select
+                value={goalAuthor}
+                onValueChange={(v) => {
+                  setGoalAuthor(v);
+                  if (goalAssist === v) setGoalAssist("none");
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o autor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {playerOptions(goalTeam).map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Assistência (opcional)</Label>
+              <Select value={goalAssist} onValueChange={(v) => setGoalAssist(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sem assistência</SelectItem>
+                  {playerOptions(goalTeam)
+                    .filter((p) => p !== goalAuthor)
+                    .map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setGoalOpen(false);
+                setGoalEditId(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button type="button" onClick={saveGoal}>
+              {goalEditId ? "Salvar alterações" : "Salvar Gol"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de confirmação de exclusão */}
+      <Dialog
+        open={confirmOpen}
+        onOpenChange={(o) => {
+          setConfirmOpen(o);
+          if (!o) setConfirmTarget(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir gol?</DialogTitle>
+            <DialogDescription>
+              Essa ação não pode ser desfeita. O placar será atualizado.
+            </DialogDescription>
+          </DialogHeader>
+
+          {confirmTarget && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">Time:</span>
+                <TeamBadge color={confirmTarget.team} />
+              </div>
+              <div className="text-sm">
+                <div>
+                  <strong>Autor:</strong> {confirmTarget.author}
+                </div>
+                {confirmTarget.assist && (
+                  <div className="text-zinc-600">
+                    <strong>Assistência:</strong> {confirmTarget.assist}
+                  </div>
+                )}
+                <div className="text-zinc-600">
+                  <strong>Horário:</strong>{" "}
+                  {new Date(confirmTarget.ts).toLocaleTimeString()}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={cancelDelete}>
+              Não
+            </Button>
+            <Button
+              type="button"
+              className="bg-red-600 hover:bg-red-600/90"
+              onClick={confirmDelete}
+            >
+              Sim, excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Encerrar Rodada */}
+      <Dialog open={endOpen} onOpenChange={setEndOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Encerrar rodada</DialogTitle>
+            <DialogDescription>
+              O vencedor permanece. Escolha o próximo adversário ou deixe automático.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-2">
+            <Label>Próximo time a entrar</Label>
+            <Select
+              value={nextTeamChoice}
+              onValueChange={(v) => setNextTeamChoice(v as TeamColor | "_auto")}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o próximo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_auto">Automático</SelectItem>
+                {candidatos.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setEndOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={confirmEnd}>Confirmar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default Match;
+export { Match };
