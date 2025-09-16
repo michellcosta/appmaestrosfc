@@ -88,3 +88,23 @@ create table if not exists push_subscriptions (
   auth text not null,
   created_at timestamptz default now()
 );
+create table if not exists profiles (
+  id uuid primary key,
+  email text not null unique,
+  role text not null default 'player' check (role in ('owner','admin','aux','player')),
+  membership text check (membership in ('mensalista','diarista')),
+  position text check (position in ('Goleiro','Zagueiro','Meia','Atacante')),
+  stars int2 check (stars between 0 and 10),
+  notifications_enabled boolean not null default true,
+  updated_at timestamptz default now()
+);
+alter table profiles enable row level security;
+
+create policy \"profiles: read self\" on profiles for select using ( auth.uid() = id );
+create policy \"profiles: staff read\" on profiles for select using (
+  exists (select 1 from profiles p where p.id = auth.uid() and p.role in ('owner','admin','aux'))
+);
+create policy \"profiles: update self\" on profiles for update using (auth.uid() = id) with check (auth.uid() = id);
+create policy \"profiles: owner update all\" on profiles for update using (
+  exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'owner')
+);
