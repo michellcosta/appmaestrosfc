@@ -149,7 +149,6 @@ const Match: React.FC = () => {
 
   const [endOpen, setEndOpen] = useState(false);
   const [nextTeamChoice, setNextTeamChoice] = useState<TeamColor | "_auto">("_auto");
-const anyModalOpen = goalOpen || confirmOpen || endOpen;
 
   /* Helpers */
   const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? [];
@@ -275,8 +274,11 @@ const anyModalOpen = goalOpen || confirmOpen || endOpen;
     setEndOpen(false);
   };
 
+  // quando há qualquer modal aberto, escondemos a barra flutuante para não atrapalhar cliques
+  const anyModalOpen = goalOpen || confirmOpen || endOpen;
+
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-5 pb-24 sm:pb-5">
+    <div className="mx-auto w-full max-w-4xl px-4 py-5 pb-[120px] sm:pb-5">
       <header className="mb-3">
         <h1 className="text-2xl font-semibold">Partida ao Vivo</h1>
         <p className="text-sm text-zinc-500">Rodada {roundSafe.number}</p>
@@ -341,7 +343,6 @@ const anyModalOpen = goalOpen || confirmOpen || endOpen;
                   Pausar
                 </Button>
               )}
-
               <Button
                 type="button"
                 onClick={onRestart}
@@ -518,9 +519,15 @@ const anyModalOpen = goalOpen || confirmOpen || endOpen;
         <CardContent className="p-2 sm:p-3">
           <Tabs value={historyFilter} onValueChange={(v) => setHistoryFilter(v as FilterRange)}>
             <TabsList className="grid grid-cols-3 w-full rounded-xl">
-              <TabsTrigger value="week" className="rounded-xl">Semana</TabsTrigger>
-              <TabsTrigger value="month" className="rounded-xl">Mês</TabsTrigger>
-              <TabsTrigger value="all" className="rounded-xl">Todos</TabsTrigger>
+              <TabsTrigger value="week" className="rounded-xl">
+                Semana
+              </TabsTrigger>
+              <TabsTrigger value="month" className="rounded-xl">
+                Mês
+              </TabsTrigger>
+              <TabsTrigger value="all" className="rounded-xl">
+                Todos
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </CardContent>
@@ -555,7 +562,9 @@ const anyModalOpen = goalOpen || confirmOpen || endOpen;
                         {h.leftScore} - {h.rightScore}
                       </td>
                       <td className="py-2 text-right">{h.winner}</td>
-                      <td className="py-2 text-right">{new Date(h.ts).toLocaleDateString()}</td>
+                      <td className="py-2 text-right">
+                        {new Date(h.ts).toLocaleDateString()}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -566,47 +575,6 @@ const anyModalOpen = goalOpen || confirmOpen || endOpen;
       </Card>
 
       {/* ==== BARRA FLUTUANTE (MOBILE) ==== */}
-      <div className="sm:hidden fixed inset-x-0 bottom-0 z-50">
-        <div className="mx-auto max-w-4xl px-4 pb-3">
-          <div className="rounded-2xl border border-zinc-200 bg-white/90 dark:bg-zinc-900/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-lg">
-            <div className="grid grid-cols-3 gap-2 p-3">
-              {!roundSafe.running ? (
-                <Button type="button" onClick={start} className="h-12 w-full">
-                  Iniciar
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  onClick={pause}
-                  className="h-12 w-full bg-amber-500 hover:bg-amber-500/90"
-                >
-                  Pausar
-                </Button>
-              )}
-              <Button
-                type="button"
-                onClick={onRestart}
-                className="h-12 w-full bg-sky-500 hover:bg-sky-600 text-white"
-              >
-                Recomeçar
-              </Button>
-              <Button
-                type="button"
-                onClick={openEnd}
-                className="h-12 w-full bg-rose-500 hover:bg-rose-600 text-white"
-              >
-                Encerrar
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* ==== /BARRA FLUTUANTE ==== */}
-    </div>
-  );
-};
-
-export default Match;
-export { Match };
-
-
+      {!anyModalOpen && (
+        <div
+          className="md:hidd
