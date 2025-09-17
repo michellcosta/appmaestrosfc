@@ -57,7 +57,7 @@ export default function FinancePage() {
               <div key={c.id} className="flex items-center justify-between gap-2 rounded-xl border p-3">
                 <div className="min-w-0">
                   <div className="text-sm font-medium">
-                    {c.type === 'mensalista' ? 'Mensalidade' : 'Diária'} {c.period ? () : ''}
+                    {c.type === 'mensalista' ? 'Mensalidade' : 'Diária'} {c.period ? (${c.period}) : ''}
                   </div>
                   <div className="text-xs text-zinc-500">
                     {new Date(c.created_at).toLocaleString()}
@@ -75,3 +75,4 @@ export default function FinancePage() {
     </div>
   );
 }
+
