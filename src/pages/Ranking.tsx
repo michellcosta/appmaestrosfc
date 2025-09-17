@@ -134,7 +134,7 @@ export default function RankingPage() {
             <p className="text-sm text-zinc-500">Carregando…</p>
           ) : filtered.length === 0 ? (
             <p className="text-sm text-zinc-500">
-              {err ? Falha ao carregar:  : "Sem registros para o período."}
+              {err ? 'Falha ao carregar:  : ${err}' *Sem registros para o período."}
             </p>
           ) : (
             <div className="overflow-x-auto">
