@@ -47,24 +47,19 @@ export default function RankingPage() {
         setLoading(true);
         setErr(null);
 
-        // 1) view preferencial (se existir)
         const { data: s1, error: e1 } = await supabase
           .from("v_player_stats")
           .select("player_id,name,goals,assists,last_event_at");
 
         let statRows: PlayerRow[] = (s1 as any) ?? [];
         if (e1) {
-          // 2) fallback: outra view (se existir)
           const { data: s2, error: e2 } = await supabase
             .from("v_goals_assists")
             .select("player_id,name,goals,assists,last_event_at");
           statRows = (s2 as any) ?? [];
-          if (e2) {
-            statRows = []; // mantém UI viva
-          }
+          if (e2) statRows = [];
         }
 
-        // votos do mês (opcional)
         let voteRows: VotesRow[] = [];
         const { data: v1, error: ve } = await supabase
           .from("v_monthly_votes_current")
