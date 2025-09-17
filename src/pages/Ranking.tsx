@@ -1,4 +1,5 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+﻿// src/pages/Ranking.tsx
+import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,9 +26,10 @@ function inRange(dateIso: string | null | undefined, range: Range) {
   const d = new Date(dateIso);
   const now = new Date();
   if (range === "week") {
-    const diff = (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24);
-    return diff <= 7;
+    const diffDays = (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24);
+    return diffDays <= 7;
   }
+  // "month"
   return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
 }
 
@@ -41,59 +43,74 @@ export default function RankingPage() {
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    let active = true;
+    let alive = true;
     (async () => {
+      setLoading(true);
+      setErr(null);
       try {
-        setLoading(true);
-        setErr(null);
-
+        // Tenta view principal
         const { data: s1, error: e1 } = await supabase
           .from("v_player_stats")
           .select("player_id,name,goals,assists,last_event_at");
 
         let statRows: PlayerRow[] = (s1 as any) ?? [];
+
+        // Se falhar, tenta uma alternativa com mesmo shape
         if (e1) {
           const { data: s2, error: e2 } = await supabase
             .from("v_goals_assists")
             .select("player_id,name,goals,assists,last_event_at");
           statRows = (s2 as any) ?? [];
-          if (e2) statRows = [];
+          if (e2) {
+            // Sem views -> não trata como erro fatal, só mostra vazio
+            statRows = [];
+          }
         }
 
+        // Votos do mês (opcional)
         let voteRows: VotesRow[] = [];
-        const { data: v1, error: ve } = await supabase
+        const { data: v1, error: vErr } = await supabase
           .from("v_monthly_votes_current")
           .select("player_id,name,votes");
-        if (!ve) voteRows = (v1 as any) ?? [];
+        if (!vErr) voteRows = (v1 as any) ?? [];
 
-        if (!active) return;
+        if (!alive) return;
         setStats(statRows);
         setVotes(voteRows);
       } catch (e: any) {
-        if (!active) return;
-        setErr(e?.message || "Erro ao carregar ranking");
+        if (!alive) return;
+        setErr(e?.message || "Erro inesperado ao carregar ranking");
       } finally {
-        if (active) setLoading(false);
+        if (alive) setLoading(false);
       }
     })();
-    return () => { active = false; };
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const filtered = useMemo(() => {
     let rows = stats.filter((r) => inRange(r.last_event_at, range));
     if (pos !== "Geral") {
-      // quando tiver posição no profile, pode filtrar aqui
+      // Quando você tiver a coluna "position" na view, dá para filtrar aqui.
       // rows = rows.filter(r => r.position === pos);
     }
     return rows
       .slice()
-      .sort((a, b) => b.goals - a.goals || b.assists - a.assists || (a.name || "").localeCompare(b.name || ""));
+      .sort(
+        (a, b) =>
+          b.goals - a.goals ||
+          b.assists - a.assists ||
+          (a.name || "").localeCompare(b.name || "")
+      );
   }, [stats, range, pos]);
 
   const topVotes = useMemo(() => {
     return votes
       .slice()
-      .sort((a, b) => b.votes - a.votes || (a.name || "").localeCompare(b.name || ""))
+      .sort(
+        (a, b) => b.votes - a.votes || (a.name || "").localeCompare(b.name || "")
+      )
       .slice(0, 10);
   }, [votes]);
 
@@ -101,9 +118,12 @@ export default function RankingPage() {
     <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 space-y-4">
       <header>
         <h1 className="text-xl font-semibold">Ranking</h1>
-        <p className="text-sm text-zinc-500">Top jogadores por gols/assistências e votos (mobile-first).</p>
+        <p className="text-sm text-zinc-500">
+          Top jogadores por gols/assistências e votos (mobile-first).
+        </p>
       </header>
 
+      {/* Filtros */}
       <Card className="rounded-2xl">
         <CardContent className="p-3 sm:p-4 flex flex-wrap items-center gap-3">
           <Tabs value={range} onValueChange={(v) => setRange(v as Range)} className="w-full sm:w-auto">
@@ -120,13 +140,16 @@ export default function RankingPage() {
             </SelectTrigger>
             <SelectContent>
               {["Geral", "Goleiro", "Zagueiro", "Meia", "Atacante"].map((p) => (
-                <SelectItem key={p} value={p}>{p}</SelectItem>
+                <SelectItem key={p} value={p}>
+                  {p}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </CardContent>
       </Card>
 
+      {/* Gols & Assistências */}
       <Card className="rounded-2xl">
         <CardContent className="p-4">
           <h3 className="text-sm font-semibold mb-2">Gols & Assistências</h3>
@@ -134,7 +157,7 @@ export default function RankingPage() {
             <p className="text-sm text-zinc-500">Carregando…</p>
           ) : filtered.length === 0 ? (
             <p className="text-sm text-zinc-500">
-              {err ? `Falha ao carregar: ${err}` *Sem registros para o período."}
+              {err ? Falha ao carregar: ${err} : "Sem registros para o período."}
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -161,17 +184,23 @@ export default function RankingPage() {
         </CardContent>
       </Card>
 
+      {/* Votos do mês */}
       <Card className="rounded-2xl">
         <CardContent className="p-4">
           <h3 className="text-sm font-semibold mb-2">Votos do mês</h3>
           {loading ? (
             <p className="text-sm text-zinc-500">Carregando…</p>
           ) : topVotes.length === 0 ? (
-            <p className="text-sm text-zinc-500">Sem dados (a view de votos mensais pode não estar criada ainda).</p>
+            <p className="text-sm text-zinc-500">
+              Sem dados (a view de votos mensais pode não estar criada ainda).
+            </p>
           ) : (
             <div className="space-y-2">
               {topVotes.map((r, i) => (
-                <div key={r.player_id} className="flex items-center justify-between rounded-xl border p-3">
+                <div
+                  key={r.player_id}
+                  className="flex items-center justify-between rounded-xl border p-3"
+                >
                   <div className="flex items-center gap-2">
                     <span className="w-6 text-right font-semibold">{i + 1}</span>
                     <span className="truncate">{r.name || r.player_id}</span>
@@ -186,4 +215,3 @@ export default function RankingPage() {
     </div>
   );
 }
-
