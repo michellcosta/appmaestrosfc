@@ -11,6 +11,7 @@ import InvitesApprovalsPage from '@/pages/Admin/InvitesApprovals';
 import HomePage from '@/pages/Home';
 import PerfilPage from '@/pages/Perfil';
 import RankingPage from '@/pages/Ranking';
+import TestAuth from '@/pages/TestAuth';
 
 export default function AppRouter() {
   return (
@@ -25,6 +26,7 @@ export default function AppRouter() {
             <Route path="/admin/invites" element={<InvitesApprovalsPage />} />
             <Route path="/ranking" element={<RankingPage />} />
             <Route path="/perfil" element={<PerfilPage />} />
+            <Route path="/test-auth" element={<TestAuth />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

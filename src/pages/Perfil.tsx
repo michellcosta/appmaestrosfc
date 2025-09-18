@@ -29,7 +29,17 @@ export default function PerfilPage() {
               <h3 className='text-lg font-semibold'>Faça login para continuar</h3>
               <p className='text-sm text-zinc-500'>Entre com sua conta Google para acessar todas as funcionalidades</p>
             </div>
-            <Button onClick={signInWithGoogle} className='w-full'>
+            <Button 
+              onClick={async () => {
+                try {
+                  await signInWithGoogle();
+                } catch (error) {
+                  console.error('Erro no login:', error);
+                  alert('Erro ao fazer login. Verifique o console para mais detalhes.');
+                }
+              }} 
+              className='w-full'
+            >
               <Mail className='w-4 h-4 mr-2' />
               Entrar com Google
             </Button>
