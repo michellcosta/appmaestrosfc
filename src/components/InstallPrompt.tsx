@@ -11,7 +11,10 @@ export default function InstallPrompt() {
     // Verificar se já mostrou o prompt antes
     const hasSeenInstallPrompt = localStorage.getItem('maestros-install-prompt-seen');
     
-    if (!hasSeenInstallPrompt) {
+    // Verificar se é mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (!hasSeenInstallPrompt && isMobile) {
       // Aguardar um pouco para carregar a página
       setTimeout(() => {
         setIsOpen(true);
@@ -77,6 +80,15 @@ export default function InstallPrompt() {
           <p className="text-center text-gray-600">
             Instale o Maestros FC no seu dispositivo para uma experiência ainda melhor!
           </p>
+          
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <p className="text-sm text-blue-800 font-medium mb-2">📱 Como instalar no celular:</p>
+            <div className="text-xs text-blue-700 space-y-1">
+              <p><strong>Chrome:</strong> Menu (3 pontos) → "Instalar aplicativo"</p>
+              <p><strong>Safari:</strong> Compartilhar → "Adicionar à Tela Inicial"</p>
+              <p><strong>Edge:</strong> Menu → "Aplicativos" → "Instalar"</p>
+            </div>
+          </div>
           
           <div className="space-y-3">
             <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
