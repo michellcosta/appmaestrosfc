@@ -13,6 +13,7 @@ import PerfilPage from '@/pages/Perfil';
 import RankingPage from '@/pages/Ranking';
 import TestAuth from '@/pages/TestAuth';
 import SimpleLogin from '@/pages/SimpleLogin';
+import CreateOwner from '@/pages/CreateOwner';
 
 export default function AppRouter() {
   return (
@@ -29,6 +30,7 @@ export default function AppRouter() {
             <Route path="/perfil" element={<PerfilPage />} />
             <Route path="/test-auth" element={<TestAuth />} />
             <Route path="/simple-login" element={<SimpleLogin />} />
+            <Route path="/create-owner" element={<CreateOwner />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
