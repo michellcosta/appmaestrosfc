@@ -1,43 +1,47 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useSessionProfile } from '@/hooks/useSessionProfile';
-import { useMenuByRole } from '@/hooks/useMenuByRole';
+import { Home, Trophy, DollarSign, BarChart3, MessageCircle, User } from 'lucide-react';
 
 export default function BottomNav() {
-  const { profile } = useSessionProfile();
-  const items = useMenuByRole(profile);
   const { pathname } = useLocation();
 
-  if (!items || items.length === 0) return null;
+  const menuItems = [
+    { href: '/', label: 'Jogos', icon: Home },
+    { href: '/match', label: 'Partida', icon: Trophy },
+    { href: '/finance', label: 'Financeiro', icon: DollarSign },
+    { href: '/ranking', label: 'Ranking', icon: BarChart3 },
+    { href: '/vote', label: 'Votar', icon: MessageCircle },
+    { href: '/perfil', label: 'Perfil', icon: User },
+  ];
 
   return (
     <nav
-      className="sm:hidden fixed inset-x-0 bottom-0 z-40"
+      className="fixed inset-x-0 bottom-0 z-40 bg-white border-t border-zinc-200"
       aria-label="Navegação inferior"
     >
-      <div className="mx-auto max-w-4xl px-4 pb-[env(safe-area-inset-bottom)]">
-        <div className="rounded-2xl border border-zinc-200 bg-white/95 dark:bg-zinc-900/85 backdrop-blur shadow-lg">
-          <ul className="grid grid-cols-4 gap-1 p-2">
-            {items.slice(0, 4).map((it) => {
-              const active = pathname === it.href;
-              return (
-                <li key={it.href}>
-                  <NavLink
-                    to={it.href}
-                    className={[
-                      "block text-center text-xs rounded-xl px-2 py-2 transition",
-                      active
-                        ? "bg-zinc-100 dark:bg-zinc-800 font-semibold"
-                        : "hover:bg-zinc-100/70 dark:hover:bg-zinc-800/70"
-                    ].join(" ")}
-                  >
-                    {it.label}
-                  </NavLink>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+      <div className="mx-auto max-w-4xl">
+        <ul className="grid grid-cols-6 gap-1 p-2">
+          {menuItems.map((item) => {
+            const active = pathname === item.href;
+            const Icon = item.icon;
+            return (
+              <li key={item.href}>
+                <NavLink
+                  to={item.href}
+                  className={[
+                    "flex flex-col items-center justify-center text-xs rounded-lg px-2 py-2 transition-colors",
+                    active
+                      ? "bg-zinc-100 text-zinc-900 font-semibold"
+                      : "text-zinc-600 hover:bg-zinc-50"
+                  ].join(" ")}
+                >
+                  <Icon className="w-4 h-4 mb-1" />
+                  <span>{item.label}</span>
+                </NavLink>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </nav>
   );
