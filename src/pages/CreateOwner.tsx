@@ -40,18 +40,35 @@ export default function CreateOwner() {
       }
 
       if (authData.user) {
-        // 2. Criar perfil na tabela users
+        // 2. Aguardar um pouco para o usuário ser criado
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // 3. Criar perfil na tabela users
         const { error: profileError } = await supabase
           .from('users')
           .insert({
             auth_id: authData.user.id,
             email: email,
             name: name,
-            role: 'owner'
+            role: 'owner',
+            aprovado: true
           });
 
         if (profileError) {
-          setResult(`❌ Erro ao criar perfil: ${profileError.message}`);
+          // Tentar criar na tabela profiles como fallback
+          const { error: profilesError } = await supabase
+            .from('profiles')
+            .insert({
+              id: authData.user.id,
+              email: email,
+              role: 'owner'
+            });
+
+          if (profilesError) {
+            setResult(`❌ Erro ao criar perfil: ${profileError.message} | Profiles: ${profilesError.message}`);
+          } else {
+            setResult('✅ Usuário Owner criado com sucesso (via profiles)!');
+          }
         } else {
           setResult('✅ Usuário Owner criado com sucesso!');
         }
