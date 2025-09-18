@@ -5,7 +5,7 @@ type AppUser = {
   id: string;
   email?: string | null;
   name?: string | null;
-  role?: 'owner'|'admin'|'aux'|mensalista'|'diarista';
+  role?: 'owner'|'admin'|'aux'|'mensalista'|'diarista';
 };
 
 type AuthCtx = {
