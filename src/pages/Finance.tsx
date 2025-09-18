@@ -2,7 +2,9 @@
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-// Se existe no seu projeto; se nÃ£o, comente esta linha e os <PaymentButton/>
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { DollarSign, CreditCard, TrendingUp, CheckCircle, Clock, XCircle } from 'lucide-react';
 import PaymentButton from '@/components/PaymentButton';
 
 type Charge = {
@@ -30,50 +32,197 @@ export default function FinancePage() {
     })();
   }, []);
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pago': return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case 'pendente': return <Clock className="w-4 h-4 text-yellow-600" />;
+      case 'cancelado': return <XCircle className="w-4 h-4 text-red-600" />;
+      default: return <Clock className="w-4 h-4" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pago': return 'bg-green-100 text-green-800';
+      case 'pendente': return 'bg-yellow-100 text-yellow-800';
+      case 'cancelado': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 space-y-4">
-      <h2 className="text-xl font-semibold">Financeiro</h2>
+      <div>
+        <h1 className="text-xl font-semibold">Financeiro</h1>
+        <p className="text-sm text-zinc-500">Controle de pagamentos e mensalidades</p>
+      </div>
 
-      <Card className="rounded-2xl">
-        <CardContent className="p-4 space-y-3">
-          <div className="text-sm font-semibold">Pagar agora</div>
-          <div className="flex flex-wrap gap-2">
-            {/* Se nÃ£o tiver PaymentButton ainda, comente estas linhas */}
-            <PaymentButton type="mensalista" amount={99.90} period="2025-09" />
-            <PaymentButton type="diarista" amount={20.00} />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Resumo Financeiro */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <DollarSign className="w-5 h-5 text-green-600" />
+              <div>
+                <p className="text-sm text-zinc-500">Total Pago</p>
+                <p className="text-lg font-semibold">R$ 1.250,00</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <CreditCard className="w-5 h-5 text-blue-600" />
+              <div>
+                <p className="text-sm text-zinc-500">Pendente</p>
+                <p className="text-lg font-semibold">R$ 180,00</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <TrendingUp className="w-5 h-5 text-purple-600" />
+              <div>
+                <p className="text-sm text-zinc-500">Este Mês</p>
+                <p className="text-lg font-semibold">R$ 320,00</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      <Card className="rounded-2xl">
-        <CardContent className="p-4 space-y-3">
-          <div className="text-sm font-semibold">Minhas cobranÃ§as</div>
-          <div className="space-y-2">
-            {loading ? (
-              <div className="text-sm text-zinc-500">Carregandoâ€¦</div>
-            ) : rows.length === 0 ? (
-              <div className="text-sm text-zinc-500">Sem cobranÃ§as.</div>
-            ) : rows.map((c) => (
-              <div key={c.id} className="flex items-center justify-between gap-2 rounded-xl border p-3">
-                <div className="min-w-0">
-                  <div className="text-sm font-medium">
-                    {c.type === 'mensalista' ? 'Mensalidade' : 'DiÃ¡ria'} {c.period ? `(${c.period})` : ''}
+      {/* Abas de Navegação */}
+      <Tabs defaultValue="payments" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="payments">Pagamentos</TabsTrigger>
+          <TabsTrigger value="monthly">Mensalidades</TabsTrigger>
+          <TabsTrigger value="daily">Diárias</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="payments" className="space-y-4">
+          <Card>
+            <CardContent className="p-4">
+              <h3 className="text-lg font-semibold mb-4">Histórico de Pagamentos</h3>
+              {loading ? (
+                <p className="text-sm text-zinc-500">Carregando...</p>
+              ) : rows.length === 0 ? (
+                <p className="text-sm text-zinc-500">Nenhum pagamento encontrado</p>
+              ) : (
+                <div className="space-y-3">
+                  {rows.map((row) => (
+                    <div key={row.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        {getStatusIcon(row.status)}
+                        <div>
+                          <p className="font-medium">
+                            {row.type === 'mensalista' ? 'Mensalidade' : 'Diária'} - {row.period || 'N/A'}
+                          </p>
+                          <p className="text-sm text-zinc-500">
+                            {new Date(row.created_at).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">R$ {row.amount.toFixed(2)}</p>
+                        <Badge className={getStatusColor(row.status)}>
+                          {row.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="monthly" className="space-y-4">
+          <Card>
+            <CardContent className="p-4">
+              <h3 className="text-lg font-semibold mb-4">Mensalidades</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <div>
+                      <p className="font-medium">Mensalidade Setembro 2024</p>
+                      <p className="text-sm text-zinc-500">Pago em 15/09/2024</p>
+                    </div>
                   </div>
-                  <div className="text-xs text-zinc-500">
-                    {new Date(c.created_at).toLocaleString()}
+                  <div className="text-right">
+                    <p className="font-semibold">R$ 50,00</p>
+                    <Badge className="bg-green-100 text-green-800">Pago</Badge>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="text-sm font-semibold">R$ {c.amount.toFixed(2)}</div>
-                  <Badge variant="secondary">{c.status}</Badge>
+                
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Clock className="w-4 h-4 text-yellow-600" />
+                    <div>
+                      <p className="font-medium">Mensalidade Outubro 2024</p>
+                      <p className="text-sm text-zinc-500">Vence em 15/10/2024</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">R$ 50,00</p>
+                    <Badge className="bg-yellow-100 text-yellow-800">Pendente</Badge>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              
+              <div className="mt-4">
+                <PaymentButton type="mensalista" amount={50} period="2024-10" />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="daily" className="space-y-4">
+          <Card>
+            <CardContent className="p-4">
+              <h3 className="text-lg font-semibold mb-4">Diárias</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <div>
+                      <p className="font-medium">Jogo - 14/09/2024</p>
+                      <p className="text-sm text-zinc-500">Pago em 14/09/2024</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">R$ 15,00</p>
+                    <Badge className="bg-green-100 text-green-800">Pago</Badge>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Clock className="w-4 h-4 text-yellow-600" />
+                    <div>
+                      <p className="font-medium">Jogo - 21/09/2024</p>
+                      <p className="text-sm text-zinc-500">Pendente</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">R$ 15,00</p>
+                    <Badge className="bg-yellow-100 text-yellow-800">Pendente</Badge>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4">
+                <PaymentButton type="diarista" amount={15} matchId="match-21-09" />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
-
-
