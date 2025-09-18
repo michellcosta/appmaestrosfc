@@ -36,6 +36,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
       .eq('auth_id', uid)
       .limit(1)
       .maybeSingle();
+    
     if (!error && data) {
       setUser({
         id: data.id,
@@ -44,8 +45,49 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
         role: (data as any).role,
       });
     } else {
-      // perfil ainda não criado; exponha só o auth user id
-      setUser({ id: uid, email: null, name: null, role: undefined });
+      // Se não existe perfil, vamos criar um automaticamente
+      const { data: session } = await supabase.auth.getSession();
+      if (session?.user) {
+        // Verifica se é o primeiro usuário (owner)
+        const { data: existingUsers } = await supabase
+          .from('users')
+          .select('id')
+          .limit(1);
+        
+        const isFirstUser = !existingUsers || existingUsers.length === 0;
+        const role = isFirstUser ? 'owner' : 'mensalista';
+        
+        // Cria o perfil do usuário
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
+          .insert({
+            auth_id: uid,
+            email: session.user.email,
+            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
+            role: role
+          })
+          .select()
+          .single();
+        
+        if (!createError && newUser) {
+          setUser({
+            id: newUser.id,
+            email: newUser.email,
+            name: newUser.name,
+            role: newUser.role,
+          });
+        } else {
+          // Fallback se não conseguir criar
+          setUser({ 
+            id: uid, 
+            email: session.user.email, 
+            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0], 
+            role: isFirstUser ? 'owner' : 'mensalista' 
+          });
+        }
+      } else {
+        setUser({ id: uid, email: null, name: null, role: undefined });
+      }
     }
   };
 

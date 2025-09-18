@@ -57,9 +57,22 @@ export default function PerfilPage() {
               <h2 className='text-lg font-semibold'>{user.name || 'Usuário'}</h2>
               <p className='text-sm text-zinc-500'>{user.email || 'E-mail não disponível'}</p>
               {user.role && (
-                <Badge variant="secondary" className='mt-2'>
+                <Badge 
+                  variant="secondary" 
+                  className={`mt-2 ${
+                    user.role === 'owner' 
+                      ? 'bg-purple-100 text-purple-800 border-purple-200' 
+                      : user.role === 'admin'
+                      ? 'bg-blue-100 text-blue-800 border-blue-200'
+                      : 'bg-green-100 text-green-800 border-green-200'
+                  }`}
+                >
                   <Shield className='w-3 h-3 mr-1' />
-                  {user.role}
+                  {user.role === 'owner' ? '👑 Dono' : 
+                   user.role === 'admin' ? '🛡️ Admin' : 
+                   user.role === 'mensalista' ? '⭐ Mensalista' : 
+                   user.role === 'diarista' ? '💫 Diarista' : 
+                   user.role}
                 </Badge>
               )}
             </div>
@@ -160,6 +173,32 @@ export default function PerfilPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Funcionalidades especiais para Owner */}
+          {user.role === 'owner' && (
+            <Card>
+              <CardContent className='p-6'>
+                <h3 className='text-lg font-semibold mb-4 flex items-center'>
+                  <Shield className='w-5 h-5 mr-2 text-purple-600' />
+                  Funcionalidades de Dono
+                </h3>
+                <div className='space-y-3'>
+                  <div className='p-3 bg-purple-50 rounded-lg'>
+                    <p className='font-medium text-purple-900'>👑 Acesso Total</p>
+                    <p className='text-sm text-purple-700'>Você tem acesso completo a todas as funcionalidades do sistema</p>
+                  </div>
+                  <div className='p-3 bg-blue-50 rounded-lg'>
+                    <p className='font-medium text-blue-900'>🛡️ Gerenciamento</p>
+                    <p className='text-sm text-blue-700'>Pode gerenciar usuários, convites e configurações</p>
+                  </div>
+                  <div className='p-3 bg-green-50 rounded-lg'>
+                    <p className='font-medium text-green-900'>📊 Relatórios</p>
+                    <p className='text-sm text-green-700'>Acesso a relatórios e estatísticas completas</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
 
