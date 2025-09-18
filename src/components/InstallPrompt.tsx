@@ -5,7 +5,6 @@ import { X, Download, Smartphone, Monitor } from 'lucide-react';
 
 export default function InstallPrompt() {
   const [isOpen, setIsOpen] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
     // Verificar se já mostrou o prompt antes
@@ -20,32 +19,9 @@ export default function InstallPrompt() {
         setIsOpen(true);
       }, 3000);
     }
-
-    // Escutar o evento beforeinstallprompt
-    const handleBeforeInstallPrompt = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
   }, []);
 
-  const handleInstall = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      
-      if (outcome === 'accepted') {
-        console.log('App instalado com sucesso!');
-      }
-      
-      setDeferredPrompt(null);
-    }
-    
+  const handleInstall = () => {
     setIsOpen(false);
     localStorage.setItem('maestros-install-prompt-seen', 'true');
   };

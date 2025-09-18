@@ -16,7 +16,6 @@ import SimpleLogin from '@/pages/SimpleLogin';
 import CreateOwner from '@/pages/CreateOwner';
 import CheckTables from '@/pages/CheckTables';
 import InstallPrompt from '@/components/InstallPrompt';
-import WelcomePopup from '@/components/WelcomePopup';
 
 export default function AppRouter() {
   return (
