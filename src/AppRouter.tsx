@@ -15,7 +15,6 @@ import TestAuth from '@/pages/TestAuth';
 import SimpleLogin from '@/pages/SimpleLogin';
 import CreateOwner from '@/pages/CreateOwner';
 import CheckTables from '@/pages/CheckTables';
-import InstallPrompt from '@/components/InstallPrompt';
 
 export default function AppRouter() {
   return (
@@ -40,9 +39,6 @@ export default function AppRouter() {
 
         {/* Bottom nav só no mobile */}
         <BottomNav />
-        
-        {/* Pop-up para instalar o app */}
-        <InstallPrompt />
       </div>
     </AuthProvider>
   );
