@@ -1,5 +1,5 @@
-﻿import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export type Profile = {
   id: string;

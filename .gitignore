@@ -39,3 +39,7 @@ dist/
 
 .vercel
 .bak.
+
+.venv
+
+.env*.local

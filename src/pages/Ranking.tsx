@@ -1,6 +1,6 @@
-﻿// src/pages/Ranking.tsx
+// src/pages/Ranking.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -157,7 +157,7 @@ export default function RankingPage() {
             <p className="text-sm text-zinc-500">Carregando…</p>
           ) : filtered.length === 0 ? (
             <p className="text-sm text-zinc-500">
-              {err ? Falha ao carregar: ${err} : "Sem registros para o período."}
+              {err ? "Falha ao carregar: " + err : "Sem registros para o período."}
             </p>
           ) : (
             <div className="overflow-x-auto">

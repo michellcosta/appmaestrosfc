@@ -88,7 +88,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     if (session?.user?.id) await fetchProfile(session.user.id);
   };
 
-  const value = useMemo(()=>({ user, loading, signInWithGoogle, signOut, refreshProfile }),[user,loading]);
+  const value = useMemo(() => ({ user, loading, signInWithGoogle, signOut, refreshProfile }), [user, loading]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 };

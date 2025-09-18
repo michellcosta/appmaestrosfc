@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Pencil, Trash2, Trophy } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";

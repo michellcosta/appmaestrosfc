@@ -1,4 +1,4 @@
-﻿import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // BRCode Pix fake para desenvolvimento (substituir por criação real no PSP depois)
 const FAKE_BRCODE = '00020126580014BR.GOV.BCB.PIX0136chave-pix-exemplo-aleatoria-123456789520400005303986540610.005802BR5920APP MAESTROS FC6009SAO PAULO62070503***6304ABCD';

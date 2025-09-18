@@ -1,4 +1,4 @@
-﻿import { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Profile } from './useSessionProfile';
 
 type MenuItem = { label: string; href: string; };

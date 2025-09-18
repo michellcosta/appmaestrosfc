@@ -1,5 +1,6 @@
-﻿import React from 'react';
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from '@/auth/AuthProvider';
 import BottomNav from '@/components/layout/BottomNav';
 
 // Páginas
@@ -13,22 +14,24 @@ import RankingPage from '@/pages/Ranking';
 
 export default function AppRouter() {
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground">
-      <div className="mx-auto w-full max-w-4xl">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/match" element={<Match />} />
-          <Route path="/finance" element={<FinancePage />} />
-          <Route path="/vote" element={<VotePage />} />
-          <Route path="/admin/invites" element={<InvitesApprovalsPage />} />
-          <Route path="/ranking" element={<RankingPage />} />
-          <Route path="/perfil" element={<PerfilPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
+    <AuthProvider>
+      <div className="min-h-[100dvh] bg-background text-foreground">
+        <div className="mx-auto w-full max-w-4xl">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/match" element={<Match />} />
+            <Route path="/finance" element={<FinancePage />} />
+            <Route path="/vote" element={<VotePage />} />
+            <Route path="/admin/invites" element={<InvitesApprovalsPage />} />
+            <Route path="/ranking" element={<RankingPage />} />
+            <Route path="/perfil" element={<PerfilPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
 
-      {/* Bottom nav só no mobile */}
-      <BottomNav />
-    </div>
+        {/* Bottom nav só no mobile */}
+        <BottomNav />
+      </div>
+    </AuthProvider>
   );
 }

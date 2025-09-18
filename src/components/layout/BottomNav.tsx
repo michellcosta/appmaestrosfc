@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useSessionProfile } from '@/hooks/useSessionProfile';
 import { useMenuByRole } from '@/hooks/useMenuByRole';
