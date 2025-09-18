@@ -1,8 +1,8 @@
 ﻿import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-// Se existe no seu projeto; se não, comente esta linha e os <PaymentButton/>
+// Se existe no seu projeto; se nÃ£o, comente esta linha e os <PaymentButton/>
 import PaymentButton from '@/components/PaymentButton';
 
 type Charge = {
@@ -38,7 +38,7 @@ export default function FinancePage() {
         <CardContent className="p-4 space-y-3">
           <div className="text-sm font-semibold">Pagar agora</div>
           <div className="flex flex-wrap gap-2">
-            {/* Se não tiver PaymentButton ainda, comente estas linhas */}
+            {/* Se nÃ£o tiver PaymentButton ainda, comente estas linhas */}
             <PaymentButton type="mensalista" amount={99.90} period="2025-09" />
             <PaymentButton type="diarista" amount={20.00} />
           </div>
@@ -47,17 +47,17 @@ export default function FinancePage() {
 
       <Card className="rounded-2xl">
         <CardContent className="p-4 space-y-3">
-          <div className="text-sm font-semibold">Minhas cobranças</div>
+          <div className="text-sm font-semibold">Minhas cobranÃ§as</div>
           <div className="space-y-2">
             {loading ? (
-              <div className="text-sm text-zinc-500">Carregando…</div>
+              <div className="text-sm text-zinc-500">Carregandoâ€¦</div>
             ) : rows.length === 0 ? (
-              <div className="text-sm text-zinc-500">Sem cobranças.</div>
+              <div className="text-sm text-zinc-500">Sem cobranÃ§as.</div>
             ) : rows.map((c) => (
               <div key={c.id} className="flex items-center justify-between gap-2 rounded-xl border p-3">
                 <div className="min-w-0">
                   <div className="text-sm font-medium">
-                    {c.type === 'mensalista' ? 'Mensalidade' : 'Diária'} {c.period ? (${c.period}) : ''}
+                    {c.type === 'mensalista' ? 'Mensalidade' : 'DiÃ¡ria'} {c.period ? `(${c.period})` : ''}
                   </div>
                   <div className="text-xs text-zinc-500">
                     {new Date(c.created_at).toLocaleString()}
@@ -75,4 +75,5 @@ export default function FinancePage() {
     </div>
   );
 }
+
 
