@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '@/auth/AuthProvider';
+import { useAuth } from '@/auth/SimpleAuthProvider';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/auth/AuthProvider';
+import { useAuth } from '@/auth/SimpleAuthProvider';
 
 export default function SimpleLogin() {
   const [email, setEmail] = useState('');
