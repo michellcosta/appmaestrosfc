@@ -14,6 +14,7 @@ import RankingPage from '@/pages/Ranking';
 import TestAuth from '@/pages/TestAuth';
 import SimpleLogin from '@/pages/SimpleLogin';
 import CreateOwner from '@/pages/CreateOwner';
+import CheckTables from '@/pages/CheckTables';
 
 export default function AppRouter() {
   return (
@@ -31,6 +32,7 @@ export default function AppRouter() {
             <Route path="/test-auth" element={<TestAuth />} />
             <Route path="/simple-login" element={<SimpleLogin />} />
             <Route path="/create-owner" element={<CreateOwner />} />
+            <Route path="/check-tables" element={<CheckTables />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
