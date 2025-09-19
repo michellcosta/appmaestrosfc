@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/OfflineAuthProvider';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { LogOut, User, Mail, Shield, Trophy, Target, Calendar, Star } from 'luci
 
 export default function PerfilPage() {
   const { user, loading, signOut, signInWithGoogle } = useAuth();
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -46,7 +48,7 @@ export default function PerfilPage() {
               </Button>
               
               <Button 
-                onClick={() => window.location.href = '/offline-auth'} 
+                onClick={() => navigate('/offline-auth')} 
                 variant="outline"
                 className='w-full'
               >
@@ -229,7 +231,7 @@ export default function PerfilPage() {
             try {
               await signOut();
               alert('Logout realizado com sucesso!');
-              window.location.href = '/';
+              navigate('/');
             } catch (error) {
               console.error('Erro ao fazer logout:', error);
               alert('Erro ao fazer logout');

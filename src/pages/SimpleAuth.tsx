@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/lib/supabase';
 
 export default function SimpleAuth() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -47,7 +49,7 @@ export default function SimpleAuth() {
         setMessage(`Erro: ${error.message}`);
       } else {
         setMessage('Login realizado com sucesso!');
-        window.location.href = '/';
+        navigate('/');
       }
     } catch (error) {
       setMessage(`Erro: ${error}`);

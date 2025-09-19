@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,7 @@ type Invite = {
 
 export default function AcceptInvite() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const token = searchParams.get('token');
   
   const [loading, setLoading] = useState(false);
@@ -127,7 +128,7 @@ export default function AcceptInvite() {
       
       // Redirecionar após 3 segundos
       setTimeout(() => {
-        window.location.href = '/';
+        navigate('/');
       }, 3000);
 
     } catch (error) {

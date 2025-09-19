@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/OfflineAuthProvider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { User, Mail, Shield, CheckCircle } from 'lucide-react';
 
 export default function OfflineAuth() {
   const { user, signInOffline, signOut } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,7 @@ export default function OfflineAuth() {
         
         // Redirecionar após 2 segundos
         setTimeout(() => {
-          window.location.href = '/';
+          navigate('/');
         }, 2000);
       } else {
         setMessage('Preencha email e senha!');
@@ -60,7 +62,7 @@ export default function OfflineAuth() {
       
       // Redirecionar após 2 segundos
       setTimeout(() => {
-        window.location.href = '/';
+        navigate('/');
       }, 2000);
     } catch (error) {
       setMessage(`Erro: ${error}`);
@@ -115,7 +117,7 @@ export default function OfflineAuth() {
             </div>
             
             <div className='flex gap-2'>
-              <Button onClick={() => window.location.href = '/'} className='flex-1'>
+              <Button onClick={() => navigate('/')} className='flex-1'>
                 Ir para Dashboard
               </Button>
               <Button onClick={handleLogout} variant="outline">

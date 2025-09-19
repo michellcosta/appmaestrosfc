@@ -78,6 +78,7 @@ export default function AppRouter() {
             <Route path="/debug-auth" element={<DebugAuth />} />
             <Route path="/simple-auth" element={<SimpleAuth />} />
             <Route path="/offline-auth" element={<OfflineAuth />} />
+            <Route path="/test-auth" element={<TestAuth />} />
             <Route path="/test-google-auth" element={<TestGoogleAuth />} />
             <Route path="/test-google-oauth" element={<TestGoogleOAuth />} />
             <Route path="/create-invite" element={<CreateInvite />} />
