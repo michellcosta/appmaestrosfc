@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '@/auth/SimpleAuthProvider';
+import { useAuth } from '@/auth/OfflineAuthProvider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
