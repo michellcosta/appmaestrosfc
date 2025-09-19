@@ -11,8 +11,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!type || !amount) return res.status(400).json({ error: 'type e amount são obrigatórios' });
 
     // Em produção: chamar PSP, criar cobrança dinâmica, receber txid + brcode
-    const txid = \txid_\\;
-    const chargeId = \charge_\\;
+    const txid = 'txid_' + Math.random().toString(36).substr(2, 9);
+    const chargeId = 'charge_' + Math.random().toString(36).substr(2, 9);
 
     // Salve no banco (Supabase) a cobrança com status 'pendente' aqui (abstraído)
     return res.status(200).json({

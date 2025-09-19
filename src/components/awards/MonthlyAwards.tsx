@@ -18,7 +18,7 @@ const CATEGORY_ORDER: AwardRow["category"][] = ["Goleiro", "Zagueiro", "Meia", "
 function toMonthKey(d: Date) {
   const y = d.getUTCFullYear();
   const m = String(d.getUTCMonth() + 1).padStart(2, "0");
-  return --01;
+  return `${y}-${m}-01`;
 }
 
 function monthLabel(monthKey: string) {

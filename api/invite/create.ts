@@ -15,8 +15,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Em produção: gravar no Supabase (invites) com uso único, expiração, e email do convidado.
     const token = randomToken(40);
-    const base = process.env.VERCEL_URL ? \https://\\ : 'http://localhost:5173';
-    const url = \\/invite/\\;
+    const base = process.env.VERCEL_URL ? 'https://' : 'http://localhost:5173';
+    const url = '/invite/';
 
     return res.status(200).json({ url, token });
   } catch (e: any) {
