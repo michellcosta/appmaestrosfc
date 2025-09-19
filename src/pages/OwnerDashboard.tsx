@@ -25,11 +25,12 @@ import {
   UserX,
   CreditCard,
   FileText,
-  Bell
+  Bell,
+  LogOut
 } from 'lucide-react';
 
 export default function OwnerDashboard() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
 
   // Dados mockados - depois integrar com Supabase
@@ -98,10 +99,29 @@ export default function OwnerDashboard() {
           </h1>
           <p className='text-sm text-zinc-500'>Painel administrativo completo</p>
         </div>
-        <Badge variant="secondary" className='bg-purple-100 text-purple-800'>
-          <Crown className='w-3 h-3 mr-1' />
-          Owner
-        </Badge>
+        <div className='flex items-center gap-3'>
+          <Badge variant="secondary" className='bg-purple-100 text-purple-800'>
+            <Crown className='w-3 h-3 mr-1' />
+            Owner
+          </Badge>
+          <Button 
+            variant="destructive" 
+            size="sm"
+            onClick={async () => {
+              try {
+                await signOut();
+                alert('Logout realizado com sucesso!');
+                window.location.href = '/';
+              } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+                alert('Erro ao fazer logout');
+              }
+            }}
+          >
+            <LogOut className='w-4 h-4 mr-2' />
+            Sair
+          </Button>
+        </div>
       </div>
 
       {/* Cards de Resumo */}
