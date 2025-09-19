@@ -37,6 +37,38 @@ export default function OfflineAuth() {
     }
   };
 
+  const handleTestLogin = async (role: 'owner'|'admin'|'aux'|'mensalista'|'diarista') => {
+    setLoading(true);
+    setMessage('');
+    
+    try {
+      const testEmail = `teste-${role}@exemplo.com`;
+      const testPassword = '123456';
+      
+      // Criar usuário de teste com role específico
+      const testUser = {
+        id: `test-${role}-${Date.now()}`,
+        email: testEmail,
+        name: `Teste ${role.charAt(0).toUpperCase() + role.slice(1)}`,
+        role: role
+      };
+      
+      // Salvar no localStorage
+      localStorage.setItem('offline_user', JSON.stringify(testUser));
+      
+      setMessage(`Login de teste como ${role} realizado com sucesso!`);
+      
+      // Redirecionar após 2 segundos
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 2000);
+    } catch (error) {
+      setMessage(`Erro: ${error}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await signOut();
@@ -141,6 +173,57 @@ export default function OfflineAuth() {
           >
             {loading ? 'Entrando...' : 'Entrar Offline'}
           </Button>
+
+          <div className='pt-4 border-t'>
+            <h3 className='text-sm font-semibold text-zinc-700 mb-3'>Logins de Teste:</h3>
+            <div className='grid grid-cols-2 gap-2'>
+              <Button 
+                onClick={() => handleTestLogin('owner')} 
+                disabled={loading}
+                variant="outline"
+                size="sm"
+                className='text-xs'
+              >
+                👑 Owner
+              </Button>
+              <Button 
+                onClick={() => handleTestLogin('admin')} 
+                disabled={loading}
+                variant="outline"
+                size="sm"
+                className='text-xs'
+              >
+                🛡️ Admin
+              </Button>
+              <Button 
+                onClick={() => handleTestLogin('aux')} 
+                disabled={loading}
+                variant="outline"
+                size="sm"
+                className='text-xs'
+              >
+                ⚡ Auxiliar
+              </Button>
+              <Button 
+                onClick={() => handleTestLogin('mensalista')} 
+                disabled={loading}
+                variant="outline"
+                size="sm"
+                className='text-xs'
+              >
+                ⭐ Mensalista
+              </Button>
+              <Button 
+                onClick={() => handleTestLogin('diarista')} 
+                disabled={loading}
+                variant="outline"
+                size="sm"
+                className='text-xs'
+              >
+                💫 Diarista
+              </Button>
+            </div>
+          </div>
           
           {message && (
             <div className='p-3 bg-green-50 border border-green-200 rounded-lg'>
