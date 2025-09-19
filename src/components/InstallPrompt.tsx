@@ -49,8 +49,12 @@ export default function InstallPrompt() {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setShowInstallPrompt(true);
-      setInstallSource('browser');
+      // Só mostrar se não foi dispensado recentemente
+      const dismissed = localStorage.getItem('installPromptDismissed');
+      if (!dismissed) {
+        setShowInstallPrompt(true);
+        setInstallSource('browser');
+      }
     };
 
     // Listener para quando o app é instalado
@@ -72,13 +76,19 @@ export default function InstallPrompt() {
     window.addEventListener('appinstalled', handleAppInstalled);
     window.matchMedia('(display-mode: standalone)').addEventListener('change', handleDisplayModeChange);
 
-    // Mostrar prompt manual após 5 segundos se não houver prompt automático
+    // Mostrar prompt manual após 10 segundos se não houver prompt automático
+    // e se não foi dispensado recentemente
     const timer = setTimeout(() => {
-      if (!deferredPrompt && !isInstalled) {
+      const dismissed = localStorage.getItem('installPromptDismissed');
+      const dismissedTime = dismissed ? parseInt(dismissed) : 0;
+      const now = Date.now();
+      const hoursSinceDismissed = dismissedTime ? (now - dismissedTime) / (1000 * 60 * 60) : 24;
+      
+      if (!deferredPrompt && !isInstalled && hoursSinceDismissed >= 24) {
         setShowInstallPrompt(true);
         setInstallSource('manual');
       }
-    }, 5000);
+    }, 10000);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -199,9 +209,10 @@ export default function InstallPrompt() {
                 📱 Para iPhone/iPad:
               </h4>
               <ol className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                <li>1. Toque no botão de compartilhar</li>
-                <li>2. Selecione "Adicionar à Tela Inicial"</li>
-                <li>3. Toque em "Adicionar"</li>
+                <li>1. Toque no botão de compartilhar (📤) na barra inferior</li>
+                <li>2. Role para baixo e toque em "Adicionar à Tela Inicial"</li>
+                <li>3. Toque em "Adicionar" no canto superior direito</li>
+                <li>4. O app aparecerá na sua tela inicial!</li>
               </ol>
             </div>
           )}
@@ -213,9 +224,10 @@ export default function InstallPrompt() {
                 🤖 Para Android:
               </h4>
               <ol className="text-xs text-green-700 dark:text-green-300 space-y-1">
-                <li>1. Toque no menu (3 pontos)</li>
-                <li>2. Selecione "Instalar app"</li>
+                <li>1. Toque no menu (⋮) no canto superior direito</li>
+                <li>2. Selecione "Instalar app" ou "Adicionar à tela inicial"</li>
                 <li>3. Confirme a instalação</li>
+                <li>4. O app aparecerá na sua tela inicial!</li>
               </ol>
             </div>
           )}
