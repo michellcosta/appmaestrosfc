@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/OfflineAuthProvider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +30,7 @@ type DrawerProps = {
 
 export default function MobileDrawer({ isOpen, onClose }: DrawerProps) {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const { 
     canSeeRanking, 
     canSeeVote, 
@@ -41,7 +43,7 @@ export default function MobileDrawer({ isOpen, onClose }: DrawerProps) {
     try {
       await signOut();
       alert('Logout realizado com sucesso!');
-      window.location.href = '/';
+      navigate('/');
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
       alert('Erro ao fazer logout');
@@ -156,7 +158,7 @@ export default function MobileDrawer({ isOpen, onClose }: DrawerProps) {
                     variant="ghost"
                     className="w-full justify-start h-12 mb-1 hover:bg-gray-100"
                     onClick={() => {
-                      window.location.href = item.path;
+                      navigate(item.path);
                       onClose();
                     }}
                   >
@@ -181,7 +183,7 @@ export default function MobileDrawer({ isOpen, onClose }: DrawerProps) {
                   variant="ghost"
                   className="w-full justify-start h-12 hover:bg-gray-100 dark:hover:bg-gray-700"
                   onClick={() => {
-                    window.location.href = '/perfil';
+                    navigate('/perfil');
                     onClose();
                   }}
                 >

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/OfflineAuthProvider';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import {
 
 export default function RestrictedAccess() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const getRoleIcon = (role?: string) => {
     switch (role) {
@@ -117,7 +119,7 @@ export default function RestrictedAccess() {
                   key={page.path}
                   variant="outline"
                   className='w-full justify-start h-12'
-                  onClick={() => window.location.href = page.path}
+                  onClick={() => navigate(page.path)}
                 >
                   <page.icon className='w-4 h-4 mr-3' />
                   <span className='font-medium'>{page.label}</span>
@@ -129,7 +131,7 @@ export default function RestrictedAccess() {
           <div className='pt-4'>
             <Button
               className='w-full'
-              onClick={() => window.location.href = '/'}
+              onClick={() => navigate('/')}
             >
               <Home className='w-4 h-4 mr-2' />
               Voltar ao Início

@@ -39,6 +39,10 @@ jobs:
           cp -r dist/* . 2>/dev/null || true
           # Copy hidden files if they exist
           cp -r dist/.* . 2>/dev/null || true
+          # Ensure _redirects file is present for SPA routing
+          if [ ! -f _redirects ]; then
+            echo "/* /index.html 200" > _redirects
+          fi
           # Ensure all files are copied
           ls -la
         
