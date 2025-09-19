@@ -49,7 +49,7 @@ export default function ConfigureAccess() {
       ...prev,
       [role]: {
         ...prev[role as keyof typeof prev],
-        [permission]: !prev[role as keyof typeof prev][permission as keyof typeof prev[role as keyof typeof prev]]
+        [permission]: !(prev[role as keyof typeof prev] as any)[permission]
       }
     }));
   };
