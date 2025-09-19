@@ -1,4 +1,4 @@
-const CACHE_NAME = 'maestros-fc-v1.2.0';
+const CACHE_NAME = 'maestros-fc-v1.3.0';
 const urlsToCache = [
   '/appmaestrosfc/',
   '/appmaestrosfc/index.html',
@@ -132,8 +132,8 @@ self.addEventListener('push', (event) => {
   
   const options = {
     body: event.data ? event.data.text() : 'Nova notificação do App Maestros FC',
-    icon: '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
+    icon: '/appmaestrosfc/icons/icon-192.png',
+    badge: '/appmaestrosfc/icons/icon-192.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
@@ -143,12 +143,12 @@ self.addEventListener('push', (event) => {
       {
         action: 'explore',
         title: 'Ver Detalhes',
-        icon: '/icons/icon-192.png'
+        icon: '/appmaestrosfc/icons/icon-192.png'
       },
       {
         action: 'close',
         title: 'Fechar',
-        icon: '/icons/icon-192.png'
+        icon: '/appmaestrosfc/icons/icon-192.png'
       }
     ]
   };
