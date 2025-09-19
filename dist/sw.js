@@ -1,11 +1,8 @@
-const CACHE_NAME = 'maestros-fc-v1.0.0';
+const CACHE_NAME = 'maestros-fc-v1.3.0';
 const urlsToCache = [
-  '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  '/appmaestrosfc/',
+  '/appmaestrosfc/index.html',
+  '/appmaestrosfc/manifest.json'
 ];
 
 // Install event - cache resources
@@ -15,7 +12,17 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('📦 Service Worker: Caching app shell');
-        return cache.addAll(urlsToCache);
+        // Cache each URL individually to handle failures gracefully
+        const cachePromises = urlsToCache.map(url => 
+          cache.add(url).catch(error => {
+            console.warn(`⚠️ Service Worker: Failed to cache ${url}`, error);
+            return null; // Continue with other URLs
+          })
+        );
+        
+        return Promise.allSettled(cachePromises).then(() => {
+          console.log('✅ Service Worker: Cache setup completed');
+        });
       })
       .then(() => {
         console.log('✅ Service Worker: Installation complete');
@@ -56,6 +63,15 @@ self.addEventListener('fetch', (event) => {
 
   // Skip chrome-extension and other non-http requests
   if (!event.request.url.startsWith('http')) {
+    return;
+  }
+
+  // Skip DevTools and source map requests
+  if (event.request.url.includes('chrome-extension:') || 
+      event.request.url.includes('sourcemap') ||
+      event.request.url.includes('devtools') ||
+      event.request.url.match(/:1$/) ||
+      event.request.url.includes('/src/')) {
     return;
   }
 
@@ -116,8 +132,8 @@ self.addEventListener('push', (event) => {
   
   const options = {
     body: event.data ? event.data.text() : 'Nova notificação do App Maestros FC',
-    icon: '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
+    icon: '/appmaestrosfc/icons/icon-192.png',
+    badge: '/appmaestrosfc/icons/icon-192.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
@@ -127,12 +143,12 @@ self.addEventListener('push', (event) => {
       {
         action: 'explore',
         title: 'Ver Detalhes',
-        icon: '/icons/icon-192.png'
+        icon: '/appmaestrosfc/icons/icon-192.png'
       },
       {
         action: 'close',
         title: 'Fechar',
-        icon: '/icons/icon-192.png'
+        icon: '/appmaestrosfc/icons/icon-192.png'
       }
     ]
   };
