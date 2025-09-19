@@ -8,7 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
+# dist
 dist-ssr
 *.local
 
@@ -21,7 +21,7 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+# *.sw?
 
 # Aux/temporários
 src/pages/Match.tsx.bak
@@ -35,7 +35,7 @@ fix_*.sh
 update_match_page_v*.sh
 .vscode/
 node_modules/
-dist/
+# dist/
 
 .vercel
 .bak.
