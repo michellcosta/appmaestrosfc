@@ -1,13 +1,56 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, MapPin, Users, CheckCircle, Navigation } from 'lucide-react';
+import { LoadingCard, LoadingStats } from '@/components/ui/loading-card';
+import { EmptyGames } from '@/components/ui/empty-state';
+import { useToastHelpers } from '@/components/ui/toast';
 
 export default function HomePage() {
+  const [loading, setLoading] = useState(true);
+  const [games, setGames] = useState([]);
+  const { success, error } = useToastHelpers();
+
+  useEffect(() => {
+    // Simular carregamento
+    const timer = setTimeout(() => {
+      setLoading(false);
+      // Simular dados vazios para mostrar empty state
+      setGames([]);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className='p-4 sm:p-6 space-y-4 pb-20'>
+        <div className="animate-fade-in-up">
+          <h1 className='text-xl font-semibold'>Jogos</h1>
+          <p className='text-sm text-zinc-500'>Próximos jogos do grupo</p>
+        </div>
+        <LoadingStats />
+        <LoadingCard />
+      </div>
+    );
+  }
+
+  if (games.length === 0) {
+    return (
+      <div className='p-4 sm:p-6 space-y-4 pb-20'>
+        <div className="animate-fade-in-up">
+          <h1 className='text-xl font-semibold'>Jogos</h1>
+          <p className='text-sm text-zinc-500'>Próximos jogos do grupo</p>
+        </div>
+        <EmptyGames />
+      </div>
+    );
+  }
+
   return (
     <div className='p-4 sm:p-6 space-y-4 pb-20'>
-      <div>
+      <div className="animate-fade-in-up">
         <h1 className='text-xl font-semibold'>Jogos</h1>
         <p className='text-sm text-zinc-500'>Próximos jogos do grupo</p>
       </div>

@@ -101,10 +101,10 @@ export default function MobileDrawer({ isOpen, onClose }: DrawerProps) {
       />
       
       {/* Drawer */}
-      <div className="fixed left-0 top-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out">
+      <div className="fixed left-0 top-0 h-full w-80 bg-white dark:bg-gray-900 shadow-xl z-50 transform transition-transform duration-300 ease-in-out animate-slide-in-left">
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-4 border-b bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+          <div className="p-4 border-b bg-gradient-primary text-white">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold">App Maestros FC</h2>
