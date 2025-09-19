@@ -29,20 +29,31 @@ export default function PerfilPage() {
               <h3 className='text-lg font-semibold'>Faça login para continuar</h3>
               <p className='text-sm text-zinc-500'>Entre com sua conta Google para acessar todas as funcionalidades</p>
             </div>
-            <Button 
-              onClick={async () => {
-                try {
-                  await signInWithGoogle();
-                } catch (error) {
-                  console.error('Erro no login:', error);
-                  alert('Erro ao fazer login. Verifique se o Google OAuth está configurado.');
-                }
-              }} 
-              className='w-full'
-            >
-              <Mail className='w-4 h-4 mr-2' />
-              Entrar com Google
-            </Button>
+            <div className='space-y-2'>
+              <Button 
+                onClick={async () => {
+                  try {
+                    await signInWithGoogle();
+                  } catch (error) {
+                    console.error('Erro no login:', error);
+                    alert('Erro ao fazer login. Verifique se o Google OAuth está configurado.');
+                  }
+                }} 
+                className='w-full'
+              >
+                <Mail className='w-4 h-4 mr-2' />
+                Entrar com Google
+              </Button>
+              
+              <Button 
+                onClick={() => window.location.href = '/offline-auth'} 
+                variant="outline"
+                className='w-full'
+              >
+                <User className='w-4 h-4 mr-2' />
+                Login de Teste (Owner)
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
