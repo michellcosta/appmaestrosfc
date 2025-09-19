@@ -17,6 +17,7 @@ import SimpleLogin from '@/pages/SimpleLogin';
 import CreateOwner from '@/pages/CreateOwner';
 import CheckTables from '@/pages/CheckTables';
 import DebugAuth from '@/pages/DebugAuth';
+import SimpleAuth from '@/pages/SimpleAuth';
 
 export default function AppRouter() {
   return (
@@ -37,6 +38,7 @@ export default function AppRouter() {
             <Route path="/create-owner" element={<CreateOwner />} />
             <Route path="/check-tables" element={<CheckTables />} />
             <Route path="/debug-auth" element={<DebugAuth />} />
+            <Route path="/simple-auth" element={<SimpleAuth />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
