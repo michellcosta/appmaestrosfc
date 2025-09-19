@@ -59,6 +59,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip DevTools and source map requests
+  if (event.request.url.includes('chrome-extension:') || 
+      event.request.url.includes('sourcemap') ||
+      event.request.url.includes('devtools') ||
+      event.request.url.match(/:1$/)) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {

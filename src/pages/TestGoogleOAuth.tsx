@@ -135,8 +135,8 @@ export default function TestGoogleOAuth() {
               <span className='text-sm text-blue-800'>Links úteis:</span>
             </div>
             <div className='text-xs text-blue-700 mt-2 space-y-1'>
-              <div>• Google Cloud Console: <a href="https://console.cloud.google.com/" target="_blank" className="underline">console.cloud.google.com</a></div>
-              <div>• Supabase Dashboard: <a href="https://supabase.com/dashboard" target="_blank" className="underline">supabase.com/dashboard</a></div>
+              <div>• Google Cloud Console: <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="underline" title="Abrir Google Cloud Console em nova aba">console.cloud.google.com</a></div>
+              <div>• Supabase Dashboard: <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="underline" title="Abrir Supabase Dashboard em nova aba">supabase.com/dashboard</a></div>
             </div>
           </div>
         </CardContent>
