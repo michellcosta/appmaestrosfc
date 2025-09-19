@@ -20,6 +20,7 @@ import DebugAuth from '@/pages/DebugAuth';
 import SimpleAuth from '@/pages/SimpleAuth';
 import OfflineAuth from '@/pages/OfflineAuth';
 import TestGoogleAuth from '@/pages/TestGoogleAuth';
+import TestGoogleOAuth from '@/pages/TestGoogleOAuth';
 
 export default function AppRouter() {
   return (
@@ -43,6 +44,7 @@ export default function AppRouter() {
             <Route path="/simple-auth" element={<SimpleAuth />} />
             <Route path="/offline-auth" element={<OfflineAuth />} />
             <Route path="/test-google-auth" element={<TestGoogleAuth />} />
+            <Route path="/test-google-oauth" element={<TestGoogleOAuth />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
