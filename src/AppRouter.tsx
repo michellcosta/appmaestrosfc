@@ -42,8 +42,8 @@ export default function AppRouter() {
       <ToastProvider>
         <AuthProvider>
           <div className="min-h-[100dvh] bg-background text-foreground">
-        {/* Install Prompt */}
-        <InstallPrompt />
+        {/* Install Prompt - Disabled */}
+        {/* <InstallPrompt /> */}
         
         {/* Update Notification */}
         <UpdateNotification />
