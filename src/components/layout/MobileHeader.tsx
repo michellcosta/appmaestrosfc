@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '@/auth/OfflineAuthProvider';
+import { useAuth } from '@/auth/SimpleAuthProvider';
 import { Button } from '@/components/ui/button';
 import { Menu, Crown, Shield, Star, Zap, User } from 'lucide-react';
 
@@ -24,28 +24,34 @@ export default function MobileHeader({ title, subtitle, onMenuClick }: HeaderPro
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white border-b border-gray-200">
+    <header 
+      className="sticky top-0 z-30 border-b-2 border-green-500 shadow-lg"
+      style={{
+        background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%)',
+        borderBottom: '2px solid #16a34a'
+      }}
+    >
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center space-x-3">
           <Button
             variant="ghost"
             size="sm"
             onClick={onMenuClick}
-            className="p-2 hover:bg-gray-100"
+            className="p-2 hover:bg-gray-800 text-green-400 hover:text-green-300"
           >
-            <Menu className="w-6 h-6 text-gray-700" />
+            <Menu className="w-6 h-6" />
           </Button>
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
+            <h1 className="text-lg font-bold text-white">{title}</h1>
             {subtitle && (
-              <p className="text-sm text-gray-500">{subtitle}</p>
+              <p className="text-sm text-gray-300">{subtitle}</p>
             )}
           </div>
         </div>
         
         <div className="flex items-center space-x-2">
           {user?.role && (
-            <div className="flex items-center space-x-1 text-sm text-gray-600">
+            <div className="flex items-center space-x-1 text-sm text-green-400">
               {getRoleIcon(user.role)}
               <span className="hidden sm:inline">
                 {user.role === 'owner' ? 'Dono' : 

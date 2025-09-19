@@ -67,6 +67,15 @@ export default {
           gray: "hsl(var(--team-gray))",
           bibs: "hsl(var(--team-bibs))",
         },
+        maestros: {
+          black: "#000000",
+          gray: "#e5e7eb",
+          "gray-light": "#f9fafb",
+          "gray-medium": "#6b7280",
+          green: "#16a34a",
+          "green-light": "#22c55e",
+          "green-dark": "#15803d",
+        },
         tabbar: {
           DEFAULT: "hsl(var(--tabbar-background))",
           foreground: "hsl(var(--tabbar-foreground))",

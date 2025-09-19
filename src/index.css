@@ -4,29 +4,29 @@
 
 /* Custom CSS Variables for App Maestros FC */
 :root {
-  /* Primary Colors - Blue to Purple Gradient */
-  --primary-50: #eff6ff;
-  --primary-100: #dbeafe;
-  --primary-200: #bfdbfe;
-  --primary-300: #93c5fd;
-  --primary-400: #60a5fa;
-  --primary-500: #3b82f6;
-  --primary-600: #2563eb;
-  --primary-700: #1d4ed8;
-  --primary-800: #1e40af;
-  --primary-900: #1e3a8a;
+  /* Primary Colors - Verde (Cores das camisas) */
+  --primary-50: #f0fdf4;
+  --primary-100: #dcfce7;
+  --primary-200: #bbf7d0;
+  --primary-300: #86efac;
+  --primary-400: #4ade80;
+  --primary-500: #22c55e;
+  --primary-600: #16a34a;
+  --primary-700: #15803d;
+  --primary-800: #166534;
+  --primary-900: #14532d;
 
-  /* Secondary Colors - Purple Gradient */
-  --secondary-50: #faf5ff;
-  --secondary-100: #f3e8ff;
-  --secondary-200: #e9d5ff;
-  --secondary-300: #d8b4fe;
-  --secondary-400: #c084fc;
-  --secondary-500: #a855f7;
-  --secondary-600: #9333ea;
-  --secondary-700: #7c3aed;
-  --secondary-800: #6b21a8;
-  --secondary-900: #581c87;
+  /* Secondary Colors - Preto */
+  --secondary-50: #f8fafc;
+  --secondary-100: #f1f5f9;
+  --secondary-200: #e2e8f0;
+  --secondary-300: #cbd5e1;
+  --secondary-400: #94a3b8;
+  --secondary-500: #64748b;
+  --secondary-600: #475569;
+  --secondary-700: #334155;
+  --secondary-800: #1e293b;
+  --secondary-900: #0f172a;
 
   /* Success Colors - Green */
   --success-50: #f0fdf4;
@@ -82,6 +82,15 @@
   --transition-fast: 150ms ease-in-out;
   --transition-base: 300ms ease-in-out;
   --transition-slow: 500ms ease-in-out;
+
+  /* Maestros FC Brand Colors */
+  --maestros-black: #000000;
+  --maestros-gray: #e5e7eb;
+  --maestros-green: #16a34a;
+  --maestros-green-light: #22c55e;
+  --maestros-green-dark: #15803d;
+  --maestros-gray-light: #f9fafb;
+  --maestros-gray-medium: #6b7280;
 }
 
 /* Dark mode variables */

@@ -42,8 +42,8 @@ export default function AppRouterWithSimpleAuth() {
   return (
     <ThemeProvider>
       <ToastProvider>
-        <AuthProvider>
-          <div className="min-h-[100dvh] bg-background text-foreground">
+        <SimpleAuthProvider>
+          <div className="min-h-[100dvh] bg-gray-100 text-gray-900">
           {/* Install Prompt - Completely Disabled */}
           <NoInstallPrompt />
           
@@ -63,7 +63,7 @@ export default function AppRouterWithSimpleAuth() {
             onClose={closeDrawer} 
           />
           
-          <div className="mx-auto w-full max-w-4xl">
+          <div className="mx-auto w-full max-w-4xl pb-20 pt-20">
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/match" element={<Match />} />
@@ -97,7 +97,7 @@ export default function AppRouterWithSimpleAuth() {
           {/* Bottom Navigation */}
           <BottomNav />
           </div>
-        </AuthProvider>
+        </SimpleAuthProvider>
       </ToastProvider>
     </ThemeProvider>
   );
