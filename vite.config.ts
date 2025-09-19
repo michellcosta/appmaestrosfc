@@ -6,7 +6,7 @@ import { copyFileSync } from "fs";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: '/appmaestrosfc/',
+  base: '/',
   server: {
     host: "::",
     port: 8080,
