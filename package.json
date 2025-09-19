@@ -9,7 +9,9 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "lhci": "lhci autorun --collect.staticDistDir=dist"
+    "lhci": "lhci autorun --collect.staticDistDir=dist",
+    "deploy:preview": "./deploy-conditional.sh preview",
+    "deploy:prod": "./deploy-conditional.sh production"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

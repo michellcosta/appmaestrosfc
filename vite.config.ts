@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => ({
       name: 'copy-sw',
       writeBundle() {
         try {
-          copyFileSync('sw.js', 'dist/sw.js');
+          copyFileSync('public/sw.js', 'dist/sw.js');
           console.log('✅ Service Worker copiado para dist/');
         } catch (error) {
           console.error('❌ Erro ao copiar Service Worker:', error);

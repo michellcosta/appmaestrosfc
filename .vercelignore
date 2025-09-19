@@ -1,0 +1,12 @@
+# Ignorar arquivos que não precisam de deploy
+README.md
+VARIABLES.md
+*.md
+.env.local
+.env.example
+test.html
+public/test.html
+dist/test.html
+
+# Ignorar commits com [skip-deploy]
+# Use: git commit -m "fix: correção [skip-deploy]"
