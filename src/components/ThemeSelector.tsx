@@ -18,11 +18,9 @@ export default function ThemeSelector() {
   ] as const;
 
   return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-        Tema
-      </h3>
-      <div className="space-y-1">
+    <div className="flex items-center space-x-2">
+      <span className="text-xs text-zinc-600 dark:text-zinc-400">Tema:</span>
+      <div className="flex space-x-1">
         {themes.map((themeOption) => {
           const Icon = themeOption.icon;
           const isSelected = theme === themeOption.id;
@@ -30,16 +28,13 @@ export default function ThemeSelector() {
           return (
             <Button
               key={themeOption.id}
-              variant={isSelected ? "default" : "ghost"}
+              variant={isSelected ? "default" : "outline"}
               size="sm"
-              className="w-full justify-start h-10"
+              className="h-8 w-8 p-0"
               onClick={() => setTheme(themeOption.id)}
+              title={themeOption.label}
             >
-              <Icon className="w-4 h-4 mr-3" />
-              <span className="flex-1 text-left">{themeOption.label}</span>
-              {isSelected && (
-                <Check className="w-4 h-4 text-white" />
-              )}
+              <Icon className="w-4 h-4" />
             </Button>
           );
         })}

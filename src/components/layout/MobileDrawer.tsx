@@ -172,9 +172,9 @@ export default function MobileDrawer({ isOpen, onClose }: DrawerProps) {
           <div className="p-4 border-t bg-gray-50 dark:bg-gray-800">
             <div className="space-y-4">
               {/* Theme Selector */}
-              <div className="p-3 bg-white dark:bg-gray-700 rounded-lg border dark:border-gray-600">
-                <ThemeSelector />
-              </div>
+            <div className="p-2 bg-white dark:bg-gray-700 rounded-lg border dark:border-gray-600">
+              <ThemeSelector />
+            </div>
               
               <div className="space-y-2">
                 <Button
