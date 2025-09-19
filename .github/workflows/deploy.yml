@@ -33,13 +33,23 @@ jobs:
       - name: Build
         run: npm run build
         
+      - name: Copy files to root
+        run: |
+          # Copy dist files to root
+          cp -r dist/* .
+          # Copy manifest and service worker
+          cp public/manifest.json .
+          cp public/sw.js .
+          # Copy icons
+          cp -r public/icons .
+        
       - name: Setup Pages
         uses: actions/configure-pages@v4
         
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist'
+          path: '.'
 
   deploy:
     environment:
