@@ -512,26 +512,38 @@ export default function OwnerDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className='space-y-3'>
-                <Button className='w-full' variant="outline">
-                  <Users className='w-4 h-4 mr-2' />
-                  Gerenciar Admins
-                </Button>
-                <Button className='w-full' variant="outline">
-                  <Shield className='w-4 h-4 mr-2' />
-                  Configurar Acessos
-                </Button>
-                <Button 
-                  className='w-full' 
-                  variant="outline"
-                  onClick={() => window.location.href = '/create-invite'}
-                >
-                  <UserCheck className='w-4 h-4 mr-2' />
-                  Criar Convites
-                </Button>
-                <Button className='w-full' variant="outline">
-                  <UserCheck className='w-4 h-4 mr-2' />
-                  Aprovar Participantes
-                </Button>
+                     <Button 
+                       className='w-full' 
+                       variant="outline"
+                       onClick={() => window.location.href = '/manage-admins'}
+                     >
+                       <Users className='w-4 h-4 mr-2' />
+                       Gerenciar Admins
+                     </Button>
+                     <Button 
+                       className='w-full' 
+                       variant="outline"
+                       onClick={() => window.location.href = '/configure-access'}
+                     >
+                       <Shield className='w-4 h-4 mr-2' />
+                       Configurar Acessos
+                     </Button>
+                     <Button
+                       className='w-full'
+                       variant="outline"
+                       onClick={() => window.location.href = '/create-invite'}
+                     >
+                       <UserCheck className='w-4 h-4 mr-2' />
+                       Criar Convites
+                     </Button>
+                     <Button 
+                       className='w-full' 
+                       variant="outline"
+                       onClick={() => window.location.href = '/approve-participants'}
+                     >
+                       <UserCheck className='w-4 h-4 mr-2' />
+                       Aprovar Participantes
+                     </Button>
               </CardContent>
             </Card>
 
