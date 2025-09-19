@@ -19,14 +19,27 @@ export default function DebugAuth() {
     addLog('🔍 Testando conexão com Supabase...');
     
     try {
-      const { data, error } = await supabase.from('users').select('count').limit(1);
-      if (error) {
-        addLog(`❌ Erro na conexão: ${error.message}`);
+      // Timeout de 10 segundos
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout - conexão demorou mais de 10 segundos')), 10000)
+      );
+      
+      const connectionPromise = supabase.from('users').select('count').limit(1);
+      
+      const result = await Promise.race([connectionPromise, timeoutPromise]);
+      
+      if (result.error) {
+        addLog(`❌ Erro na conexão: ${result.error.message}`);
+        addLog(`❌ Código do erro: ${result.error.code}`);
+        addLog(`❌ Detalhes: ${JSON.stringify(result.error)}`);
       } else {
         addLog('✅ Conexão com Supabase OK');
+        addLog(`✅ Dados recebidos: ${JSON.stringify(result.data)}`);
       }
     } catch (err) {
       addLog(`❌ Erro inesperado: ${err}`);
+      addLog(`❌ Tipo do erro: ${typeof err}`);
+      addLog(`❌ Stack: ${err.stack || 'N/A'}`);
     }
     
     setIsTesting(false);
