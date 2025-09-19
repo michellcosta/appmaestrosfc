@@ -44,3 +44,4 @@ cp .env.example .env
 # 3) rodar em desenvolvimento
 npm run dev
 # acesse http://localhost:5173
+# Force Vercel Deploy
