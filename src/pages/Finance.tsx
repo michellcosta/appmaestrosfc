@@ -51,7 +51,7 @@ export default function FinancePage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 space-y-4">
+    <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 space-y-4 pb-20">
       <div>
         <h1 className="text-xl font-semibold">Financeiro</h1>
         <p className="text-sm text-zinc-500">Controle de pagamentos e mensalidades</p>

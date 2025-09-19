@@ -115,7 +115,7 @@ export default function RankingPage() {
   }, [votes]);
 
   return (
-    <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 space-y-4">
+    <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 space-y-4 pb-20">
       <header>
         <h1 className="text-xl font-semibold">Ranking</h1>
         <p className="text-sm text-zinc-500">

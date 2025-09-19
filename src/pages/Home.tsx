@@ -6,7 +6,7 @@ import { Calendar, Clock, MapPin, Users, CheckCircle, Navigation } from 'lucide-
 
 export default function HomePage() {
   return (
-    <div className='p-4 sm:p-6 space-y-4'>
+    <div className='p-4 sm:p-6 space-y-4 pb-20'>
       <div>
         <h1 className='text-xl font-semibold'>Jogos</h1>
         <p className='text-sm text-zinc-500'>Próximos jogos do grupo</p>
