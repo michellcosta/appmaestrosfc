@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '@/auth/SimpleAuthProvider';
+import { useAuth } from '@/auth/OfflineAuthProvider';
 import { Button } from '@/components/ui/button';
 import { Menu, Crown, Shield, Star, Zap, User } from 'lucide-react';
 

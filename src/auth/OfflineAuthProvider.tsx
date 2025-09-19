@@ -27,7 +27,7 @@ const Ctx = createContext<AuthCtx>({
 
 export const useAuth = () => useContext(Ctx);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function OfflineAuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
 

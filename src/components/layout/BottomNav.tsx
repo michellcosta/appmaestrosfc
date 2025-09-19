@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Trophy, DollarSign, BarChart3, MessageCircle, User, Crown } from 'lucide-react';
-import { useAuth } from '@/auth/SimpleAuthProvider';
+import { useAuth } from '@/auth/OfflineAuthProvider';
 
 export default function BottomNav() {
   const { pathname } = useLocation();

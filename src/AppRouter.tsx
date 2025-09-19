@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from '@/auth/OfflineAuthProvider';
+import { OfflineAuthProvider } from './auth/OfflineAuthProvider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ToastProvider } from '@/components/ui/toast';
 import NoInstallPrompt from '@/components/NoInstallPrompt';
@@ -42,60 +42,62 @@ export default function AppRouter() {
   return (
     <ThemeProvider>
       <ToastProvider>
-        <AuthProvider>
-          <div className="min-h-[100dvh] bg-background text-foreground">
-        {/* Install Prompt - Completely Disabled */}
-        <NoInstallPrompt />
-        
-        {/* Update Notification */}
-        <UpdateNotification />
-        
-        {/* Mobile Header */}
-        <MobileHeader 
-          title="App Maestros FC" 
-          subtitle="Sistema de Gestão"
-          onMenuClick={openDrawer}
-        />
-        
-        {/* Mobile Drawer */}
-        <MobileDrawer 
-          isOpen={isOpen} 
-          onClose={closeDrawer} 
-        />
-        
-        <div className="mx-auto w-full max-w-4xl">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/match" element={<Match />} />
-            <Route path="/finance" element={<FinancePage />} />
-            <Route path="/vote" element={<VotePage />} />
-            <Route path="/admin/invites" element={<InvitesApprovalsPage />} />
-            <Route path="/ranking" element={<RankingPage />} />
-            <Route path="/perfil" element={<PerfilPage />} />
-            <Route path="/owner-dashboard" element={<OwnerDashboard />} />
-            <Route path="/test-auth" element={<TestAuth />} />
-            <Route path="/simple-login" element={<SimpleLogin />} />
-            <Route path="/create-owner" element={<CreateOwner />} />
-            <Route path="/check-tables" element={<CheckTables />} />
-            <Route path="/debug-auth" element={<DebugAuth />} />
-            <Route path="/simple-auth" element={<SimpleAuth />} />
-            <Route path="/offline-auth" element={<OfflineAuth />} />
-            <Route path="/test-auth" element={<TestAuth />} />
-            <Route path="/test-page" element={<TestPage />} />
-            <Route path="/simple-test" element={<SimpleTest />} />
-            <Route path="/test-google-auth" element={<TestGoogleAuth />} />
-            <Route path="/test-google-oauth" element={<TestGoogleOAuth />} />
-            <Route path="/create-invite" element={<CreateInvite />} />
-            <Route path="/accept-invite" element={<AcceptInvite />} />
-            <Route path="/restricted" element={<RestrictedAccess />} />
-            <Route path="/manage-admins" element={<ManageAdmins />} />
-            <Route path="/configure-access" element={<ConfigureAccess />} />
-            <Route path="/approve-participants" element={<ApproveParticipants />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
-      </div>
-        </AuthProvider>
+        <OfflineAuthProvider>
+          <div className="min-h-[100dvh] bg-gray-100 text-gray-900">
+          {/* Install Prompt - Completely Disabled */}
+          <NoInstallPrompt />
+          
+          {/* Update Notification */}
+          <UpdateNotification />
+          
+          {/* Mobile Header */}
+          <MobileHeader 
+            title="App Maestros FC" 
+            subtitle="Sistema de Gestão"
+            onMenuClick={openDrawer}
+          />
+          
+          {/* Mobile Drawer */}
+          <MobileDrawer 
+            isOpen={isOpen} 
+            onClose={closeDrawer} 
+          />
+          
+          <div className="mx-auto w-full max-w-4xl pb-20 pt-20">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/match" element={<Match />} />
+              <Route path="/finance" element={<FinancePage />} />
+              <Route path="/vote" element={<VotePage />} />
+              <Route path="/admin/invites" element={<InvitesApprovalsPage />} />
+              <Route path="/ranking" element={<RankingPage />} />
+              <Route path="/perfil" element={<PerfilPage />} />
+              <Route path="/owner-dashboard" element={<OwnerDashboard />} />
+              <Route path="/test-auth" element={<TestAuth />} />
+              <Route path="/simple-login" element={<SimpleLogin />} />
+              <Route path="/create-owner" element={<CreateOwner />} />
+              <Route path="/check-tables" element={<CheckTables />} />
+              <Route path="/debug-auth" element={<DebugAuth />} />
+              <Route path="/simple-auth" element={<SimpleAuth />} />
+              <Route path="/offline-auth" element={<OfflineAuth />} />
+              <Route path="/test-google-auth" element={<TestGoogleAuth />} />
+              <Route path="/test-google-oauth" element={<TestGoogleOAuth />} />
+              <Route path="/create-invite" element={<CreateInvite />} />
+              <Route path="/accept-invite" element={<AcceptInvite />} />
+              <Route path="/restricted" element={<RestrictedAccess />} />
+              <Route path="/manage-admins" element={<ManageAdmins />} />
+              <Route path="/configure-access" element={<ConfigureAccess />} />
+              <Route path="/approve-participants" element={<ApproveParticipants />} />
+              <Route path="/test-page" element={<TestPage />} />
+              <Route path="/simple-test" element={<SimpleTest />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
+          
+          {/* Bottom Navigation */}
+          <BottomNav />
+          </div>
+        </OfflineAuthProvider>
       </ToastProvider>
     </ThemeProvider>
   );

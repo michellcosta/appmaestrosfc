@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from '@/auth/SimpleAuthProvider';
+import { OfflineAuthProvider } from './auth/OfflineAuthProvider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ToastProvider } from '@/components/ui/toast';
 import NoInstallPrompt from '@/components/NoInstallPrompt';
@@ -42,7 +42,7 @@ export default function AppRouterWithSimpleAuth() {
   return (
     <ThemeProvider>
       <ToastProvider>
-        <SimpleAuthProvider>
+        <OfflineAuthProvider>
           <div className="min-h-[100dvh] bg-gray-100 text-gray-900">
           {/* Install Prompt - Completely Disabled */}
           <NoInstallPrompt />
@@ -97,7 +97,7 @@ export default function AppRouterWithSimpleAuth() {
           {/* Bottom Navigation */}
           <BottomNav />
           </div>
-        </SimpleAuthProvider>
+        </OfflineAuthProvider>
       </ToastProvider>
     </ThemeProvider>
   );

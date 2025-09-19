@@ -47,7 +47,8 @@
     
     <!-- Service Worker Registration -->
     <script>
-      if ('serviceWorker' in navigator) {
+      // Only register Service Worker in production
+      if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/appmaestrosfc/sw.js')
             .then((registration) => {
@@ -75,6 +76,8 @@
               console.error('❌ Service Worker registration failed:', error);
             });
         });
+      } else {
+        console.log('🔧 Service Worker disabled in development mode');
       }
     </script>
   </body>
