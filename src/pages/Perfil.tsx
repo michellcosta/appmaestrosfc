@@ -214,8 +214,17 @@ export default function PerfilPage() {
 
       <div className='pt-4'>
         <Button 
-          onClick={signOut} 
-          variant="outline" 
+          onClick={async () => {
+            try {
+              await signOut();
+              alert('Logout realizado com sucesso!');
+              window.location.href = '/';
+            } catch (error) {
+              console.error('Erro ao fazer logout:', error);
+              alert('Erro ao fazer logout');
+            }
+          }} 
+          variant="destructive" 
           className='w-full'
         >
           <LogOut className='w-4 h-4 mr-2' />
