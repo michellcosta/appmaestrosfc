@@ -1,4 +1,4 @@
-const CACHE_NAME = 'maestros-fc-v1.3.0';
+const CACHE_NAME = 'maestros-fc-v1.4.0';
 const urlsToCache = [
   '/appmaestrosfc/',
   '/appmaestrosfc/index.html',
