@@ -1,6 +1,5 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from '@/auth/OfflineAuthProvider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ToastProvider } from '@/components/ui/toast';
 import NoInstallPrompt from '@/components/NoInstallPrompt';
@@ -36,14 +35,13 @@ import ApproveParticipants from '@/pages/ApproveParticipants';
 import TestPage from '@/pages/TestPage';
 import SimpleTest from '@/pages/SimpleTest';
 
-export default function AppRouter() {
+export default function AppRouterWithoutAuth() {
   const { isOpen, openDrawer, closeDrawer } = useMobileDrawer();
 
   return (
     <ThemeProvider>
       <ToastProvider>
-        <AuthProvider>
-          <div className="min-h-[100dvh] bg-background text-foreground">
+        <div className="min-h-[100dvh] bg-background text-foreground">
         {/* Install Prompt - Completely Disabled */}
         <NoInstallPrompt />
         
@@ -80,7 +78,6 @@ export default function AppRouter() {
             <Route path="/debug-auth" element={<DebugAuth />} />
             <Route path="/simple-auth" element={<SimpleAuth />} />
             <Route path="/offline-auth" element={<OfflineAuth />} />
-            <Route path="/test-auth" element={<TestAuth />} />
             <Route path="/test-page" element={<TestPage />} />
             <Route path="/simple-test" element={<SimpleTest />} />
             <Route path="/test-google-auth" element={<TestGoogleAuth />} />
@@ -94,8 +91,10 @@ export default function AppRouter() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
-      </div>
-        </AuthProvider>
+        
+        {/* Bottom Navigation */}
+        <BottomNav />
+        </div>
       </ToastProvider>
     </ThemeProvider>
   );
