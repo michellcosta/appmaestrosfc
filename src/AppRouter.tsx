@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from '@/auth/SimpleAuthProvider';
+import { AuthProvider } from '@/auth/FixedAuthProvider';
 import BottomNav from '@/components/layout/BottomNav';
 
 // Páginas

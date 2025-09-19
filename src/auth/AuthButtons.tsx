@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from './SimpleAuthProvider';
+import { useAuth } from './FixedAuthProvider';
 import { Button } from '@/components/ui/button';
 
 export const GoogleLoginButton: React.FC = () => {

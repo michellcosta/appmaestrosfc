@@ -31,12 +31,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Verificar sessão inicial
-    const checkSession = async () => {
+    let mounted = true;
+
+    const initializeAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        if (session?.user) {
+        if (session?.user && mounted) {
           // Buscar perfil do usuário
           const { data: profile } = await supabase
             .from('users')
@@ -44,27 +45,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .eq('auth_id', session.user.id)
             .single();
 
-          if (profile) {
+          if (profile && mounted) {
             setUser({
               id: profile.id,
               email: profile.email,
               name: profile.name,
               role: profile.role
             });
-          } else {
+          } else if (mounted) {
             // Se não tem perfil, criar um automaticamente
-            const { data: newUser, error: createError } = await supabase
+            const { data: newUser } = await supabase
               .from('users')
               .insert({
                 auth_id: session.user.id,
                 email: session.user.email,
                 name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
-                role: 'owner' // Primeiro usuário é owner
+                role: 'owner'
               })
               .select()
               .single();
 
-            if (!createError && newUser) {
+            if (newUser && mounted) {
               setUser({
                 id: newUser.id,
                 email: newUser.email,
@@ -77,17 +78,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error('Erro ao verificar sessão:', error);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
-    checkSession();
+    initializeAuth();
 
     // Escutar mudanças de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+
         if (event === 'SIGNED_IN' && session?.user) {
-          // Buscar perfil do usuário
           const { data: profile } = await supabase
             .from('users')
             .select('*')
@@ -109,7 +113,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signInWithGoogle = async () => {
