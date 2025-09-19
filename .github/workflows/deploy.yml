@@ -39,6 +39,8 @@ jobs:
           cp -r dist/* . 2>/dev/null || true
           # Copy hidden files if they exist
           cp -r dist/.* . 2>/dev/null || true
+          # Create 404.html for GitHub Pages SPA routing
+          cp index.html 404.html
           # Ensure _redirects file is present for SPA routing
           if [ ! -f _redirects ]; then
             echo "/* /index.html 200" > _redirects

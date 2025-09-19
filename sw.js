@@ -1,11 +1,11 @@
 const CACHE_NAME = 'maestros-fc-v1.0.0';
 const urlsToCache = [
-  '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  '/appmaestrosfc/',
+  '/appmaestrosfc/manifest.json',
+  '/appmaestrosfc/icons/icon-192.png',
+  '/appmaestrosfc/icons/icon-512.png',
+  '/appmaestrosfc/index.html',
+  '/appmaestrosfc/404.html'
 ];
 
 // Install event - cache resources

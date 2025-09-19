@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maestros FC - Organize suas peladas</title>
+    <meta name="description" content="Aplicativo para organizar partidas de futebol do seu grupo fechado" />
+    <meta name="author" content="Maestros FC" />
+    <meta name="theme-color" content="#16A34A" />
+    <link rel="manifest" href="/appmaestrosfc/manifest.json" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Maestros FC" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Maestros FC" />
+    
+    <!-- Mobile PWA Meta Tags -->
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-TileColor" content="#16A34A" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/appmaestrosfc/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/appmaestrosfc/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/appmaestrosfc/icons/icon-512.png" />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <meta property="og:title" content="Maestros FC" />
+    <meta property="og:description" content="Organize suas peladas com facilidade" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@lovable_dev" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <script type="module" crossorigin src="/appmaestrosfc/assets/index-tXMfV4sC.js"></script>
+    <link rel="stylesheet" crossorigin href="/appmaestrosfc/assets/index-B_O4L61o.css">
+  </head>
+
+  <body>
+    <div id="root"></div>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/appmaestrosfc/sw.js')
+            .then((registration) => {
+              console.log('✅ Service Worker registered successfully:', registration.scope);
+              
+              // Check for updates
+              registration.addEventListener('updatefound', () => {
+                console.log('🔄 Service Worker: Update found');
+                const newWorker = registration.installing;
+                
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('🆕 Service Worker: New version available');
+                    
+                    // Show update notification
+                    if (confirm('Nova versão disponível! Deseja atualizar agora?')) {
+                      newWorker.postMessage({ type: 'SKIP_WAITING' });
+                      window.location.reload();
+                    }
+                  }
+                });
+              });
+            })
+            .catch((error) => {
+              console.error('❌ Service Worker registration failed:', error);
+            });
+        });
+      }
+    </script>
+  </body>
+</html>
