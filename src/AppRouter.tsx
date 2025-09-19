@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/auth/OfflineAuthProvider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ToastProvider } from '@/components/ui/toast';
-import MiniInstallPrompt from '@/components/MiniInstallPrompt';
+// import MiniInstallPrompt from '@/components/MiniInstallPrompt';
 import UpdateNotification from '@/components/UpdateNotification';
 import BottomNav from '@/components/layout/BottomNav';
 import MobileDrawer, { useMobileDrawer } from '@/components/layout/MobileDrawer';
