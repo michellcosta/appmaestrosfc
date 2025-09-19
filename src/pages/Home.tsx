@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +9,7 @@ import { EmptyGames } from '@/components/ui/empty-state';
 import { useToastHelpers } from '@/components/ui/toast';
 
 export default function HomePage() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [games, setGames] = useState([]);
   const { success, error } = useToastHelpers();
@@ -121,6 +123,45 @@ export default function HomePage() {
                 <p className='text-sm text-zinc-500'>19:00 - Campo do Maestros</p>
               </div>
               <Badge variant="outline">12/22 jogadores</Badge>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Seção de Testes - Apenas para desenvolvimento */}
+      <div className='space-y-3'>
+        <h2 className='text-lg font-semibold'>🧪 Páginas de Teste</h2>
+        <Card className='rounded-2xl'>
+          <CardContent className='p-4 space-y-2'>
+            <div className='grid grid-cols-2 gap-2'>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/test-page')}
+              >
+                Teste Simples
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/offline-auth')}
+              >
+                Login Offline
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/test-auth')}
+              >
+                Teste Auth
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/debug-auth')}
+              >
+                Debug Auth
+              </Button>
             </div>
           </CardContent>
         </Card>
