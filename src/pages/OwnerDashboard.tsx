@@ -520,6 +520,14 @@ export default function OwnerDashboard() {
                   <Shield className='w-4 h-4 mr-2' />
                   Configurar Acessos
                 </Button>
+                <Button 
+                  className='w-full' 
+                  variant="outline"
+                  onClick={() => window.location.href = '/create-invite'}
+                >
+                  <UserCheck className='w-4 h-4 mr-2' />
+                  Criar Convites
+                </Button>
                 <Button className='w-full' variant="outline">
                   <UserCheck className='w-4 h-4 mr-2' />
                   Aprovar Participantes
