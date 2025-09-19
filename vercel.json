@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/((?!api/)(?!sw.js).*)",
+      "source": "/((?!api/)(?!sw.js)(?!manifest.json).*)",
       "destination": "/index.html"
     }
   ],
@@ -16,6 +16,15 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/manifest.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
         }
       ]
     }

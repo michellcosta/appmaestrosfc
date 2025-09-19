@@ -47,39 +47,24 @@
     <div id="root"></div>
     
     <!-- Service Worker Registration -->
-    <script>
-      // Only register Service Worker in production
-      if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/appmaestrosfc/sw.js')
-            .then((registration) => {
-              console.log('✅ Service Worker registered successfully:', registration.scope);
-              
-              // Check for updates
-              registration.addEventListener('updatefound', () => {
-                console.log('🔄 Service Worker: Update found');
-                const newWorker = registration.installing;
-                
-                newWorker.addEventListener('statechange', () => {
-                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    console.log('🆕 Service Worker: New version available');
-                    
-                    // Show update notification
-                    if (confirm('Nova versão disponível! Deseja atualizar agora?')) {
-                      newWorker.postMessage({ type: 'SKIP_WAITING' });
-                      window.location.reload();
-                    }
-                  }
+        <script>
+          // Service Worker temporariamente desabilitado para debug
+          console.log('🔧 Service Worker desabilitado temporariamente para debug');
+          
+          // TODO: Reativar quando o problema do MIME type for resolvido
+          /*
+          if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
+            window.addEventListener('load', () => {
+              navigator.serviceWorker.register('/appmaestrosfc/sw.js')
+                .then((registration) => {
+                  console.log('✅ Service Worker registered successfully:', registration.scope);
+                })
+                .catch((error) => {
+                  console.error('❌ Service Worker registration failed:', error);
                 });
-              });
-            })
-            .catch((error) => {
-              console.error('❌ Service Worker registration failed:', error);
             });
-        });
-      } else {
-        console.log('🔧 Service Worker disabled in development mode');
-      }
-    </script>
+          }
+          */
+        </script>
   </body>
 </html>
