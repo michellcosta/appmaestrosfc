@@ -3,15 +3,23 @@ import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { usePermissions } from '@/hooks/usePermissions';
+import RestrictedAccess from './RestrictedAccess';
 
 type CurrentPoll = { poll_id: string; opens_at: string; closes_at: string; };
 type PartialRow = { poll_id: string; category: 'Goleiro'|'Zagueiro'|'Meia'|'Atacante'; player_id: string; player_name: string|null; votes: number; };
 const CATS: PartialRow['category'][] = ['Goleiro','Zagueiro','Meia','Atacante'];
 
 export default function VotePage() {
+  const { canSeeVote } = usePermissions();
   const [poll, setPoll] = useState<CurrentPoll|null>(null);
   const [partials, setPartials] = useState<PartialRow[]>([]);
   const [choice, setChoice] = useState<Record<string,string>>({}); // category -> player_id
+
+  // Verificar permissão
+  if (!canSeeVote()) {
+    return <RestrictedAccess />;
+  }
 
   useEffect(() => {
     (async () => {

@@ -20,6 +20,7 @@ import {
   Palette
 } from 'lucide-react';
 import ThemeSelector from '@/components/ThemeSelector';
+import { usePermissions } from '@/hooks/usePermissions';
 
 type DrawerProps = {
   isOpen: boolean;
@@ -28,6 +29,13 @@ type DrawerProps = {
 
 export default function MobileDrawer({ isOpen, onClose }: DrawerProps) {
   const { user, signOut } = useAuth();
+  const { 
+    canSeeRanking, 
+    canSeeVote, 
+    canSeeDashboard, 
+    canRequestToPlay, 
+    canPayDaily 
+  } = usePermissions();
 
   const handleLogout = async () => {
     try {
@@ -77,9 +85,9 @@ export default function MobileDrawer({ isOpen, onClose }: DrawerProps) {
     { icon: Home, label: 'Jogos', path: '/', show: true },
     { icon: Trophy, label: 'Partidas', path: '/match', show: true },
     { icon: DollarSign, label: 'Financeiro', path: '/finance', show: true },
-    { icon: BarChart3, label: 'Ranking', path: '/ranking', show: true },
-    { icon: MessageSquare, label: 'Votar', path: '/vote', show: true },
-    { icon: Crown, label: 'Dashboard', path: '/owner-dashboard', show: user?.role === 'owner' },
+    { icon: BarChart3, label: 'Ranking', path: '/ranking', show: canSeeRanking() },
+    { icon: MessageSquare, label: 'Votar', path: '/vote', show: canSeeVote() },
+    { icon: Crown, label: 'Dashboard', path: '/owner-dashboard', show: canSeeDashboard() },
   ];
 
   if (!isOpen) return null;

@@ -26,6 +26,7 @@ import TestGoogleAuth from '@/pages/TestGoogleAuth';
 import TestGoogleOAuth from '@/pages/TestGoogleOAuth';
 import CreateInvite from '@/pages/CreateInvite';
 import AcceptInvite from '@/pages/AcceptInvite';
+import RestrictedAccess from '@/pages/RestrictedAccess';
 
 export default function AppRouter() {
   const { isOpen, openDrawer, closeDrawer } = useMobileDrawer();
@@ -68,6 +69,7 @@ export default function AppRouter() {
             <Route path="/test-google-oauth" element={<TestGoogleOAuth />} />
             <Route path="/create-invite" element={<CreateInvite />} />
             <Route path="/accept-invite" element={<AcceptInvite />} />
+            <Route path="/restricted" element={<RestrictedAccess />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

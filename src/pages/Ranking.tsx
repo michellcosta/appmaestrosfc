@@ -4,6 +4,8 @@ import { supabase } from "@/lib/supabase";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { usePermissions } from '@/hooks/usePermissions';
+import RestrictedAccess from './RestrictedAccess';
 
 type Range = "week" | "month" | "all";
 
@@ -34,6 +36,7 @@ function inRange(dateIso: string | null | undefined, range: Range) {
 }
 
 export default function RankingPage() {
+  const { canSeeRanking } = usePermissions();
   const [range, setRange] = useState<Range>("month");
   const [pos, setPos] = useState<"Geral" | "Goleiro" | "Zagueiro" | "Meia" | "Atacante">("Geral");
 
@@ -41,6 +44,11 @@ export default function RankingPage() {
   const [votes, setVotes] = useState<VotesRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+
+  // Verificar permissão
+  if (!canSeeRanking()) {
+    return <RestrictedAccess />;
+  }
 
   useEffect(() => {
     let alive = true;
