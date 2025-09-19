@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/auth/OfflineAuthProvider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ToastProvider } from '@/components/ui/toast';
+import InstallPrompt from '@/components/InstallPrompt';
+import UpdateNotification from '@/components/UpdateNotification';
 import BottomNav from '@/components/layout/BottomNav';
 import MobileDrawer, { useMobileDrawer } from '@/components/layout/MobileDrawer';
 import MobileHeader from '@/components/layout/MobileHeader';
@@ -40,6 +42,12 @@ export default function AppRouter() {
       <ToastProvider>
         <AuthProvider>
           <div className="min-h-[100dvh] bg-background text-foreground">
+        {/* Install Prompt */}
+        <InstallPrompt />
+        
+        {/* Update Notification */}
+        <UpdateNotification />
+        
         {/* Mobile Header */}
         <MobileHeader 
           title="App Maestros FC" 

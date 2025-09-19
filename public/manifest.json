@@ -1,20 +1,78 @@
 {
-  "name": "Maestros FC",
-  "short_name": "Maestros",
+  "name": "App Maestros FC",
+  "short_name": "Maestros FC",
+  "description": "Sistema de gestão completo para grupo de futebol - jogos, pagamentos, ranking e muito mais",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FAFAFA",
-  "theme_color": "#16A34A",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "scope": "/",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["sports", "utilities", "productivity"],
   "icons": [
-    { 
-      "src": "/icons/icon-192.png", 
-      "sizes": "192x192", 
-      "type": "image/png"
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
     },
-    { 
-      "src": "/icons/icon-512.png", 
-      "sizes": "512x512", 
-      "type": "image/png"
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Próximo Jogo",
+      "short_name": "Jogos",
+      "description": "Ver próximos jogos",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Financeiro",
+      "short_name": "Pagamentos",
+      "description": "Gerenciar pagamentos",
+      "url": "/finance",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Ranking",
+      "short_name": "Ranking",
+      "description": "Ver ranking do grupo",
+      "url": "/ranking",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }
