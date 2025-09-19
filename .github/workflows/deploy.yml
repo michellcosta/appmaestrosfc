@@ -37,11 +37,11 @@ jobs:
         run: |
           # Copy dist files to root
           cp -r dist/* .
-          # Copy manifest and service worker
-          cp public/manifest.json .
-          cp public/sw.js .
-          # Copy icons
-          cp -r public/icons .
+          # Copy manifest and service worker from dist
+          cp dist/manifest.json .
+          cp dist/sw.js .
+          # Copy icons from dist
+          cp -r dist/icons .
         
       - name: Setup Pages
         uses: actions/configure-pages@v4
