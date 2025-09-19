@@ -60,6 +60,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('📊 Sessão encontrada:', session?.user?.id);
         
         if (session?.user && mounted) {
+          console.log('🔍 Buscando perfil do usuário...');
+          
           // Buscar perfil do usuário
           const { data: profile, error: profileError } = await supabase
             .from('users')
@@ -69,6 +71,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (profileError) {
             console.log('⚠️ Perfil não encontrado, criando...');
+            console.log('Erro:', profileError);
+            
             // Se não tem perfil, criar um automaticamente
             const { data: newUser, error: createError } = await supabase
               .from('users')
@@ -91,6 +95,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               });
             } else if (createError) {
               console.error('❌ Erro ao criar perfil:', createError);
+              // Se não conseguir criar, usar dados da sessão
+              if (mounted) {
+                setUser({
+                  id: session.user.id,
+                  email: session.user.email,
+                  name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
+                  role: 'owner'
+                });
+              }
             }
           } else if (profile && mounted) {
             console.log('✅ Perfil encontrado:', profile);
