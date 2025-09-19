@@ -1,11 +1,9 @@
-const CACHE_NAME = 'maestros-fc-v1.0.0';
+const CACHE_NAME = 'maestros-fc-v1.1.0';
 const urlsToCache = [
   '/appmaestrosfc/',
-  '/appmaestrosfc/manifest.json',
-  '/appmaestrosfc/icons/icon-192.png',
-  '/appmaestrosfc/icons/icon-512.png',
   '/appmaestrosfc/index.html',
-  '/appmaestrosfc/404.html'
+  '/appmaestrosfc/404.html',
+  '/appmaestrosfc/manifest.json'
 ];
 
 // Install event - cache resources
@@ -15,7 +13,15 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('📦 Service Worker: Caching app shell');
-        return cache.addAll(urlsToCache);
+        // Cache each URL individually to handle failures gracefully
+        return Promise.allSettled(
+          urlsToCache.map(url => 
+            cache.add(url).catch(error => {
+              console.warn(`⚠️ Service Worker: Failed to cache ${url}`, error);
+              return null; // Continue with other URLs
+            })
+          )
+        );
       })
       .then(() => {
         console.log('✅ Service Worker: Installation complete');
