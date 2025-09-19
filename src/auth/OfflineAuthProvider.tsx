@@ -83,8 +83,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    console.log('⚠️ Google Auth não disponível em modo offline');
-    throw new Error('Google Auth não disponível em modo offline');
+    try {
+      console.log('🔍 Iniciando Google OAuth...');
+      
+      // Importar supabase dinamicamente
+      const { supabase } = await import('@/lib/supabase');
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        }
+      });
+
+      if (error) {
+        console.error('❌ Erro no Google OAuth:', error);
+        throw error;
+      }
+
+      console.log('✅ Google OAuth iniciado:', data);
+    } catch (error) {
+      console.error('❌ Erro no Google OAuth:', error);
+      throw error;
+    }
   };
 
   const signOut = async () => {
