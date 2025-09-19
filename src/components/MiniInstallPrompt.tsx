@@ -36,9 +36,11 @@ export default function MiniInstallPrompt() {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       
-      // Só mostrar se nunca foi dispensado
-      const dismissed = localStorage.getItem('miniInstallDismissed');
-      if (!dismissed) {
+      // Verificar se foi dispensado nesta sessão
+      const sessionDismissed = sessionStorage.getItem('miniInstallDismissed');
+      const permanentlyDismissed = localStorage.getItem('miniInstallDismissed');
+      
+      if (!sessionDismissed && !permanentlyDismissed) {
         setShowPrompt(true);
       }
     };
@@ -70,7 +72,8 @@ export default function MiniInstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    localStorage.setItem('miniInstallDismissed', 'true');
+    // Só dispensar para esta sessão, não permanentemente
+    sessionStorage.setItem('miniInstallDismissed', 'true');
   };
 
   if (isInstalled || !showPrompt) {
