@@ -1,8 +1,7 @@
-const CACHE_NAME = 'maestros-fc-v1.1.0';
+const CACHE_NAME = 'maestros-fc-v1.2.0';
 const urlsToCache = [
   '/appmaestrosfc/',
   '/appmaestrosfc/index.html',
-  '/appmaestrosfc/404.html',
   '/appmaestrosfc/manifest.json'
 ];
 
@@ -14,14 +13,16 @@ self.addEventListener('install', (event) => {
       .then((cache) => {
         console.log('📦 Service Worker: Caching app shell');
         // Cache each URL individually to handle failures gracefully
-        return Promise.allSettled(
-          urlsToCache.map(url => 
-            cache.add(url).catch(error => {
-              console.warn(`⚠️ Service Worker: Failed to cache ${url}`, error);
-              return null; // Continue with other URLs
-            })
-          )
+        const cachePromises = urlsToCache.map(url => 
+          cache.add(url).catch(error => {
+            console.warn(`⚠️ Service Worker: Failed to cache ${url}`, error);
+            return null; // Continue with other URLs
+          })
         );
+        
+        return Promise.allSettled(cachePromises).then(() => {
+          console.log('✅ Service Worker: Cache setup completed');
+        });
       })
       .then(() => {
         console.log('✅ Service Worker: Installation complete');
@@ -69,7 +70,8 @@ self.addEventListener('fetch', (event) => {
   if (event.request.url.includes('chrome-extension:') || 
       event.request.url.includes('sourcemap') ||
       event.request.url.includes('devtools') ||
-      event.request.url.match(/:1$/)) {
+      event.request.url.match(/:1$/) ||
+      event.request.url.includes('/src/')) {
     return;
   }
 
