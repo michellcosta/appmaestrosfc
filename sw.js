@@ -1,4 +1,4 @@
-const CACHE_NAME = 'maestros-fc-v1.0.1';
+const CACHE_NAME = 'maestros-fc-v1.0.2';
 const urlsToCache = [
   '/',
   '/static/js/bundle.js',
