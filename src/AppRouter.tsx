@@ -2,6 +2,8 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/auth/OfflineAuthProvider';
 import BottomNav from '@/components/layout/BottomNav';
+import MobileDrawer, { useMobileDrawer } from '@/components/layout/MobileDrawer';
+import MobileHeader from '@/components/layout/MobileHeader';
 
 // Páginas
 import Match from '@/pages/Match';
@@ -25,9 +27,24 @@ import CreateInvite from '@/pages/CreateInvite';
 import AcceptInvite from '@/pages/AcceptInvite';
 
 export default function AppRouter() {
+  const { isOpen, openDrawer, closeDrawer } = useMobileDrawer();
+
   return (
     <AuthProvider>
       <div className="min-h-[100dvh] bg-background text-foreground">
+        {/* Mobile Header */}
+        <MobileHeader 
+          title="App Maestros FC" 
+          subtitle="Sistema de Gestão"
+          onMenuClick={openDrawer}
+        />
+        
+        {/* Mobile Drawer */}
+        <MobileDrawer 
+          isOpen={isOpen} 
+          onClose={closeDrawer} 
+        />
+        
         <div className="mx-auto w-full max-w-4xl">
           <Routes>
             <Route path="/" element={<HomePage />} />
@@ -52,9 +69,6 @@ export default function AppRouter() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
-
-        {/* Bottom nav só no mobile */}
-        <BottomNav />
       </div>
     </AuthProvider>
   );
