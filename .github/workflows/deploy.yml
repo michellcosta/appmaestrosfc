@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
           
       - name: Install dependencies
@@ -36,7 +36,9 @@ jobs:
       - name: Copy files to root
         run: |
           # Copy all dist files to root
-          cp -r dist/* .
+          cp -r dist/* . 2>/dev/null || true
+          # Copy hidden files if they exist
+          cp -r dist/.* . 2>/dev/null || true
           # Ensure all files are copied
           ls -la
         
