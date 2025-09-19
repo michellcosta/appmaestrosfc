@@ -32,16 +32,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout;
 
     const initializeAuth = async () => {
       try {
         console.log('🔍 Inicializando autenticação...');
         
+        // Timeout de segurança para evitar carregamento infinito
+        timeoutId = setTimeout(() => {
+          if (mounted) {
+            console.log('⏰ Timeout - finalizando loading');
+            setLoading(false);
+          }
+        }, 3000);
+        
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('❌ Erro na sessão:', error);
-          if (mounted) setLoading(false);
+          if (mounted) {
+            clearTimeout(timeoutId);
+            setLoading(false);
+          }
           return;
         }
         
@@ -94,13 +106,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('❌ Erro ao inicializar auth:', error);
       } finally {
         if (mounted) {
+          clearTimeout(timeoutId);
           setLoading(false);
         }
       }
     };
 
     // Aguardar um pouco para garantir que o DOM está pronto
-    const timeout = setTimeout(() => {
+    const initTimeout = setTimeout(() => {
       initializeAuth();
     }, 100);
 
@@ -164,7 +177,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false;
-      clearTimeout(timeout);
+      clearTimeout(initTimeout);
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, []);
