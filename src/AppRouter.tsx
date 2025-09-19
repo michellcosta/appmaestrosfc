@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/auth/OfflineAuthProvider';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import BottomNav from '@/components/layout/BottomNav';
 import MobileDrawer, { useMobileDrawer } from '@/components/layout/MobileDrawer';
 import MobileHeader from '@/components/layout/MobileHeader';
@@ -30,8 +31,9 @@ export default function AppRouter() {
   const { isOpen, openDrawer, closeDrawer } = useMobileDrawer();
 
   return (
-    <AuthProvider>
-      <div className="min-h-[100dvh] bg-background text-foreground">
+    <ThemeProvider>
+      <AuthProvider>
+        <div className="min-h-[100dvh] bg-background text-foreground">
         {/* Mobile Header */}
         <MobileHeader 
           title="App Maestros FC" 
@@ -70,6 +72,7 @@ export default function AppRouter() {
           </Routes>
         </div>
       </div>
-    </AuthProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
