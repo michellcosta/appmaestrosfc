@@ -31,23 +31,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
+    let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
 
     const initializeAuth = async () => {
       try {
-        console.log('🔍 Inicializando autenticação...');
-        
+        // Timeout de segurança para mobile
+        timeoutId = setTimeout(() => {
+          if (isMounted) {
+            setLoading(false);
+          }
+        }, 5000);
+
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('❌ Erro na sessão:', error);
-          if (mounted) setLoading(false);
+          console.error('Erro na sessão:', error);
+          if (isMounted) {
+            setLoading(false);
+          }
           return;
         }
         
-        console.log('📊 Sessão encontrada:', session?.user?.id);
-        
-        if (session?.user && mounted) {
+        if (session?.user && isMounted) {
           // Buscar perfil do usuário
           const { data: profile, error: profileError } = await supabase
             .from('users')
@@ -56,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .single();
 
           if (profileError) {
-            console.log('⚠️ Perfil não encontrado, criando...');
+            console.error('Erro ao buscar perfil:', profileError);
             // Se não tem perfil, criar um automaticamente
             const { data: newUser, error: createError } = await supabase
               .from('users')
@@ -69,19 +75,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .select()
               .single();
 
-            if (!createError && newUser && mounted) {
-              console.log('✅ Perfil criado:', newUser);
+            if (!createError && newUser && isMounted) {
               setUser({
                 id: newUser.id,
                 email: newUser.email,
                 name: newUser.name,
                 role: newUser.role
               });
-            } else if (createError) {
-              console.error('❌ Erro ao criar perfil:', createError);
             }
-          } else if (profile && mounted) {
-            console.log('✅ Perfil encontrado:', profile);
+          } else if (profile && isMounted) {
             setUser({
               id: profile.id,
               email: profile.email,
@@ -91,30 +93,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } catch (error) {
-        console.error('❌ Erro ao inicializar auth:', error);
+        console.error('Erro ao inicializar auth:', error);
       } finally {
-        if (mounted) {
+        if (isMounted) {
+          clearTimeout(timeoutId);
           setLoading(false);
         }
       }
     };
 
-    // Aguardar um pouco para garantir que o DOM está pronto
-    const timeout = setTimeout(() => {
+    // Aguardar um pouco para garantir que o DOM está pronto no mobile
+    const initTimeout = setTimeout(() => {
       initializeAuth();
     }, 100);
 
     // Escutar mudanças de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔄 Auth state change:', event);
-        
-        if (!mounted) return;
+        if (!isMounted) return;
 
         try {
           if (event === 'SIGNED_IN' && session?.user) {
-            console.log('✅ Usuário logado:', session.user.email);
-            
             const { data: profile } = await supabase
               .from('users')
               .select('*')
@@ -151,11 +150,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
             }
           } else if (event === 'SIGNED_OUT') {
-            console.log('🚪 Usuário deslogado');
             setUser(null);
           }
         } catch (error) {
-          console.error('❌ Erro no auth state change:', error);
+          console.error('Erro no auth state change:', error);
         } finally {
           setLoading(false);
         }
@@ -163,8 +161,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     return () => {
-      mounted = false;
-      clearTimeout(timeout);
+      isMounted = false;
+      clearTimeout(initTimeout);
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, []);
@@ -178,6 +177,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       });
       

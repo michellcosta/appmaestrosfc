@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from '@/auth/FixedAuthProvider';
+import { AuthProvider } from '@/auth/SimpleAuthProvider';
 import BottomNav from '@/components/layout/BottomNav';
 
 // Páginas
@@ -11,10 +11,12 @@ import InvitesApprovalsPage from '@/pages/Admin/InvitesApprovals';
 import HomePage from '@/pages/Home';
 import PerfilPage from '@/pages/Perfil';
 import RankingPage from '@/pages/Ranking';
+import OwnerDashboard from '@/pages/OwnerDashboard';
 import TestAuth from '@/pages/TestAuth';
 import SimpleLogin from '@/pages/SimpleLogin';
 import CreateOwner from '@/pages/CreateOwner';
 import CheckTables from '@/pages/CheckTables';
+import DebugAuth from '@/pages/DebugAuth';
 
 export default function AppRouter() {
   return (
@@ -29,10 +31,12 @@ export default function AppRouter() {
             <Route path="/admin/invites" element={<InvitesApprovalsPage />} />
             <Route path="/ranking" element={<RankingPage />} />
             <Route path="/perfil" element={<PerfilPage />} />
+            <Route path="/owner-dashboard" element={<OwnerDashboard />} />
             <Route path="/test-auth" element={<TestAuth />} />
             <Route path="/simple-login" element={<SimpleLogin />} />
             <Route path="/create-owner" element={<CreateOwner />} />
             <Route path="/check-tables" element={<CheckTables />} />
+            <Route path="/debug-auth" element={<DebugAuth />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

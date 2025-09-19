@@ -1,11 +1,13 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Trophy, DollarSign, BarChart3, MessageCircle, User } from 'lucide-react';
+import { Home, Trophy, DollarSign, BarChart3, MessageCircle, User, Crown } from 'lucide-react';
+import { useAuth } from '@/auth/SimpleAuthProvider';
 
 export default function BottomNav() {
   const { pathname } = useLocation();
+  const { user } = useAuth();
 
-  const menuItems = [
+  const baseMenuItems = [
     { href: '/', label: 'Jogos', icon: Home },
     { href: '/match', label: 'Partida', icon: Trophy },
     { href: '/finance', label: 'Financeiro', icon: DollarSign },
@@ -13,6 +15,15 @@ export default function BottomNav() {
     { href: '/vote', label: 'Votar', icon: MessageCircle },
     { href: '/perfil', label: 'Perfil', icon: User },
   ];
+
+  // Se for owner, substituir "Perfil" por "Dashboard"
+  const menuItems = user?.role === 'owner' 
+    ? baseMenuItems.map(item => 
+        item.href === '/perfil' 
+          ? { href: '/owner-dashboard', label: 'Dashboard', icon: Crown }
+          : item
+      )
+    : baseMenuItems;
 
   return (
     <nav
