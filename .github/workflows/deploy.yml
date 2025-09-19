@@ -35,13 +35,10 @@ jobs:
         
       - name: Copy files to root
         run: |
-          # Copy dist files to root
+          # Copy all dist files to root
           cp -r dist/* .
-          # Copy manifest and service worker from dist
-          cp dist/manifest.json .
-          cp dist/sw.js .
-          # Copy icons from dist
-          cp -r dist/icons .
+          # Ensure all files are copied
+          ls -la
         
       - name: Setup Pages
         uses: actions/configure-pages@v4
