@@ -27,22 +27,32 @@ export default function PerfilPage() {
             <User className='w-12 h-12 mx-auto text-zinc-400' />
             <div>
               <h3 className='text-lg font-semibold'>Faça login para continuar</h3>
-              <p className='text-sm text-zinc-500'>Entre com sua conta Google para acessar todas as funcionalidades</p>
+              <p className='text-sm text-zinc-500'>Use o login offline para acessar todas as funcionalidades</p>
             </div>
-            <Button 
-              onClick={async () => {
-                try {
-                  await signInWithGoogle();
-                } catch (error) {
-                  console.error('Erro no login:', error);
-                  alert('Erro ao fazer login. Verifique o console para mais detalhes.');
-                }
-              }} 
-              className='w-full'
-            >
-              <Mail className='w-4 h-4 mr-2' />
-              Entrar com Google
-            </Button>
+            <div className='space-y-2'>
+              <Button 
+                onClick={() => window.location.href = '/offline-auth'} 
+                className='w-full'
+              >
+                <User className='w-4 h-4 mr-2' />
+                Login Offline
+              </Button>
+              <Button 
+                onClick={async () => {
+                  try {
+                    await signInWithGoogle();
+                  } catch (error) {
+                    console.error('Erro no login:', error);
+                    alert('Erro ao fazer login. Use o login offline.');
+                  }
+                }} 
+                variant="outline"
+                className='w-full'
+              >
+                <Mail className='w-4 h-4 mr-2' />
+                Entrar com Google
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
