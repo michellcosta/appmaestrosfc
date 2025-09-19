@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '@/auth/OfflineAuthProvider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,29 +8,20 @@ import { Badge } from '@/components/ui/badge';
 import { User, Mail, Shield, CheckCircle } from 'lucide-react';
 
 export default function OfflineAuth() {
+  const { user, signInOffline, signOut } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const handleLogin = async () => {
     setLoading(true);
     setMessage('');
     
     try {
-      // Simular login offline
       if (email && password) {
+        await signInOffline(email, password);
         setMessage('Login realizado com sucesso!');
-        setIsLoggedIn(true);
-        
-        // Salvar no localStorage
-        localStorage.setItem('offline_user', JSON.stringify({
-          id: 'offline-1',
-          email: email,
-          name: email.split('@')[0],
-          role: 'owner'
-        }));
         
         // Redirecionar após 2 segundos
         setTimeout(() => {
@@ -45,13 +37,16 @@ export default function OfflineAuth() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('offline_user');
-    setIsLoggedIn(false);
-    setMessage('Logout realizado!');
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      setMessage('Logout realizado!');
+    } catch (error) {
+      setMessage(`Erro: ${error}`);
+    }
   };
 
-  if (isLoggedIn) {
+  if (user) {
     return (
       <div className='p-4 sm:p-6 space-y-4'>
         <Card>
@@ -67,10 +62,10 @@ export default function OfflineAuth() {
                 <User className='w-6 h-6 text-green-600' />
               </div>
               <div>
-                <p className='font-semibold'>{email}</p>
+                <p className='font-semibold'>{user.email}</p>
                 <Badge variant="secondary" className='bg-purple-100 text-purple-800'>
                   <Shield className='w-3 h-3 mr-1' />
-                  Owner
+                  {user.role === 'owner' ? 'Owner' : user.role}
                 </Badge>
               </div>
             </div>
