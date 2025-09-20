@@ -25,23 +25,23 @@ export const useGamesStore = create<GamesStore>()(
   persist(
     (set, get) => ({
       matches: [
-        // Dados iniciais mockados
+        // Dados iniciais mockados - atualizados
         {
           id: 1,
-          date: '2024-01-20',
-          time: '19:00',
-          location: 'Rua Barão de Mesquita, 513 - Tijuca, Rio de Janeiro - RJ',
-          maxPlayers: 22,
+          date: '2025-01-26',
+          time: '20:00',
+          location: 'R. Renato Bazin, 705-751 - Laranjal, São Gonçalo - RJ, 24725-140',
+          maxPlayers: 25,
           confirmedPlayers: 18,
           status: 'open',
           createdAt: Date.now() - 86400000 // 1 dia atrás
         },
         {
           id: 2,
-          date: '2024-01-22',
-          time: '20:00',
-          location: 'Av. Presidente Vargas, 1000 - Centro, Rio de Janeiro - RJ',
-          maxPlayers: 22,
+          date: '2025-01-28',
+          time: '19:30',
+          location: 'R. Renato Bazin, 705-751 - Laranjal, São Gonçalo - RJ, 24725-140',
+          maxPlayers: 25,
           confirmedPlayers: 15,
           status: 'open',
           createdAt: Date.now() - 43200000 // 12 horas atrás
