@@ -5,7 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Crown, Shield, Star, Zap, User } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useAuth } from '@/auth/OfflineAuthProvider';
 import RestrictedAccess from './RestrictedAccess';
 
 type Range = "week" | "month" | "all";
@@ -43,7 +45,19 @@ function inRange(dateIso: string | null | undefined, range: Range) {
 
 export default function RankingPage() {
   const { canSeeRanking, canSeeVote } = usePermissions();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"ranking" | "voting">("ranking");
+
+  const getRoleIcon = (role?: string) => {
+    switch (role) {
+      case 'owner': return <Crown className='w-4 h-4 text-role-owner' />;
+      case 'admin': return <Shield className='w-4 h-4 text-role-admin' />;
+      case 'aux': return <Zap className='w-4 h-4 text-role-aux' />;
+      case 'mensalista': return <Star className='w-4 h-4 text-role-mensalista' />;
+      case 'diarista': return <Zap className='w-4 h-4 text-role-diarista' />;
+      default: return <User className='w-4 h-4 text-role-default' />;
+    }
+  };
   const [range, setRange] = useState<Range>("month");
   const [pos, setPos] = useState<"Geral" | "Goleiro" | "Zagueiro" | "Meia" | "Atacante">("Geral");
 
@@ -176,11 +190,31 @@ export default function RankingPage() {
 
   return (
     <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 space-y-4 pb-20">
-      <header>
-        <h1 className="text-xl font-semibold">Ranking & Votações</h1>
-        <p className="text-sm text-zinc-500">
-          Rankings dos jogadores e votações ativas.
-        </p>
+      <header className="bg-white border-b border-gray-200 shadow-sm rounded-lg mb-4">
+        <div className="flex items-center justify-between p-4">
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">Ranking & Votações</h1>
+            <p className="text-sm text-gray-600">
+              Rankings dos jogadores e votações ativas.
+            </p>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            {user?.role && (
+              <div className="flex items-center space-x-1 text-sm text-maestros-green">
+                {getRoleIcon(user.role)}
+                <span className="hidden sm:inline font-medium">
+                  {user.role === 'owner' ? 'Dono' : 
+                   user.role === 'admin' ? 'Admin' : 
+                   user.role === 'aux' ? 'Auxiliar' : 
+                   user.role === 'mensalista' ? 'Mensalista' : 
+                   user.role === 'diarista' ? 'Diarista' : 
+                   'Usuário'}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
       </header>
 
       {/* Abas principais */}

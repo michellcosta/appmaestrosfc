@@ -1,25 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Cloud, CloudRain, Sun, CloudSnow, Wind, Thermometer, Droplets, Eye } from 'lucide-react';
+import { Cloud, CloudRain, Sun, CloudSnow, Wind, Thermometer, Droplets, Eye, Moon } from 'lucide-react';
 import { weatherService, type WeatherData } from '@/services/weatherService';
 
 interface WeatherForecastProps {
   date: string;
   location: string;
+  time?: string; // Horário da partida (formato HH:MM)
   className?: string;
 }
 
-const WeatherForecast: React.FC<WeatherForecastProps> = ({ date, location, className = '' }) => {
+const WeatherForecast: React.FC<WeatherForecastProps> = ({ date, location, time, className = '' }) => {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Função para obter ícone baseado na condição
-  const getWeatherIcon = (condition: string) => {
+  // Função para obter ícone baseado na condição e período do dia
+  const getWeatherIcon = (condition: string, description: string) => {
+    const isNightCondition = description.includes('Céu limpo') || 
+                            (description.includes('nublado') && time && isNightTime(time));
+    
     switch (condition) {
       case 'sunny':
-        return <Sun className="w-6 h-6 text-yellow-500" />;
+        return isNightCondition ? 
+          <Moon className="w-6 h-6 text-blue-300" /> : 
+          <Sun className="w-6 h-6 text-yellow-500" />;
       case 'cloudy':
         return <Cloud className="w-6 h-6 text-gray-500" />;
       case 'rainy':
@@ -29,8 +35,16 @@ const WeatherForecast: React.FC<WeatherForecastProps> = ({ date, location, class
       case 'windy':
         return <Wind className="w-6 h-6 text-gray-600" />;
       default:
-        return <Sun className="w-6 h-6 text-yellow-500" />;
+        return isNightCondition ? 
+          <Moon className="w-6 h-6 text-blue-300" /> : 
+          <Sun className="w-6 h-6 text-yellow-500" />;
     }
+  };
+
+  // Função auxiliar para determinar se é período noturno
+  const isNightTime = (timeStr: string) => {
+    const [hours] = timeStr.split(':').map(Number);
+    return hours >= 18 || hours < 6;
   };
 
   // Função para determinar a cor do badge baseada na temperatura
@@ -43,13 +57,13 @@ const WeatherForecast: React.FC<WeatherForecastProps> = ({ date, location, class
   };
 
   // Função para obter dados meteorológicos usando o serviço
-  const fetchWeatherData = async (targetDate: string, targetLocation: string) => {
+  const fetchWeatherData = async (targetDate: string, targetLocation: string, targetTime?: string) => {
     try {
       setLoading(true);
       setError(null);
 
       // Usar o serviço de previsão do tempo
-      const weatherData = await weatherService.getWeatherForecast(targetDate, targetLocation);
+      const weatherData = await weatherService.getWeatherForecast(targetDate, targetLocation, targetTime);
       setWeather(weatherData);
     } catch (err) {
       setError('Erro ao carregar previsão do tempo');
@@ -61,9 +75,9 @@ const WeatherForecast: React.FC<WeatherForecastProps> = ({ date, location, class
 
   useEffect(() => {
     if (date && location) {
-      fetchWeatherData(date, location);
+      fetchWeatherData(date, location, time);
     }
-  }, [date, location]);
+  }, [date, location, time]);
 
   if (loading) {
     return (
@@ -112,7 +126,7 @@ const WeatherForecast: React.FC<WeatherForecastProps> = ({ date, location, class
         {/* Temperatura e condição principal */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {getWeatherIcon(weather.condition)}
+            {getWeatherIcon(weather.condition, weather.description)}
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold">{weather.temperature}°C</span>

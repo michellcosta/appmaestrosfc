@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, Users, CheckCircle, Navigation } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, CheckCircle, Navigation, RefreshCw } from 'lucide-react';
 import { LoadingCard, LoadingStats } from '@/components/ui/loading-card';
 import { EmptyGames } from '@/components/ui/empty-state';
 import { useToastHelpers } from '@/components/ui/toast';
 import { useGamesStore } from '@/store/gamesStore';
+import { SyncService } from '@/services/syncService';
+import { useAuth } from '@/auth/OfflineAuthProvider';
 import { RouteButton } from '@/components/RouteButton';
 import PageLayout from '@/components/layout/PageLayout';
 import WeatherForecast from '@/components/WeatherForecast';
@@ -16,7 +18,54 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { matches } = useGamesStore();
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   const { success, error } = useToastHelpers();
+  const { user } = useAuth();
+
+  // Função para sincronizar dados entre dispositivos
+  const handleSyncData = async () => {
+    if (isSyncing) return;
+    
+    setIsSyncing(true);
+    
+    try {
+      // Preservar dados de autenticação
+      const offlineUser = localStorage.getItem('offline_user');
+      
+      // Sincronizar com servidor usando dados atuais
+      const syncedMatches = await SyncService.syncWithServer(matches, user?.id);
+      
+      if (syncedMatches) {
+        // Limpar localStorage preservando autenticação
+        localStorage.clear();
+        
+        // Restaurar dados de autenticação
+        if (offlineUser) {
+          localStorage.setItem('offline_user', offlineUser);
+        }
+        
+        // Salvar dados sincronizados no localStorage
+        localStorage.setItem('maestrosfc_games', JSON.stringify({
+          state: { matches: syncedMatches },
+          version: 0
+        }));
+        
+        success('Dados sincronizados entre dispositivos!');
+        
+        // Recarregar para aplicar mudanças
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        error('Erro ao sincronizar com servidor');
+      }
+    } catch (err) {
+      console.error('Erro na sincronização:', err);
+      error('Erro ao sincronizar dados');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Função para formatar data em português
   const formatDate = (dateString: string) => {
@@ -48,7 +97,7 @@ export default function HomePage() {
 
   if (isLoading) {
     return (
-      <PageLayout title="Início" subtitle="Temperatura Local e Jogos">
+      <PageLayout title="Início" subtitle="Próximo jogo e Temperatura local">
         <div className="space-y-4 pb-20">
           <LoadingStats />
           <LoadingCard />
@@ -59,7 +108,7 @@ export default function HomePage() {
 
   if (matches.length === 0) {
     return (
-      <PageLayout title="Início" subtitle="Temperatura Local e Jogos">
+      <PageLayout title="Início" subtitle="Próximo jogo e Temperatura local">
         <div className="space-y-4 pb-20">
           <EmptyGames />
         </div>
@@ -70,7 +119,7 @@ export default function HomePage() {
   const currentMatch = matches[0];
 
   return (
-    <PageLayout title="Início" subtitle="Temperatura Local e Jogos">
+    <PageLayout title="Início" subtitle="Próximo jogo e Temperatura local">
       <div className="space-y-4 pb-20">
         <Card className="rounded-2xl">
           <CardContent className="p-6 space-y-4">
@@ -131,6 +180,7 @@ export default function HomePage() {
         <WeatherForecast 
           date={currentMatch.date} 
           location={currentMatch.location}
+          time={currentMatch.time}
         />
 
         {/* Próximos Jogos */}
@@ -149,6 +199,7 @@ export default function HomePage() {
                 <WeatherForecast 
                   date={match.date} 
                   location={match.location}
+                  time={match.time}
                   className="border-0 shadow-none bg-zinc-50 dark:bg-zinc-800"
                 />
               </CardContent>
@@ -190,6 +241,23 @@ export default function HomePage() {
                 >
                   Debug Auth
                 </Button>
+              </div>
+              
+              {/* Botão de Sincronização */}
+              <div className="pt-2 border-t border-zinc-200">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleSyncData}
+                  disabled={isSyncing}
+                  className="w-full text-blue-600 border-blue-200 hover:bg-blue-50 disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                  {isSyncing ? 'Sincronizando...' : 'Sincronizar Dados'}
+                </Button>
+                <p className="text-xs text-zinc-500 mt-1 text-center">
+                  Sincroniza dados entre mobile e desktop
+                </p>
               </div>
             </CardContent>
           </Card>

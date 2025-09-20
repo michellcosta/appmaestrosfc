@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { SyncService } from '@/services/syncService'
 
 export interface GameMatch {
   id: number
@@ -57,23 +58,32 @@ export const useGamesStore = create<GamesStore>()(
           createdAt: Date.now()
         }
 
-        set((state) => ({
-          matches: [...state.matches, newMatch]
-        }))
+        set((state) => {
+          const newMatches = [...state.matches, newMatch];
+          // Salvar no servidor em background
+          SyncService.saveToServer(newMatches).catch(console.error);
+          return { matches: newMatches };
+        })
       },
 
       updateMatch: (id, updates) => {
-        set((state) => ({
-          matches: state.matches.map(match =>
+        set((state) => {
+          const newMatches = state.matches.map(match =>
             match.id === id ? { ...match, ...updates } : match
-          )
-        }))
+          );
+          // Salvar no servidor em background
+          SyncService.saveToServer(newMatches).catch(console.error);
+          return { matches: newMatches };
+        })
       },
 
       deleteMatch: (id) => {
-        set((state) => ({
-          matches: state.matches.filter(match => match.id !== id)
-        }))
+        set((state) => {
+          const newMatches = state.matches.filter(match => match.id !== id);
+          // Salvar no servidor em background
+          SyncService.saveToServer(newMatches).catch(console.error);
+          return { matches: newMatches };
+        })
       },
 
       getUpcomingMatches: () => {

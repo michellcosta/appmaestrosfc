@@ -3,7 +3,9 @@ import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Crown, Shield, Star, Zap, User } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useAuth } from '@/auth/OfflineAuthProvider';
 import RestrictedAccess from './RestrictedAccess';
 
 type CurrentPoll = { poll_id: string; opens_at: string; closes_at: string; };
@@ -12,7 +14,19 @@ const CATS: PartialRow['category'][] = ['Goleiro','Zagueiro','Meia','Atacante'];
 
 export default function VotePage() {
   const { canSeeVote } = usePermissions();
+  const { user } = useAuth();
   const [poll, setPoll] = useState<CurrentPoll|null>(null);
+
+  const getRoleIcon = (role?: string) => {
+    switch (role) {
+      case 'owner': return <Crown className='w-4 h-4 text-role-owner' />;
+      case 'admin': return <Shield className='w-4 h-4 text-role-admin' />;
+      case 'aux': return <Zap className='w-4 h-4 text-role-aux' />;
+      case 'mensalista': return <Star className='w-4 h-4 text-role-mensalista' />;
+      case 'diarista': return <Zap className='w-4 h-4 text-role-diarista' />;
+      default: return <User className='w-4 h-4 text-role-default' />;
+    }
+  };
   const [partials, setPartials] = useState<PartialRow[]>([]);
   const [choice, setChoice] = useState<Record<string,string>>({}); // category -> player_id
 
@@ -61,8 +75,33 @@ export default function VotePage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 space-y-4">
-      <h2 className="text-xl font-semibold">Votações Semanais</h2>
+    <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 space-y-4 pb-20">
+      <header className="bg-white border-b border-gray-200 shadow-sm rounded-lg mb-4">
+        <div className="flex items-center justify-between p-4">
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">Votação</h1>
+            <p className="text-sm text-gray-600">
+              Vote nos melhores jogadores da rodada
+            </p>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            {user?.role && (
+              <div className="flex items-center space-x-1 text-sm text-maestros-green">
+                {getRoleIcon(user.role)}
+                <span className="hidden sm:inline font-medium">
+                  {user.role === 'owner' ? 'Dono' : 
+                   user.role === 'admin' ? 'Admin' : 
+                   user.role === 'aux' ? 'Auxiliar' : 
+                   user.role === 'mensalista' ? 'Mensalista' : 
+                   user.role === 'diarista' ? 'Diarista' : 
+                   'Usuário'}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
       {!poll ? (
         <div className="text-sm text-zinc-500">Nenhuma votação em andamento.</div>
       ) : (

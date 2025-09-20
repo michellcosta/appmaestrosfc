@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Pencil, Trash2, Trophy } from "lucide-react";
+import { Pencil, Trash2, Trophy, Crown, Shield, Star, Zap, User } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useMatchStore, GoalEvent, TeamColor } from "@/store/matchStore";
+import { useAuth } from '@/auth/OfflineAuthProvider';
 
 type FilterRange = "week" | "month" | "all";
 
@@ -75,6 +76,18 @@ const Match: React.FC = () => {
     deleteGoal,
     endRoundChooseNext,
   } = useMatchStore();
+  const { user } = useAuth();
+
+  const getRoleIcon = (role?: string) => {
+    switch (role) {
+      case 'owner': return <Crown className='w-4 h-4 text-role-owner' />;
+      case 'admin': return <Shield className='w-4 h-4 text-role-admin' />;
+      case 'aux': return <Zap className='w-4 h-4 text-role-aux' />;
+      case 'mensalista': return <Star className='w-4 h-4 text-role-mensalista' />;
+      case 'diarista': return <Zap className='w-4 h-4 text-role-diarista' />;
+      default: return <User className='w-4 h-4 text-role-default' />;
+    }
+  };
 
   /* Safeguards */
   const roundSafe =
@@ -271,9 +284,29 @@ const Match: React.FC = () => {
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-5 pb-[120px] sm:pb-5">
-      <header className="mb-3">
-        <h1 className="text-2xl font-semibold">Partida ao Vivo</h1>
-        <p className="text-sm text-zinc-500">Rodada {roundSafe.number}</p>
+      <header className="bg-white border-b border-gray-200 shadow-sm rounded-lg mb-4">
+        <div className="flex items-center justify-between p-4">
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">Partida ao Vivo</h1>
+            <p className="text-sm text-gray-600">Rodada {roundSafe.number}</p>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            {user?.role && (
+              <div className="flex items-center space-x-1 text-sm text-maestros-green">
+                {getRoleIcon(user.role)}
+                <span className="hidden sm:inline font-medium">
+                  {user.role === 'owner' ? 'Dono' : 
+                   user.role === 'admin' ? 'Admin' : 
+                   user.role === 'aux' ? 'Auxiliar' : 
+                   user.role === 'mensalista' ? 'Mensalista' : 
+                   user.role === 'diarista' ? 'Diarista' : 
+                   'Usuário'}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
       </header>
 
       {/* Cronômetro */}

@@ -196,15 +196,17 @@ export default function OwnerDashboard() {
   return (
     <div className='p-4 sm:p-6 space-y-6'>
       {/* Header */}
-      <div className='flex items-center justify-between'>
-        <div>
-          <h1 className='text-2xl font-bold flex items-center gap-2'>
-            <Crown className='w-6 h-6 text-purple-600' />
-            Dashboard do Dono
-          </h1>
-          <p className='text-sm text-zinc-600 dark:text-zinc-400'>Painel administrativo completo</p>
-        </div>
-        <div className='flex items-center gap-3'>
+      <header className="bg-white border-b border-gray-200 shadow-sm rounded-lg mb-4">
+        <div className="p-4">
+          <div className='flex items-center justify-between'>
+            <div className="flex items-center space-x-3">
+              <Crown className='w-4 h-4 text-role-owner' />
+              <div>
+                <h1 className='text-lg font-bold text-gray-900'>Dashboard do Dono</h1>
+                <p className='text-sm text-gray-600'>Painel administrativo completo</p>
+              </div>
+            </div>
+            <div className='flex items-center gap-3'>
           <Badge variant="secondary" className='bg-purple-100 text-purple-800'>
             <Crown className='w-3 h-3 mr-1' />
             Owner
@@ -226,8 +228,10 @@ export default function OwnerDashboard() {
             <LogOut className='w-4 h-4 mr-2' />
             Sair
           </Button>
+            </div>
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* Cards de Resumo */}
       <div className='grid grid-cols-2 gap-4'>

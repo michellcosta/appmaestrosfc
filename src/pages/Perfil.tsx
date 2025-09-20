@@ -36,7 +36,8 @@ import {
   CheckCircle,
   Bell,
   RefreshCw,
-  Palette
+  Palette,
+  Zap
 } from 'lucide-react';
 import ThemeSelector from '@/components/ThemeSelector';
 
@@ -44,6 +45,17 @@ export default function PerfilPage() {
   const { user, loading, signOut, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const { matches, updateMatch, deleteMatch } = useGamesStore();
+
+  const getRoleIcon = (role?: string) => {
+    switch (role) {
+      case 'owner': return <Crown className='w-4 h-4 text-role-owner' />;
+      case 'admin': return <Shield className='w-4 h-4 text-role-admin' />;
+      case 'aux': return <Zap className='w-4 h-4 text-role-aux' />;
+      case 'mensalista': return <Star className='w-4 h-4 text-role-mensalista' />;
+      case 'diarista': return <Zap className='w-4 h-4 text-role-diarista' />;
+      default: return <User className='w-4 h-4 text-role-default' />;
+    }
+  };
 
   // Dados mockados para o dashboard do owner
   const [dashboardData] = useState({
@@ -70,8 +82,15 @@ export default function PerfilPage() {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedMatch, setSelectedMatch] = useState(null);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [editForm, setEditForm] = useState({
+    location: '',
+    date: '',
+    time: '',
+    maxPlayers: 22
+  });
+  const [createForm, setCreateForm] = useState({
     location: '',
     date: '',
     time: '',
@@ -86,6 +105,7 @@ export default function PerfilPage() {
 
   const handleEditMatch = (match) => {
     setSelectedMatch(match);
+    // Pré-preencher com dados da partida editada
     setEditForm({
       location: match.location,
       date: match.date,
@@ -98,6 +118,55 @@ export default function PerfilPage() {
   const handleDeleteMatch = (match) => {
     setSelectedMatch(match);
     setDeleteModalOpen(true);
+  };
+
+  const handleCreateMatch = () => {
+    // Nova Partida - usar data atual
+    const today = new Date();
+    const currentDate = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    const currentTime = today.toTimeString().slice(0, 5); // Formato HH:MM
+    
+    setCreateForm({
+      location: '',
+      date: currentDate,
+      time: currentTime,
+      maxPlayers: 22
+    });
+    setCreateModalOpen(true);
+  };
+
+  const handleRepeatMatch = () => {
+    // Repetir Partida - pegar última partida + 7 dias
+    if (matches.length > 0) {
+      const lastMatch = matches[matches.length - 1];
+      const lastMatchDate = new Date(lastMatch.date);
+      lastMatchDate.setDate(lastMatchDate.getDate() + 7);
+      
+      const newDate = lastMatchDate.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+      
+      setCreateForm({
+        location: lastMatch.location,
+        date: newDate,
+        time: lastMatch.time,
+        maxPlayers: lastMatch.maxPlayers
+      });
+      setCreateModalOpen(true);
+    } else {
+      alert('Não há partidas anteriores para repetir.');
+    }
+  };
+
+  const handleSaveCreate = () => {
+    // Aqui você adicionaria a lógica para salvar a nova partida
+    console.log('Criando nova partida:', createForm);
+    alert('Partida criada com sucesso!');
+    setCreateModalOpen(false);
+    setCreateForm({
+      location: '',
+      date: '',
+      time: '',
+      maxPlayers: 22
+    });
   };
 
   const confirmDeleteMatch = () => {
@@ -128,8 +197,8 @@ export default function PerfilPage() {
   if (loading) {
     return (
       <div className='p-4 sm:p-6'>
-        <h1 className='text-xl font-semibold'>Perfil</h1>
-        <p className='text-sm text-zinc-500'>Carregando...</p>
+        <h1 className='text-lg font-bold text-gray-900'>Perfil</h1>
+        <p className='text-sm text-gray-600'>Carregando...</p>
       </div>
     );
   }
@@ -137,7 +206,7 @@ export default function PerfilPage() {
   if (!user) {
     return (
       <div className='p-4 sm:p-6 space-y-4'>
-        <h1 className='text-xl font-semibold'>Perfil</h1>
+        <h1 className='text-lg font-bold text-gray-900'>Perfil</h1>
         <Card>
           <CardContent className='p-6 text-center space-y-4'>
             <User className='w-12 h-12 mx-auto text-zinc-400' />
@@ -178,10 +247,30 @@ export default function PerfilPage() {
 
   return (
     <div className='p-4 sm:p-6 space-y-4 pb-20'>
-      <div>
-        <h1 className='text-xl font-semibold'>Perfil</h1>
-        <p className='text-sm text-zinc-500'>Dados do jogador, posição e estrelas</p>
-      </div>
+      <header className="bg-white border-b border-gray-200 shadow-sm rounded-lg mb-4">
+        <div className="flex items-center justify-between p-4">
+          <div>
+            <h1 className='text-lg font-bold text-gray-900'>Perfil</h1>
+            <p className='text-sm text-gray-600'>Dados do jogador, posição e estrelas</p>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            {user?.role && (
+              <div className="flex items-center space-x-1 text-sm text-maestros-green">
+                {getRoleIcon(user.role)}
+                <span className="hidden sm:inline font-medium">
+                  {user.role === 'owner' ? 'Dono' : 
+                   user.role === 'admin' ? 'Admin' : 
+                   user.role === 'aux' ? 'Auxiliar' : 
+                   user.role === 'mensalista' ? 'Mensalista' : 
+                   user.role === 'diarista' ? 'Diarista' : 
+                   'Usuário'}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
       
       {/* Informações do Usuário */}
       <Card>
@@ -417,7 +506,19 @@ export default function PerfilPage() {
                     </div>
                   </div>
                 ))}
-                <Button className='w-full' variant="outline">
+                <Button 
+                  className='w-full mb-2' 
+                  variant="outline"
+                  onClick={handleRepeatMatch}
+                >
+                  <RefreshCw className='w-4 h-4 mr-2' />
+                  Repetir Partida
+                </Button>
+                <Button 
+                  className='w-full' 
+                  variant="outline"
+                  onClick={handleCreateMatch}
+                >
                   <Plus className='w-4 h-4 mr-2' />
                   Nova Partida
                 </Button>
@@ -811,6 +912,63 @@ export default function PerfilPage() {
             </Button>
             <Button variant="destructive" onClick={confirmDeleteMatch}>
               Excluir Jogo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Criar Partida */}
+      <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Criar Nova Partida</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="create-location">Local</Label>
+              <Input
+                id="create-location"
+                value={createForm.location}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, location: e.target.value }))}
+                placeholder="Digite o local do jogo"
+              />
+            </div>
+            <div>
+              <Label htmlFor="create-date">Data</Label>
+              <Input
+                id="create-date"
+                type="date"
+                value={createForm.date}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, date: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="create-time">Hora</Label>
+              <Input
+                id="create-time"
+                type="time"
+                value={createForm.time}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, time: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="create-maxPlayers">Número de Vagas</Label>
+              <Input
+                id="create-maxPlayers"
+                type="number"
+                min="10"
+                max="30"
+                value={createForm.maxPlayers}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, maxPlayers: parseInt(e.target.value) || 22 }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveCreate}>
+              Criar Partida
             </Button>
           </DialogFooter>
         </DialogContent>

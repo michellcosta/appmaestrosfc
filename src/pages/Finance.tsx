@@ -4,8 +4,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { DollarSign, CreditCard, TrendingUp, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { DollarSign, CreditCard, TrendingUp, CheckCircle, Clock, XCircle, Crown, Shield, Star, Zap, User } from 'lucide-react';
 import PaymentButton from '@/components/PaymentButton';
+import { useAuth } from '@/auth/OfflineAuthProvider';
 
 type Charge = {
   id: string;
@@ -19,6 +20,18 @@ type Charge = {
 export default function FinancePage() {
   const [rows, setRows] = useState<Charge[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  const getRoleIcon = (role?: string) => {
+    switch (role) {
+      case 'owner': return <Crown className='w-4 h-4 text-role-owner' />;
+      case 'admin': return <Shield className='w-4 h-4 text-role-admin' />;
+      case 'aux': return <Zap className='w-4 h-4 text-role-aux' />;
+      case 'mensalista': return <Star className='w-4 h-4 text-role-mensalista' />;
+      case 'diarista': return <Zap className='w-4 h-4 text-role-diarista' />;
+      default: return <User className='w-4 h-4 text-role-default' />;
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -52,10 +65,30 @@ export default function FinancePage() {
 
   return (
     <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 space-y-4 pb-20">
-      <div>
-        <h1 className="text-xl font-semibold">Financeiro</h1>
-        <p className="text-sm text-zinc-500">Controle de pagamentos e mensalidades</p>
-      </div>
+      <header className="bg-white border-b border-gray-200 shadow-sm rounded-lg mb-4">
+        <div className="flex items-center justify-between p-4">
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">Financeiro</h1>
+            <p className="text-sm text-gray-600">Controle de pagamentos e mensalidades</p>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            {user?.role && (
+              <div className="flex items-center space-x-1 text-sm text-maestros-green">
+                {getRoleIcon(user.role)}
+                <span className="hidden sm:inline font-medium">
+                  {user.role === 'owner' ? 'Dono' : 
+                   user.role === 'admin' ? 'Admin' : 
+                   user.role === 'aux' ? 'Auxiliar' : 
+                   user.role === 'mensalista' ? 'Mensalista' : 
+                   user.role === 'diarista' ? 'Diarista' : 
+                   'Usuário'}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
 
       {/* Resumo Financeiro */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
