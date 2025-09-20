@@ -1,95 +1,263 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/auth/OfflineAuthProvider';
+import { CheckCircle, AlertCircle, User, Mail, Crown } from 'lucide-react';
 
 export default function SimpleLogin() {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { user, setUser } = useAuth();
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
+  const { user, signInOffline, signOut } = useAuth();
+
+  const showMessage = (text: string, type: 'success' | 'error') => {
+    setMessage(text);
+    setMessageType(type);
+    setTimeout(() => {
+      setMessage('');
+      setMessageType('');
+    }, 5000);
+  };
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleLogin = async () => {
-    if (!email || !name) {
-      alert('Preencha todos os campos');
+    // Validações
+    if (!email.trim()) {
+      showMessage('Por favor, digite seu email', 'error');
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      showMessage('Por favor, digite um email válido', 'error');
+      return;
+    }
+
+    if (!name.trim()) {
+      showMessage('Por favor, digite seu nome', 'error');
+      return;
+    }
+
+    if (name.trim().length < 2) {
+      showMessage('Nome deve ter pelo menos 2 caracteres', 'error');
       return;
     }
 
     setLoading(true);
     
-    // Simula login como owner
-    const mockUser = {
-      id: 'owner-' + Date.now(),
-      email: email,
-      name: name,
-      role: 'owner' as const
-    };
+    try {
+      // Usar o método signInOffline do provider
+      await signInOffline(email.trim(), 'temp-password');
+      
+      // Atualizar o usuário com o nome correto
+      const userData = {
+        id: 'owner-' + Date.now(),
+        email: email.trim(),
+        name: name.trim(),
+        role: 'owner' as const
+      };
 
-    // Simula o setUser do AuthProvider
-    if (setUser) {
-      setUser(mockUser);
+      // Salvar no localStorage com o nome correto
+      localStorage.setItem('offline_user', JSON.stringify(userData));
+      
+      showMessage(`Bem-vindo, ${name.trim()}! Login realizado com sucesso.`, 'success');
+      
+      // Recarregar a página após 2 segundos para aplicar o login
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Erro no login:', error);
+      showMessage('Erro ao fazer login. Tente novamente.', 'error');
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
-    alert('Login realizado com sucesso! Você é o Owner do sistema.');
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      showMessage('Logout realizado com sucesso!', 'success');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error) {
+      console.error('Erro no logout:', error);
+      showMessage('Erro ao fazer logout', 'error');
+    }
   };
 
   if (user) {
     return (
-      <div className="p-4 space-y-4">
-        <h1 className="text-xl font-semibold">Já logado!</h1>
-        <Card>
-          <CardContent className="p-4">
-            <p>Bem-vindo, {user.name}!</p>
-            <p>Role: {user.role}</p>
-            <p>Email: {user.email}</p>
-          </CardContent>
-        </Card>
+      <div 
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{
+          background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%)'
+        }}
+      >
+        <div className="w-full max-w-sm space-y-8">
+          {/* Header minimalista */}
+          <div className="text-center space-y-2">
+            <div className="mx-auto w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+              <CheckCircle className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-white">Conectado</h1>
+            <p className="text-gray-300">Acesso autorizado</p>
+          </div>
+
+          {/* Card de informações clean */}
+          <div className="bg-gray-900 rounded-3xl p-6 shadow-xl border border-gray-700 space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-2xl">
+                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <span className="font-medium text-white">{user.name}</span>
+              </div>
+              
+              <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-2xl">
+                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                  <Mail className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-gray-300">{user.email}</span>
+              </div>
+              
+              <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-2xl">
+                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                  <Crown className="w-5 h-5 text-white" />
+                </div>
+                <span className="font-medium text-green-300">Owner</span>
+              </div>
+            </div>
+
+            <Button 
+              onClick={handleLogout}
+              className="w-full h-14 rounded-2xl bg-gray-700 hover:bg-red-600 border-2 border-gray-600 hover:border-red-500 text-white hover:text-white font-medium text-base transition-all duration-200 active:scale-95"
+            >
+              Sair da Conta
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-xl font-semibold">Login Temporário</h1>
-      <p className="text-sm text-zinc-500">
-        Use este login temporário enquanto configuramos o Google OAuth
-      </p>
-      
-      <Card>
-        <CardContent className="p-4 space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Seu nome completo"
-            />
+    <div 
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{
+        background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%)'
+      }}
+    >
+      <div className="w-full max-w-sm space-y-8">
+        {/* Header com tema Maestros */}
+        <div className="text-center space-y-4">
+          <div className="flex justify-center space-x-2 mb-6">
+            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+            <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse delay-75"></div>
+            <div className="w-3 h-3 bg-green-300 rounded-full animate-pulse delay-150"></div>
           </div>
-          
+          <h1 className="text-3xl font-bold text-white">Maestros FC</h1>
+          <p className="text-gray-300">Login Rápido</p>
+        </div>
+
+        {/* Card principal com tema escuro */}
+        <div className="bg-gray-900 rounded-3xl p-6 shadow-xl border border-gray-700 space-y-6">
+          {/* Campo Nome */}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="seu@email.com"
-            />
+            <div className="flex items-center gap-3 p-4 bg-gray-800 rounded-2xl border-2 border-transparent focus-within:border-maestros-green focus-within:bg-gray-700 transition-all">
+              <div className="w-8 h-8 bg-maestros-green rounded-full flex items-center justify-center flex-shrink-0">
+                <User className="w-4 h-4 text-white" />
+              </div>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Nome completo"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={loading}
+                className="border-0 bg-transparent p-0 h-auto text-base text-white placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
+                autoComplete="name"
+              />
+            </div>
           </div>
-          
+
+          {/* Campo Email */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 p-4 bg-gray-800 rounded-2xl border-2 border-transparent focus-within:border-green-500 focus-within:bg-gray-700 transition-all">
+              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <Mail className="w-4 h-4 text-white" />
+              </div>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                className="border-0 bg-transparent p-0 h-auto text-base text-white placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
+                autoComplete="email"
+                inputMode="email"
+              />
+            </div>
+          </div>
+
+          {/* Mensagem de feedback */}
+          {message && (
+            <div className={`p-4 rounded-2xl flex items-center gap-3 ${
+              messageType === 'success' 
+                ? 'bg-green-900/50 border border-green-500/30 text-green-300' 
+                : 'bg-red-900/50 border border-red-500/30 text-red-300'
+            }`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                messageType === 'success' ? 'bg-green-500' : 'bg-red-500'
+              }`}>
+                {messageType === 'success' ? (
+                  <CheckCircle className="w-4 h-4 text-white" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-white" />
+                )}
+              </div>
+              <span className="font-medium">{message}</span>
+            </div>
+          )}
+
+          {/* Botão de login */}
           <Button 
-            onClick={handleLogin} 
-            disabled={loading}
-            className="w-full"
+            onClick={handleLogin}
+            disabled={!name.trim() || !email.trim() || loading}
+            className="w-full h-14 rounded-2xl btn-primary disabled:opacity-50 disabled:cursor-not-allowed font-medium text-base transition-all duration-200 active:scale-95 shadow-lg"
           >
-            {loading ? 'Entrando...' : 'Entrar como Owner'}
+            {loading ? (
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Entrando...</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Crown className="w-4 h-4" />
+                <span>Entrar como Owner</span>
+              </div>
+            )}
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Badge de segurança com tema escuro */}
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-full shadow-md border border-gray-600">
+            <div className="w-2 h-2 bg-maestros-green rounded-full animate-pulse"></div>
+            <span className="text-sm text-gray-300 font-medium">Seguro & Rápido</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

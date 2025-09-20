@@ -27,10 +27,10 @@ type FilterRange = "week" | "month" | "all";
 
 /* Cores dos chips de time */
 const colorChip: Record<TeamColor, string> = {
-  Preto: "bg-zinc-900 text-white",
-  Verde: "bg-emerald-600 text-white",
-  Cinza: "bg-slate-400 text-zinc-900",
-  Vermelho: "bg-red-600 text-white",
+  Preto: "bg-zinc-800 text-white border-2 border-zinc-300 dark:border-zinc-600",
+  Verde: "bg-emerald-600 text-white border-2 border-emerald-300 dark:border-emerald-400",
+  Cinza: "bg-slate-500 text-white border-2 border-slate-300 dark:border-slate-400",
+  Vermelho: "bg-red-600 text-white border-2 border-red-300 dark:border-red-400",
 };
 
 /* Badge do time */
@@ -40,12 +40,11 @@ const TeamBadge: React.FC<{ color: TeamColor; className?: string }> = ({
 }) => (
   <span
     className={[
-      "inline-flex items-center px-3 py-1 rounded-full text-sm font-medium",
+      "inline-flex items-center px-3 py-1 rounded-full text-sm font-medium w-8 h-8 shadow-md",
       colorChip[color],
       className || "",
     ].join(" ")}
   >
-    {color}
   </span>
 );
 
@@ -355,6 +354,55 @@ const Match: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Menu de Controle da Partida (Mobile) */}
+      <div className="md:hidden mb-3">
+        <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-center gap-3">
+              {!roundSafe.running ? (
+                <button
+                  type="button"
+                  onClick={start}
+                  className="w-12 h-12 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all duration-200 flex items-center justify-center text-white shadow-md hover:shadow-lg"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={pause}
+                  className="w-12 h-12 rounded-full bg-amber-500 hover:bg-amber-600 active:scale-95 transition-all duration-200 flex items-center justify-center text-white shadow-md hover:shadow-lg"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                  </svg>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onRestart}
+                className="w-12 h-12 rounded-full bg-sky-500 hover:bg-sky-600 active:scale-95 transition-all duration-200 flex items-center justify-center text-white shadow-md hover:shadow-lg"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={openEnd}
+                className="w-12 h-12 rounded-full bg-rose-500 hover:bg-rose-600 active:scale-95 transition-all duration-200 flex items-center justify-center text-white shadow-md hover:shadow-lg"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 6h12v12H6z"/>
+                </svg>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Placar */}
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
         <CardContent className="p-4 sm:p-5">
@@ -479,7 +527,7 @@ const Match: React.FC = () => {
       {/* Estatísticas */}
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
         <CardContent className="p-4 sm:p-5">
-          <h3 className="text-sm font-semibold mb-2">Estatísticas dos jogadores (sessão)</h3>
+          <h3 className="text-sm font-semibold mb-2">Estatísticas dos jogadores</h3>
           {eventsSafe.length === 0 ? (
             <p className="text-sm text-zinc-500">Sem registros ainda.</p>
           ) : (
@@ -508,17 +556,30 @@ const Match: React.FC = () => {
       </Card>
 
       {/* Tabs (Semana/Mês/Todos) */}
-      <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
-        <CardContent className="p-2 sm:p-3">
-          <Tabs value={historyFilter} onValueChange={(v) => setHistoryFilter(v as FilterRange)}>
-            <TabsList className="grid grid-cols-3 w-full rounded-xl">
-              <TabsTrigger value="week" className="rounded-xl">Semana</TabsTrigger>
-              <TabsTrigger value="month" className="rounded-xl">Mês</TabsTrigger>
-              <TabsTrigger value="all" className="rounded-xl">Todos</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </CardContent>
-      </Card>
+      <div className="mb-3">
+        <Tabs value={historyFilter} onValueChange={(v) => setHistoryFilter(v as FilterRange)}>
+          <TabsList className="grid grid-cols-3 w-full h-12 p-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 items-center justify-center">
+            <TabsTrigger 
+              value="week" 
+              className="flex items-center justify-center h-6 px-1.5 rounded text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-zinc-700 dark:data-[state=active]:text-zinc-100 text-zinc-600 dark:text-zinc-300"
+            >
+              Semana
+            </TabsTrigger>
+            <TabsTrigger 
+              value="month" 
+              className="flex items-center justify-center h-6 px-1.5 rounded text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-zinc-700 dark:data-[state=active]:text-zinc-100 text-zinc-600 dark:text-zinc-300"
+            >
+              Mês
+            </TabsTrigger>
+            <TabsTrigger 
+              value="all" 
+              className="flex items-center justify-center h-6 px-1.5 rounded text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-zinc-700 dark:data-[state=active]:text-zinc-100 text-zinc-600 dark:text-zinc-300"
+            >
+              Todos
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
       {/* Histórico de Partidas */}
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800">
@@ -561,51 +622,7 @@ const Match: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* ==== BARRA FLUTUANTE (MOBILE) ==== */}
-      {!anyModalOpen && (
-        <div
-          className="md:hidden fixed inset-x-0 z-[9999] pointer-events-none"
-          style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
-        >
-          <div className="mx-auto max-w-4xl px-4 pb-3">
-            <div
-              className={`rounded-2xl border border-zinc-200 backdrop-blur shadow-lg transition-opacity pointer-events-auto
-              ${roundSafe.running ? "bg-white/90 dark:bg-zinc-900/80 opacity-100" : "bg-white/70 dark:bg-zinc-900/60 opacity-80"}`}
-            >
-              <div className="grid grid-cols-3 gap-2 p-3">
-                {!roundSafe.running ? (
-                  <Button type="button" onClick={start} className="h-12 w-full">
-                    Iniciar
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    onClick={pause}
-                    className="h-12 w-full bg-amber-500 hover:bg-amber-500/90"
-                  >
-                    Pausar
-                  </Button>
-                )}
-                <Button
-                  type="button"
-                  onClick={onRestart}
-                  className="h-12 w-full bg-sky-500 hover:bg-sky-600 text-white"
-                >
-                  Recomeçar
-                </Button>
-                <Button
-                  type="button"
-                  onClick={openEnd}
-                  className="h-12 w-full bg-rose-500 hover:bg-rose-600 text-white"
-                >
-                  Encerrar
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* ==== /BARRA FLUTUANTE ==== */}
+
 
       {/* Modal: Registrar/Editar Gol (sempre montado) */}
       <Dialog

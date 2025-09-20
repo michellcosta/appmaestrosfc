@@ -6,7 +6,6 @@ import { ToastProvider } from '@/components/ui/toast';
 import NoInstallPrompt from '@/components/NoInstallPrompt';
 import UpdateNotification from '@/components/UpdateNotification';
 import BottomNav from '@/components/layout/BottomNav';
-import MobileDrawer, { useMobileDrawer } from '@/components/layout/MobileDrawer';
 import MobileHeader from '@/components/layout/MobileHeader';
 
 // Páginas
@@ -37,7 +36,6 @@ import TestPage from '@/pages/TestPage';
 import SimpleTest from '@/pages/SimpleTest';
 
 export default function AppRouter() {
-  const { isOpen, openDrawer, closeDrawer } = useMobileDrawer();
 
   return (
     <ThemeProvider>
@@ -50,25 +48,12 @@ export default function AppRouter() {
           {/* Update Notification */}
           <UpdateNotification />
           
-          {/* Mobile Header */}
-          <MobileHeader 
-            title="App Maestros FC" 
-            subtitle="Sistema de Gestão"
-            onMenuClick={openDrawer}
-          />
-          
-          {/* Mobile Drawer */}
-          <MobileDrawer 
-            isOpen={isOpen} 
-            onClose={closeDrawer} 
-          />
-          
-          <div className="mx-auto w-full max-w-4xl pb-20 pt-20">
+          <div className="mx-auto w-full max-w-4xl pb-20 pt-4">
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/match" element={<Match />} />
               <Route path="/finance" element={<FinancePage />} />
-              <Route path="/vote" element={<VotePage />} />
+              <Route path="/vote" element={<Navigate to="/ranking" replace />} />
               <Route path="/admin/invites" element={<InvitesApprovalsPage />} />
               <Route path="/ranking" element={<RankingPage />} />
               <Route path="/perfil" element={<PerfilPage />} />

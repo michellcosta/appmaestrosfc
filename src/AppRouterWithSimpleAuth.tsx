@@ -68,7 +68,7 @@ export default function AppRouterWithSimpleAuth() {
               <Route path="/" element={<HomePage />} />
               <Route path="/match" element={<Match />} />
               <Route path="/finance" element={<FinancePage />} />
-              <Route path="/vote" element={<VotePage />} />
+              <Route path="/vote" element={<Navigate to="/ranking" replace />} />
               <Route path="/admin/invites" element={<InvitesApprovalsPage />} />
               <Route path="/ranking" element={<RankingPage />} />
               <Route path="/perfil" element={<PerfilPage />} />

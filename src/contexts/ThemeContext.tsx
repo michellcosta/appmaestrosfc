@@ -9,7 +9,7 @@ type ThemeContextType = {
 };
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: 'auto',
+  theme: 'light',
   setTheme: () => {},
   isDark: false,
 });
@@ -17,7 +17,7 @@ const ThemeContext = createContext<ThemeContextType>({
 export const useTheme = () => useContext(ThemeContext);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('auto');
+  const [theme, setTheme] = useState<Theme>('light');
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {

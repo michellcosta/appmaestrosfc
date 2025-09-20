@@ -5,9 +5,32 @@ export default {
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   prefix: "",
   theme: {
+    screens: {
+      'xs': '320px',
+      'sm': '640px',
+      'md': '768px',
+      'lg': '1024px',
+      'xl': '1280px',
+      '2xl': '1536px',
+      // Device-specific breakpoints
+      'mobile': {'max': '767px'},
+      'tablet': {'min': '768px', 'max': '1023px'},
+      'desktop': {'min': '1024px'},
+      // Height-based breakpoints for better mobile experience
+      'short': {'raw': '(max-height: 667px)'},
+      'tall': {'raw': '(min-height: 668px)'},
+    },
     container: {
       center: true,
-      padding: "2rem",
+      padding: {
+        DEFAULT: "1rem",
+        xs: "0.5rem",
+        sm: "1rem",
+        md: "1.5rem",
+        lg: "2rem",
+        xl: "2rem",
+        "2xl": "2rem",
+      },
       screens: {
         "2xl": "1400px",
       },

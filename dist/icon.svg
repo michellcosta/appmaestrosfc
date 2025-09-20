@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ade80;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="darkGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#15803d;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#14532d;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="512" height="512" fill="url(#greenGradient)" rx="64"/>
+  
+  <!-- Lion Mane -->
+  <circle cx="256" cy="280" r="180" fill="url(#darkGreen)" opacity="0.8"/>
+  
+  <!-- Lion Face -->
+  <ellipse cx="256" cy="300" rx="120" ry="140" fill="url(#greenGradient)"/>
+  
+  <!-- Eyes -->
+  <circle cx="220" cy="260" r="12" fill="url(#darkGreen)"/>
+  <circle cx="292" cy="260" r="12" fill="url(#darkGreen)"/>
+  <circle cx="222" cy="258" r="4" fill="#ffffff"/>
+  <circle cx="294" cy="258" r="4" fill="#ffffff"/>
+  
+  <!-- Nose -->
+  <path d="M 240 300 Q 256 290 272 300 Q 256 310 240 300" fill="url(#darkGreen)"/>
+  
+  <!-- Mouth -->
+  <path d="M 256 320 Q 240 340 220 330 M 256 320 Q 272 340 292 330" stroke="url(#darkGreen)" stroke-width="6" fill="none" stroke-linecap="round"/>
+  
+  <!-- Crown -->
+  <path d="M 180 180 L 200 120 L 230 140 L 256 100 L 282 140 L 312 120 L 332 180 Z" fill="url(#darkGreen)"/>
+  
+  <!-- Crown Jewels -->
+  <circle cx="256" cy="130" r="8" fill="#fbbf24"/>
+  <circle cx="220" cy="150" r="6" fill="#fbbf24"/>
+  <circle cx="292" cy="150" r="6" fill="#fbbf24"/>
+  
+  <!-- Letter M -->
+  <path d="M 180 380 L 180 480 L 200 480 L 200 420 L 230 460 L 256 420 L 282 460 L 312 420 L 312 480 L 332 480 L 332 380 L 300 380 L 256 440 L 212 380 Z" fill="url(#darkGreen)" stroke="#ffffff" stroke-width="2"/>
+</svg>

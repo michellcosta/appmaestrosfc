@@ -20,7 +20,7 @@ import {
   Menu,
   Palette
 } from 'lucide-react';
-import ThemeSelector from '@/components/ThemeSelector';
+
 import { usePermissions } from '@/hooks/usePermissions';
 
 type DrawerProps = {
@@ -52,23 +52,23 @@ export default function MobileDrawer({ isOpen, onClose }: DrawerProps) {
 
   const getRoleIcon = (role?: string) => {
     switch (role) {
-      case 'owner': return <Crown className='w-4 h-4 text-purple-600' />;
-      case 'admin': return <Shield className='w-4 h-4 text-blue-600' />;
-      case 'aux': return <Zap className='w-4 h-4 text-green-600' />;
-      case 'mensalista': return <Star className='w-4 h-4 text-purple-600' />;
-      case 'diarista': return <Zap className='w-4 h-4 text-orange-600' />;
+      case 'owner': return <Crown className='w-4 h-4 text-role-owner' />;
+      case 'admin': return <Shield className='w-4 h-4 text-role-admin' />;
+      case 'aux': return <Zap className='w-4 h-4 text-role-aux' />;
+      case 'mensalista': return <Star className='w-4 h-4 text-role-mensalista' />;
+      case 'diarista': return <Zap className='w-4 h-4 text-role-diarista' />;
       default: return <User className='w-4 h-4 text-gray-600' />;
     }
   };
 
   const getRoleColor = (role?: string) => {
     switch (role) {
-      case 'owner': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'admin': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'aux': return 'bg-green-100 text-green-800 border-green-200';
-      case 'mensalista': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'diarista': return 'bg-orange-100 text-orange-800 border-orange-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'owner': return 'bg-role-owner/10 text-role-owner border-role-owner/20';
+      case 'admin': return 'bg-role-admin/10 text-role-admin border-role-admin/20';
+      case 'aux': return 'bg-role-aux/10 text-role-aux border-role-aux/20';
+      case 'mensalista': return 'bg-role-mensalista/10 text-role-mensalista border-role-mensalista/20';
+      case 'diarista': return 'bg-role-diarista/10 text-role-diarista border-role-diarista/20';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600';
     }
   };
 
@@ -88,7 +88,6 @@ export default function MobileDrawer({ isOpen, onClose }: DrawerProps) {
     { icon: Trophy, label: 'Partidas', path: '/match', show: true },
     { icon: DollarSign, label: 'Financeiro', path: '/finance', show: true },
     { icon: BarChart3, label: 'Ranking', path: '/ranking', show: canSeeRanking() },
-    { icon: MessageSquare, label: 'Votar', path: '/vote', show: canSeeVote() },
     { icon: Crown, label: 'Dashboard', path: '/owner-dashboard', show: canSeeDashboard() },
   ];
 
@@ -106,7 +105,7 @@ export default function MobileDrawer({ isOpen, onClose }: DrawerProps) {
       <div className="fixed left-0 top-0 h-full w-80 bg-white dark:bg-gray-900 shadow-xl z-50 transform transition-transform duration-300 ease-in-out animate-slide-in-left">
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-4 border-b bg-gradient-primary text-white">
+          <div className="p-4 border-b bg-gradient-maestros text-white">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold">App Maestros FC</h2>
@@ -124,16 +123,16 @@ export default function MobileDrawer({ isOpen, onClose }: DrawerProps) {
           </div>
 
           {/* User Profile */}
-          <div className="p-4 border-b bg-gray-50">
+          <div className="p-4 border-b bg-gray-50 dark:bg-gray-800">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-maestros rounded-full flex items-center justify-center">
                 <User className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                   {user?.name || 'Usuário'}
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
                   {user?.email || 'email@exemplo.com'}
                 </p>
                 {user?.role && (
@@ -156,7 +155,7 @@ export default function MobileDrawer({ isOpen, onClose }: DrawerProps) {
                   <Button
                     key={item.path}
                     variant="ghost"
-                    className="w-full justify-start h-12 mb-1 hover:bg-gray-100"
+                    className="w-full justify-start h-12 mb-1 text-gray-700 dark:text-gray-200 hover:bg-maestros-green/10 hover:text-maestros-green dark:hover:bg-maestros-green/20 dark:hover:text-maestros-green transition-colors"
                     onClick={() => {
                       navigate(item.path);
                       onClose();
@@ -171,17 +170,12 @@ export default function MobileDrawer({ isOpen, onClose }: DrawerProps) {
           </div>
 
           {/* Footer */}
-          <div className="p-4 border-t bg-gray-50 dark:bg-gray-800">
+          <div className="p-4 border-t bg-gray-50 dark:bg-gray-800 border-maestros-green/20">
             <div className="space-y-4">
-              {/* Theme Selector */}
-            <div className="p-2 bg-white dark:bg-gray-700 rounded-lg border dark:border-gray-600">
-              <ThemeSelector />
-            </div>
-              
               <div className="space-y-2">
                 <Button
                   variant="ghost"
-                  className="w-full justify-start h-12 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="w-full justify-start h-12 text-gray-700 dark:text-gray-200 hover:bg-maestros-green/10 hover:text-maestros-green dark:hover:bg-maestros-green/20 dark:hover:text-maestros-green transition-colors"
                   onClick={() => {
                     navigate('/perfil');
                     onClose();
@@ -193,7 +187,7 @@ export default function MobileDrawer({ isOpen, onClose }: DrawerProps) {
                 
                 <Button
                   variant="ghost"
-                  className="w-full justify-start h-12 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                  className="w-full justify-start h-12 text-gray-700 dark:text-gray-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
                   onClick={handleLogout}
                 >
                   <LogOut className="w-5 h-5 mr-3" />

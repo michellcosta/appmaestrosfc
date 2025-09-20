@@ -2,8 +2,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { usePermissions } from '@/hooks/usePermissions';
 import RestrictedAccess from './RestrictedAccess';
 
@@ -23,6 +24,11 @@ type VotesRow = {
   votes: number;
 };
 
+// Tipos para votação
+type CurrentPoll = { poll_id: string; opens_at: string; closes_at: string; };
+type PartialRow = { poll_id: string; category: 'Goleiro'|'Zagueiro'|'Meia'|'Atacante'; player_id: string; player_name: string|null; votes: number; };
+const CATS: PartialRow['category'][] = ['Goleiro','Zagueiro','Meia','Atacante'];
+
 function inRange(dateIso: string | null | undefined, range: Range) {
   if (!dateIso || range === "all") return true;
   const d = new Date(dateIso);
@@ -36,7 +42,8 @@ function inRange(dateIso: string | null | undefined, range: Range) {
 }
 
 export default function RankingPage() {
-  const { canSeeRanking } = usePermissions();
+  const { canSeeRanking, canSeeVote } = usePermissions();
+  const [activeTab, setActiveTab] = useState<"ranking" | "voting">("ranking");
   const [range, setRange] = useState<Range>("month");
   const [pos, setPos] = useState<"Geral" | "Goleiro" | "Zagueiro" | "Meia" | "Atacante">("Geral");
 
@@ -44,6 +51,11 @@ export default function RankingPage() {
   const [votes, setVotes] = useState<VotesRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+
+  // Estados para votação
+  const [poll, setPoll] = useState<CurrentPoll|null>(null);
+  const [partials, setPartials] = useState<PartialRow[]>([]);
+  const [choice, setChoice] = useState<Record<string,string>>({});
 
   // Verificar permissão
   if (!canSeeRanking()) {
@@ -82,6 +94,19 @@ export default function RankingPage() {
           .select("player_id,name,votes");
         if (!vErr) voteRows = (v1 as any) ?? [];
 
+        // Carregar dados de votação se o usuário tem permissão
+        if (canSeeVote()) {
+          const { data: p } = await supabase.from('v_current_polls').select('*').maybeSingle();
+          setPoll((p as any) ?? null);
+          if (p?.poll_id) {
+            const { data: rows } = await supabase
+              .from('v_poll_partials')
+              .select('poll_id,category,player_id,player_name,votes')
+              .eq('poll_id', p.poll_id);
+            setPartials((rows as any) ?? []);
+          }
+        }
+
         if (!alive) return;
         setStats(statRows);
         setVotes(voteRows);
@@ -95,7 +120,7 @@ export default function RankingPage() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [canSeeVote]);
 
   const filtered = useMemo(() => {
     let rows = stats.filter((r) => inRange(r.last_event_at, range));
@@ -122,40 +147,89 @@ export default function RankingPage() {
       .slice(0, 10);
   }, [votes]);
 
+  // Agrupamento de dados de votação por categoria
+  const grouped = useMemo(() => {
+    const byCat: Record<string, PartialRow[]> = { Goleiro:[],Zagueiro:[],Meia:[],Atacante:[] };
+    for (const r of partials) byCat[r.category].push(r);
+    for (const c of CATS) byCat[c].sort((a,b)=> b.votes - a.votes || (a.player_name||'').localeCompare(b.player_name||''));
+    return byCat;
+  }, [partials]);
+
+  // Função para submeter voto
+  const submitVote = async (cat: PartialRow['category']) => {
+    const player_id = choice[cat];
+    if (!poll?.poll_id || !player_id) return;
+    const { error } = await supabase.from('ballot_choices').insert({
+      poll_id: poll.poll_id, category: cat, player_id, voter_id: (await supabase.auth.getUser()).data.user?.id
+    });
+    if (!error) {
+      // refresh parciais
+      const { data: rows } = await supabase
+        .from('v_poll_partials')
+        .select('poll_id,category,player_id,player_name,votes')
+        .eq('poll_id', poll.poll_id);
+      setPartials((rows as any) ?? []);
+    } else {
+      alert(error.message);
+    }
+  };
+
   return (
     <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 space-y-4 pb-20">
       <header>
-        <h1 className="text-xl font-semibold">Ranking</h1>
+        <h1 className="text-xl font-semibold">Ranking & Votações</h1>
         <p className="text-sm text-zinc-500">
-          Top jogadores por gols/assistências e votos (mobile-first).
+          Rankings dos jogadores e votações ativas.
         </p>
       </header>
 
-      {/* Filtros */}
-      <Card className="rounded-2xl">
-        <CardContent className="p-3 sm:p-4 flex flex-wrap items-center gap-3">
-          <Tabs value={range} onValueChange={(v) => setRange(v as Range)} className="w-full sm:w-auto">
-            <TabsList className="grid grid-cols-3 w-full sm:w-auto">
-              <TabsTrigger value="week">Semana</TabsTrigger>
-              <TabsTrigger value="month">Mês</TabsTrigger>
-              <TabsTrigger value="all">Todos</TabsTrigger>
-            </TabsList>
-          </Tabs>
+      {/* Abas principais */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "ranking" | "voting")} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="ranking">📊 Rankings</TabsTrigger>
+          {canSeeVote() && <TabsTrigger value="voting">🗳️ Votações</TabsTrigger>}
+        </TabsList>
 
-          <Select value={pos} onValueChange={(v) => setPos(v as any)}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Posição" />
-            </SelectTrigger>
-            <SelectContent>
-              {["Geral", "Goleiro", "Zagueiro", "Meia", "Atacante"].map((p) => (
-                <SelectItem key={p} value={p}>
-                  {p}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
+        {/* Conteúdo da aba Ranking */}
+        <TabsContent value="ranking" className="space-y-4">
+          {/* Filtros */}
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <Tabs value={range} onValueChange={(v) => setRange(v as Range)}>
+          <TabsList className="grid grid-cols-3 w-full h-10 p-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 items-center justify-center">
+            <TabsTrigger 
+              value="week" 
+              className="flex items-center justify-center h-6 px-1.5 rounded text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-zinc-700 dark:data-[state=active]:text-zinc-100 text-zinc-600 dark:text-zinc-300"
+            >
+              Semana
+            </TabsTrigger>
+            <TabsTrigger 
+              value="month" 
+              className="flex items-center justify-center h-6 px-1.5 rounded text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-zinc-700 dark:data-[state=active]:text-zinc-100 text-zinc-600 dark:text-zinc-300"
+            >
+              Mês
+            </TabsTrigger>
+            <TabsTrigger 
+              value="all" 
+              className="flex items-center justify-center h-6 px-1.5 rounded text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-zinc-700 dark:data-[state=active]:text-zinc-100 text-zinc-600 dark:text-zinc-300"
+            >
+              Todos
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+            <Select value={pos} onValueChange={(v) => setPos(v as any)}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Posição" />
+              </SelectTrigger>
+              <SelectContent>
+                {["Geral", "Goleiro", "Zagueiro", "Meia", "Atacante"].map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
       {/* Gols & Assistências */}
       <Card className="rounded-2xl">
@@ -192,34 +266,102 @@ export default function RankingPage() {
         </CardContent>
       </Card>
 
-      {/* Votos do mês */}
-      <Card className="rounded-2xl">
-        <CardContent className="p-4">
-          <h3 className="text-sm font-semibold mb-2">Votos do mês</h3>
-          {loading ? (
-            <p className="text-sm text-zinc-500">Carregando…</p>
-          ) : topVotes.length === 0 ? (
-            <p className="text-sm text-zinc-500">
-              Sem dados (a view de votos mensais pode não estar criada ainda).
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {topVotes.map((r, i) => (
-                <div
-                  key={r.player_id}
-                  className="flex items-center justify-between rounded-xl border p-3"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="w-6 text-right font-semibold">{i + 1}</span>
-                    <span className="truncate">{r.name || r.player_id}</span>
-                  </div>
-                  <span className="font-semibold">{r.votes}</span>
+          {/* Votos do mês */}
+          <Card className="rounded-2xl">
+            <CardContent className="p-4">
+              <h3 className="text-sm font-semibold mb-2">Votos do mês</h3>
+              {loading ? (
+                <p className="text-sm text-zinc-500">Carregando…</p>
+              ) : topVotes.length === 0 ? (
+                <p className="text-sm text-zinc-500">
+                  Sem dados (a view de votos mensais pode não estar criada ainda).
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {topVotes.map((r, i) => (
+                    <div
+                      key={r.player_id}
+                      className="flex items-center justify-between rounded-xl border p-3"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 text-right font-semibold">{i + 1}</span>
+                        <span className="truncate">{r.name || r.player_id}</span>
+                      </div>
+                      <span className="font-semibold">{r.votes}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Conteúdo da aba Votações */}
+        {canSeeVote() && (
+          <TabsContent value="voting" className="space-y-4">
+            {!poll ? (
+              <Card className="rounded-2xl">
+                <CardContent className="p-4 text-center">
+                  <p className="text-sm text-zinc-500">Nenhuma votação ativa no momento.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {CATS.map((cat) => (
+                  <Card key={cat} className="rounded-2xl">
+                    <CardContent className="p-4">
+                      <h3 className="text-sm font-semibold mb-3">{cat}</h3>
+                      
+                      {/* Select para escolher jogador */}
+                      <Select 
+                        value={choice[cat] || ""} 
+                        onValueChange={(v) => setChoice(prev => ({ ...prev, [cat]: v }))}
+                      >
+                        <SelectTrigger className="w-full mb-3">
+                          <SelectValue placeholder={`Escolha um ${cat.toLowerCase()}`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {grouped[cat]?.map((p) => (
+                            <SelectItem key={p.player_id} value={p.player_id}>
+                              {p.player_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {/* Botão de votar */}
+                      <Button 
+                        onClick={() => submitVote(cat)} 
+                        disabled={!choice[cat]}
+                        className="w-full mb-3"
+                      >
+                        Votar em {cat}
+                      </Button>
+
+                      {/* Resultados parciais */}
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-medium text-zinc-500">Resultados parciais:</h4>
+                        {grouped[cat]?.slice(0, 5).map((p, i) => (
+                          <div
+                            key={p.player_id}
+                            className="flex items-center justify-between text-sm"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="w-4 text-right text-xs text-zinc-500">{i + 1}</span>
+                              <span className="truncate">{p.player_name}</span>
+                            </div>
+                            <span className="font-medium">{p.votes}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }

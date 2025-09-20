@@ -42,12 +42,12 @@ export default function RestrictedAccess() {
 
   const getRoleColor = (role?: string) => {
     switch (role) {
-      case 'owner': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'admin': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'aux': return 'bg-green-100 text-green-800 border-green-200';
-      case 'mensalista': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'diarista': return 'bg-orange-100 text-orange-800 border-orange-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'owner': return 'bg-role-owner/10 text-role-owner border-role-owner/20';
+      case 'admin': return 'bg-role-admin/10 text-role-admin border-role-admin/20';
+      case 'aux': return 'bg-role-aux/10 text-role-aux border-role-aux/20';
+      case 'mensalista': return 'bg-role-mensalista/10 text-role-mensalista border-role-mensalista/20';
+      case 'diarista': return 'bg-role-diarista/10 text-role-diarista border-role-diarista/20';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600';
     }
   };
 

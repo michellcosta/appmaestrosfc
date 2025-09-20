@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,10 +43,10 @@ export default function FinancePage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pago': return 'bg-green-100 text-green-800';
-      case 'pendente': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelado': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'pago': return 'bg-success text-success-foreground';
+      case 'pendente': return 'bg-warning text-warning-foreground';
+      case 'cancelado': return 'bg-destructive text-destructive-foreground';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
     }
   };
 
@@ -156,7 +156,7 @@ export default function FinancePage() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold">R$ 50,00</p>
-                    <Badge className="bg-green-100 text-green-800">Pago</Badge>
+                    <Badge className="bg-success text-success-foreground">Pago</Badge>
                   </div>
                 </div>
                 
@@ -170,7 +170,7 @@ export default function FinancePage() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold">R$ 50,00</p>
-                    <Badge className="bg-yellow-100 text-yellow-800">Pendente</Badge>
+                    <Badge className="bg-warning text-warning-foreground">Pendente</Badge>
                   </div>
                 </div>
               </div>
@@ -189,7 +189,7 @@ export default function FinancePage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center space-x-3">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <CheckCircle className="w-4 h-4 text-maestros-green" />
                     <div>
                       <p className="font-medium">Jogo - 14/09/2024</p>
                       <p className="text-sm text-zinc-500">Pago em 14/09/2024</p>
@@ -197,13 +197,13 @@ export default function FinancePage() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold">R$ 15,00</p>
-                    <Badge className="bg-green-100 text-green-800">Pago</Badge>
+                    <Badge className="bg-success text-success-foreground">Pago</Badge>
                   </div>
                 </div>
                 
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center space-x-3">
-                    <Clock className="w-4 h-4 text-yellow-600" />
+                    <Clock className="w-4 h-4 text-warning" />
                     <div>
                       <p className="font-medium">Jogo - 21/09/2024</p>
                       <p className="text-sm text-zinc-500">Pendente</p>
@@ -211,7 +211,7 @@ export default function FinancePage() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold">R$ 15,00</p>
-                    <Badge className="bg-yellow-100 text-yellow-800">Pendente</Badge>
+                    <Badge className="bg-warning text-warning-foreground">Pendente</Badge>
                   </div>
                 </div>
               </div>

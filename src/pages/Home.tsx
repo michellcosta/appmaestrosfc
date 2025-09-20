@@ -7,165 +7,195 @@ import { Calendar, Clock, MapPin, Users, CheckCircle, Navigation } from 'lucide-
 import { LoadingCard, LoadingStats } from '@/components/ui/loading-card';
 import { EmptyGames } from '@/components/ui/empty-state';
 import { useToastHelpers } from '@/components/ui/toast';
+import { useGamesStore } from '@/store/gamesStore';
+import { RouteButton } from '@/components/RouteButton';
+import PageLayout from '@/components/layout/PageLayout';
+import WeatherForecast from '@/components/WeatherForecast';
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [games, setGames] = useState([]);
+  const { matches } = useGamesStore();
+  const [isLoading, setIsLoading] = useState(true);
   const { success, error } = useToastHelpers();
 
+  // Função para formatar data em português
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString + 'T00:00:00');
+    const months = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    
+    return `${day} de ${month}`;
+  };
+
+  // Função para formatar hora
+  const formatTime = (timeString: string) => {
+    return `${timeString}h`;
+  };
+
   useEffect(() => {
-    // Simular carregamento
+    // Simular carregamento inicial
     const timer = setTimeout(() => {
-      setLoading(false);
-      // Simular dados vazios para mostrar empty state
-      setGames([]);
-    }, 2000);
+      setIsLoading(false);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, []);
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className='p-4 sm:p-6 space-y-4 pb-20'>
-        <div className="animate-fade-in-up">
-          <h1 className='text-xl font-semibold'>Jogos</h1>
-          <p className='text-sm text-zinc-500'>Próximos jogos do grupo</p>
+      <PageLayout title="Início" subtitle="Temperatura Local e Jogos">
+        <div className="space-y-4 pb-20">
+          <LoadingStats />
+          <LoadingCard />
         </div>
-        <LoadingStats />
-        <LoadingCard />
-      </div>
+      </PageLayout>
     );
   }
 
-  if (games.length === 0) {
+  if (matches.length === 0) {
     return (
-      <div className='p-4 sm:p-6 space-y-4 pb-20'>
-        <div className="animate-fade-in-up">
-          <h1 className='text-xl font-semibold'>Jogos</h1>
-          <p className='text-sm text-zinc-500'>Próximos jogos do grupo</p>
+      <PageLayout title="Início" subtitle="Temperatura Local e Jogos">
+        <div className="space-y-4 pb-20">
+          <EmptyGames />
         </div>
-        <EmptyGames />
-      </div>
+      </PageLayout>
     );
   }
+
+  const currentMatch = matches[0];
 
   return (
-    <div className='p-4 sm:p-6 space-y-4 pb-20'>
-      <div className="animate-fade-in-up">
-        <h1 className='text-xl font-semibold'>Jogos</h1>
-        <p className='text-sm text-zinc-500'>Próximos jogos do grupo</p>
-      </div>
-
-      <Card className='rounded-2xl'>
-        <CardContent className='p-6 space-y-4'>
-          {/* Data e Hora */}
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center space-x-4'>
-              <div className='flex items-center space-x-2 text-zinc-600'>
-                <Calendar className='w-4 h-4' />
-                <span className='text-sm font-medium'>domingo, 14 de setembro</span>
+    <PageLayout title="Início" subtitle="Temperatura Local e Jogos">
+      <div className="space-y-4 pb-20">
+        <Card className="rounded-2xl">
+          <CardContent className="p-6 space-y-4">
+            {/* Data e Hora */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 text-zinc-600">
+                  <Calendar className="w-4 h-4" />
+                  <span className="text-sm font-medium">{formatDate(currentMatch.date)}</span>
+                </div>
+                <div className="flex items-center gap-1 text-zinc-600">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-sm font-medium">{formatTime(currentMatch.time)}</span>
+                </div>
               </div>
-              <div className='flex items-center space-x-2 text-zinc-600'>
-                <Clock className='w-4 h-4' />
-                <span className='text-sm font-medium'>19:00</span>
-              </div>
+              <Badge variant="secondary" className="bg-green-100 text-green-800">
+                <Users className="w-3 h-3 mr-1" />
+                {currentMatch.confirmedPlayers}/{currentMatch.maxPlayers} jogadores
+              </Badge>
             </div>
-            <Badge variant="secondary" className='bg-green-100 text-green-800'>
-              <Users className='w-3 h-3 mr-1' />
-              18/22 jogadores
-            </Badge>
-          </div>
 
-          {/* Localização */}
-          <div className='flex items-center space-x-2 text-zinc-600'>
-            <MapPin className='w-4 h-4' />
-            <div>
-              <p className='font-medium'>Campo do Maestros</p>
-              <p className='text-sm text-zinc-500'>Rua das Flores, 123</p>
-            </div>
-          </div>
-
-          {/* Status do Check-in */}
-          <div className='bg-green-50 border border-green-200 rounded-lg p-3 flex items-center space-x-2'>
-            <CheckCircle className='w-4 h-4 text-green-600' />
-            <span className='text-sm text-green-800 font-medium'>Check-in realizado</span>
-          </div>
-
-          {/* Botões de Ação */}
-          <div className='space-y-3'>
-            <div className='flex space-x-2'>
-              <Button className='flex-1 bg-green-600 hover:bg-green-700'>
-                <CheckCircle className='w-4 h-4 mr-2' />
-                Confirmado
-              </Button>
-              <Button variant="outline" className='flex-1'>
-                <Navigation className='w-4 h-4 mr-2' />
-                Abrir Rota
-              </Button>
-            </div>
-            <Button className='w-full bg-orange-500 hover:bg-orange-600 text-white'>
-              <Users className='w-4 h-4 mr-2' />
-              Sortear Times
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Próximos Jogos */}
-      <div className='space-y-3'>
-        <h2 className='text-lg font-semibold'>Próximos Jogos</h2>
-        <Card className='rounded-2xl'>
-          <CardContent className='p-4'>
-            <div className='flex items-center justify-between'>
+            {/* Localização */}
+            <div className="flex items-center space-x-2 text-zinc-600">
+              <MapPin className="w-4 h-4" />
               <div>
-                <p className='font-medium'>Sábado, 21 de setembro</p>
-                <p className='text-sm text-zinc-500'>19:00 - Campo do Maestros</p>
+                <p className="font-medium">{currentMatch.location}</p>
+                <p className="text-sm text-zinc-500">Local da partida</p>
               </div>
-              <Badge variant="outline">12/22 jogadores</Badge>
             </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Seção de Testes - Apenas para desenvolvimento */}
-      <div className='space-y-3'>
-        <h2 className='text-lg font-semibold'>🧪 Páginas de Teste</h2>
-        <Card className='rounded-2xl'>
-          <CardContent className='p-4 space-y-2'>
-            <div className='grid grid-cols-2 gap-2'>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => navigate('/test-page')}
-              >
-                Teste Simples
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => navigate('/offline-auth')}
-              >
-                Login Offline
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => navigate('/test-auth')}
-              >
-                Teste Auth
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => navigate('/debug-auth')}
-              >
-                Debug Auth
+            {/* Status do Check-in */}
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center space-x-2">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+              <span className="text-sm text-green-800 font-medium">Check-in realizado</span>
+            </div>
+
+            {/* Botões de Ação */}
+            <div className="space-y-3">
+              <div className="flex space-x-2">
+                <Button className="flex-1 btn-primary">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Confirmado
+                </Button>
+                <RouteButton 
+                  address={currentMatch.location} 
+                  className="flex-1 border-maestros-green text-maestros-green hover:bg-maestros-green/10"
+                />
+              </div>
+              <Button className="w-full btn-secondary">
+                <Users className="w-4 h-4 mr-2" />
+                Sortear Times
               </Button>
             </div>
           </CardContent>
         </Card>
+
+        {/* Previsão do Tempo */}
+        <WeatherForecast 
+          date={currentMatch.date} 
+          location={currentMatch.location}
+        />
+
+        {/* Próximos Jogos */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">Próximas Partidas</h2>
+          {matches.slice(1).map((match) => (
+            <Card key={match.id} className="rounded-2xl">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{formatDate(match.date)}</p>
+                    <p className="text-sm text-zinc-500">{formatTime(match.time)} - {match.location}</p>
+                  </div>
+                  <Badge variant="outline">{match.confirmedPlayers}/{match.maxPlayers} jogadores</Badge>
+                </div>
+                <WeatherForecast 
+                  date={match.date} 
+                  location={match.location}
+                  className="border-0 shadow-none bg-zinc-50 dark:bg-zinc-800"
+                />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Seção de Testes - Apenas para desenvolvimento */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">🧪 Páginas de Teste</h2>
+          <Card className="rounded-2xl">
+            <CardContent className="p-4 space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/test-page')}
+                >
+                  Teste Simples
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/offline-auth')}
+                >
+                  Login Offline
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/test-auth')}
+                >
+                  Teste Auth
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/debug-auth')}
+                >
+                  Debug Auth
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }
+
