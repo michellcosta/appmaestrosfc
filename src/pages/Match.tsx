@@ -22,6 +22,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useMatchStore, GoalEvent, TeamColor } from "@/store/matchStore";
+import { usePlayersStore } from "@/store/playersStore";
 import { useAuth } from '@/auth/OfflineAuthProvider';
 
 type FilterRange = "week" | "month" | "all";
@@ -76,6 +77,34 @@ const Match: React.FC = () => {
     deleteGoal,
     endRoundChooseNext,
   } = useMatchStore();
+  const { 
+    players, 
+    loadPlayersFromTeamDraw, 
+    getPlayersByTeam,
+    substitutePlayer,
+    addSubstitution,
+    getPlayerByName,
+    loadExampleData
+  } = usePlayersStore();
+
+  // Função para obter jogadores ativos por time
+  const getActivePlayersByTeam = (teamColor: TeamColor) => {
+    return getPlayersByTeam(teamColor).filter(player => !player.is_substitute);
+  };
+
+  // Função para obter times disponíveis
+  const getAvailableTeams = () => {
+    const teams: TeamColor[] = [];
+    const teamColors: TeamColor[] = ['Preto', 'Verde', 'Cinza', 'Vermelho'];
+    
+    teamColors.forEach(color => {
+      if (getPlayersByTeam(color).length > 0) {
+        teams.push(color);
+      }
+    });
+    
+    return teams;
+  };
   const { user } = useAuth();
 
   const getRoleIcon = (role?: string) => {
@@ -152,11 +181,48 @@ const Match: React.FC = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<GoalEvent | null>(null);
 
+  /* Carregar dados do sorteio de times */
+  useEffect(() => {
+    const loadTeamData = async () => {
+      try {
+        // Aqui você pode passar o matchId real quando disponível
+        // Por enquanto, vamos tentar carregar dados existentes
+        await loadPlayersFromTeamDraw(currentMatch?.id || '');
+      } catch (error) {
+        console.warn('Erro ao carregar dados do sorteio:', error);
+        // Continua usando dados mock em caso de erro
+      }
+    };
+
+    loadTeamData();
+  }, [loadPlayersFromTeamDraw]);
+
   const [endOpen, setEndOpen] = useState(false);
   const [nextTeamChoice, setNextTeamChoice] = useState<TeamColor | "_auto">("_auto");
 
+  /* Modal de Substituições */
+  const [substitutionOpen, setSubstitutionOpen] = useState(false);
+  const [substitutionTeam, setSubstitutionTeam] = useState<TeamColor>("Preto");
+  const [playerOut, setPlayerOut] = useState<string>("");
+  const [playerIn, setPlayerIn] = useState<string>("");
+
   /* Helpers */
-  const playerOptions = (team: TeamColor) => defaultTeamPlayers[team] ?? [];
+  const playerOptions = (team: TeamColor) => {
+    // Primeiro tenta buscar TODOS os jogadores do time (incluindo substitutos)
+    const teamPlayers = getPlayersByTeam(team);
+    console.log(`Jogadores do time ${team}:`, teamPlayers);
+    
+    if (teamPlayers.length > 0) {
+      const playerNames = teamPlayers.map(p => p.name);
+      console.log(`Nomes dos jogadores do time ${team}:`, playerNames);
+      return playerNames;
+    }
+    
+    // Fallback para jogadores mock se não houver dados reais
+    const mockPlayers = defaultTeamPlayers[team] ?? [];
+    console.log(`Usando jogadores mock para time ${team}:`, mockPlayers);
+    return mockPlayers;
+  };
 
   const openGoal = (team: TeamColor) => {
     if (!roundSafe.running) return;
@@ -187,16 +253,75 @@ const Match: React.FC = () => {
   }, [goalAuthor, goalAssist, goalOpen]);
 
   const saveGoal = () => {
-    if (!goalAuthor) return;
+    if (!goalAuthor) {
+      alert("Selecione o autor do gol");
+      return;
+    }
+
     const assistVal = goalAssist === "none" ? null : goalAssist;
 
-    if (goalEditId) {
-      editGoal(goalEditId, { author: goalAuthor, assist: assistVal ?? null });
-    } else {
-      addGoal({ team: goalTeam, author: goalAuthor, assist: assistVal ?? null });
+    // Validações avançadas quando há dados reais do sorteio
+    if (getAvailableTeams().length > 0) {
+      try {
+        const authorPlayer = getPlayerByName(goalAuthor);
+        
+        if (!authorPlayer) {
+          alert(`Jogador "${goalAuthor}" não encontrado no sorteio`);
+          return;
+        }
+
+        if (authorPlayer.team_color !== goalTeam) {
+          alert(`Jogador "${goalAuthor}" não pertence ao time ${goalTeam}`);
+          return;
+        }
+
+        if (authorPlayer.is_substitute) {
+          alert(`Jogador "${goalAuthor}" está no banco e não pode marcar gol`);
+          return;
+        }
+
+        // Validar assistência se fornecida
+        if (assistVal) {
+          const assistPlayer = getPlayerByName(assistVal);
+          
+          if (!assistPlayer) {
+            alert(`Jogador da assistência "${assistVal}" não encontrado no sorteio`);
+            return;
+          }
+
+          if (assistPlayer.team_color !== goalTeam) {
+            alert(`Jogador da assistência "${assistVal}" não pertence ao time ${goalTeam}`);
+            return;
+          }
+
+          if (assistPlayer.is_substitute) {
+            alert(`Jogador da assistência "${assistVal}" está no banco`);
+            return;
+          }
+
+          if (goalAuthor === assistVal) {
+            alert("Jogador não pode dar assistência para si mesmo");
+            return;
+          }
+        }
+      } catch (error) {
+        alert("Erro na validação: " + (error as Error).message);
+        return;
+      }
     }
-    setGoalOpen(false);
-    setGoalEditId(null);
+
+    // Salvar o gol se todas as validações passaram
+    try {
+      if (goalEditId) {
+        editGoal(goalEditId, { author: goalAuthor, assist: assistVal ?? null });
+      } else {
+        addGoal({ team: goalTeam, author: goalAuthor, assist: assistVal ?? null });
+      }
+      setGoalOpen(false);
+      setGoalEditId(null);
+    } catch (error) {
+      alert("Erro ao salvar gol: " + (error as Error).message);
+    }
   };
 
   const confirmDelete = () => {
@@ -279,8 +404,49 @@ const Match: React.FC = () => {
     setEndOpen(false);
   };
 
+  /* Funções de Substituição */
+  const openSubstitution = (team: TeamColor) => {
+    setSubstitutionTeam(team);
+    setPlayerOut("");
+    setPlayerIn("");
+    setSubstitutionOpen(true);
+  };
+
+  const saveSubstitution = () => {
+    if (!playerOut || !playerIn) {
+      alert("Selecione ambos os jogadores para a substituição");
+      return;
+    }
+
+    if (playerOut === playerIn) {
+      alert("Jogador que sai deve ser diferente do que entra");
+      return;
+    }
+
+    try {
+      addSubstitution(substitutionTeam, playerOut, playerIn);
+      setSubstitutionOpen(false);
+      setPlayerOut("");
+      setPlayerIn("");
+    } catch (error) {
+      alert("Erro ao realizar substituição: " + (error as Error).message);
+    }
+  };
+
+  const getAvailablePlayersForSubstitution = (team: TeamColor) => {
+    const allPlayers = getPlayersByTeam(team);
+    const activePlayers = getActivePlayersByTeam(team);
+    
+    return {
+      playersOut: activePlayers.map(p => p.name), // Jogadores que podem sair (ativos)
+      playersIn: allPlayers
+        .filter(p => !activePlayers.find(ap => ap.name === p.name))
+        .map(p => p.name) // Jogadores que podem entrar (inativos)
+    };
+  };
+
   // esconder barra quando qualquer modal aberto
-  const anyModalOpen = goalOpen || confirmOpen || endOpen;
+  const anyModalOpen = goalOpen || confirmOpen || endOpen || substitutionOpen;
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-5 pb-[120px] sm:pb-5">
@@ -292,6 +458,39 @@ const Match: React.FC = () => {
           </div>
           
           <div className="flex items-center space-x-2">
+            {canEdit(userRole) && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadPlayersFromTeamDraw(currentMatch?.id || '')}
+                  className="text-xs"
+                >
+                  {getAvailableTeams().length > 0 ? (
+                    <>
+                      <Star className="w-3 h-3 mr-1" />
+                      Recarregar Sorteio
+                    </>
+                  ) : (
+                    <>
+                      <User className="w-3 h-3 mr-1" />
+                      Carregar Sorteio
+                    </>
+                  )}
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadExampleData}
+                  className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                >
+                  <Zap className="w-3 h-3 mr-1" />
+                  Dados Teste
+                </Button>
+              </>
+            )}
+            
             {user?.role && (
               <div className="flex items-center space-x-1 text-sm text-maestros-green">
                 {getRoleIcon(user.role)}
@@ -456,6 +655,19 @@ const Match: React.FC = () => {
                   <span className="text-lg font-bold tabular-nums">
                     {roundSafe.scores[team] ?? 0}
                   </span>
+                  {canEdit(userRole) && getAvailableTeams().length > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openSubstitution(team)}
+                      disabled={!roundSafe.running}
+                      aria-label={"Substituição do " + team}
+                      className="h-8 w-8 p-0"
+                    >
+                      ⇄
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="outline"
@@ -665,33 +877,45 @@ const Match: React.FC = () => {
           if (!o) setGoalEditId(null);
         }}
       >
-        <DialogContent className="z-[99999]">
+        <DialogContent className="z-[99999] max-w-md">
           <DialogHeader>
             <DialogTitle>{goalEditId ? "Editar Gol" : "Registrar Gol"}</DialogTitle>
             <DialogDescription>
               Autor pré-selecionado; assistência é opcional. Autoassistência não é permitida.
+              {getAvailableTeams().length > 0 ? (
+                <div className="mt-2 text-green-600 text-xs flex items-center gap-1">
+                  <Star className="w-3 h-3" />
+                  Usando jogadores do sorteio oficial
+                </div>
+              ) : (
+                <div className="mt-2 text-amber-600 text-xs flex items-center gap-1">
+                  <User className="w-3 h-3" />
+                  Usando jogadores de exemplo (carregue o sorteio)
+                </div>
+              )}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="text-sm">
               <span className="mr-2">Time:</span>
               <TeamBadge color={goalTeam} />
             </div>
 
             <div className="grid gap-2">
-              <Label>Autor do gol</Label>
+              <Label htmlFor="goal-author">Autor do gol</Label>
               <Select
                 value={goalAuthor}
                 onValueChange={(v) => {
+                  console.log("Selecionando autor:", v);
                   setGoalAuthor(v);
                   if (goalAssist === v) setGoalAssist("none");
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger id="goal-author">
                   <SelectValue placeholder="Selecione o autor" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[100000]" position="popper" sideOffset={5}>
                   {playerOptions(goalTeam).map((p) => (
                     <SelectItem key={p} value={p}>
                       {p}
@@ -702,12 +926,18 @@ const Match: React.FC = () => {
             </div>
 
             <div className="grid gap-2">
-              <Label>Assistência (opcional)</Label>
-              <Select value={goalAssist} onValueChange={(v) => setGoalAssist(v)}>
-                <SelectTrigger>
+              <Label htmlFor="goal-assist">Assistência (opcional)</Label>
+              <Select 
+                value={goalAssist} 
+                onValueChange={(v) => {
+                  console.log("Selecionando assistência:", v);
+                  setGoalAssist(v);
+                }}
+              >
+                <SelectTrigger id="goal-assist">
                   <SelectValue placeholder="Selecione (opcional)" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[100000]" position="popper" sideOffset={5}>
                   <SelectItem value="none">Sem assistência</SelectItem>
                   {playerOptions(goalTeam)
                     .filter((p) => p !== goalAuthor)
@@ -721,20 +951,25 @@ const Match: React.FC = () => {
             </div>
           </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => {
-                setGoalOpen(false);
-                setGoalEditId(null);
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button type="button" onClick={saveGoal}>
-              {goalEditId ? "Salvar alterações" : "Salvar Gol"}
-            </Button>
+          <DialogFooter className="flex flex-col gap-2">
+            <div className="text-xs text-gray-500">
+              Debug: Autor atual = "{goalAuthor}" | Jogadores disponíveis = {playerOptions(goalTeam).length}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setGoalOpen(false);
+                  setGoalEditId(null);
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button type="button" onClick={saveGoal}>
+                {goalEditId ? "Salvar alterações" : "Salvar Gol"}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -828,6 +1063,95 @@ const Match: React.FC = () => {
               Cancelar
             </Button>
             <Button onClick={confirmEnd}>Confirmar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Substituições */}
+      <Dialog
+        open={substitutionOpen}
+        onOpenChange={(o) => {
+          setSubstitutionOpen(o);
+          if (!o) {
+            setPlayerOut("");
+            setPlayerIn("");
+          }
+        }}
+      >
+        <DialogContent className="z-[99999]">
+          <DialogHeader>
+            <DialogTitle>Substituição - {substitutionTeam}</DialogTitle>
+            <DialogDescription>
+              Selecione o jogador que sai e o que entra. A substituição será registrada no histórico.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="text-sm">
+              <span className="mr-2">Time:</span>
+              <TeamBadge color={substitutionTeam} />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Jogador que sai (ativo)</Label>
+              <Select
+                value={playerOut}
+                onValueChange={setPlayerOut}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione quem sai" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getAvailablePlayersForSubstitution(substitutionTeam).playersOut.map((player) => (
+                    <SelectItem key={player} value={player}>
+                      {player}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Jogador que entra (banco)</Label>
+              <Select
+                value={playerIn}
+                onValueChange={setPlayerIn}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione quem entra" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getAvailablePlayersForSubstitution(substitutionTeam).playersIn.map((player) => (
+                    <SelectItem key={player} value={player}>
+                      {player}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {getAvailablePlayersForSubstitution(substitutionTeam).playersIn.length === 0 && (
+              <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded">
+                ⚠️ Não há jogadores no banco para substituição
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setSubstitutionOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              type="button" 
+              onClick={saveSubstitution}
+              disabled={!playerOut || !playerIn}
+            >
+              Confirmar Substituição
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
