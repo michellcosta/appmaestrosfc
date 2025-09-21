@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { OfflineAuthProvider } from './auth/OfflineAuthProvider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ToastProvider } from '@/components/ui/toast';
-import NoInstallPrompt from '@/components/NoInstallPrompt';
+import OneTimeInstallPopup from '@/components/OneTimeInstallPopup';
 import UpdateNotification from '@/components/UpdateNotification';
 import BottomNav from '@/components/layout/BottomNav';
 import MobileHeader from '@/components/layout/MobileHeader';
@@ -20,6 +20,7 @@ import OwnerDashboard from '@/pages/OwnerDashboard';
 import TestAuth from '@/pages/TestAuth';
 import SimpleLogin from '@/pages/SimpleLogin';
 import CreateOwner from '@/pages/CreateOwner';
+import CreateOwnerWithGoogle from '@/pages/CreateOwnerWithGoogle';
 import CheckTables from '@/pages/CheckTables';
 import DebugAuth from '@/pages/DebugAuth';
 import SimpleAuth from '@/pages/SimpleAuth';
@@ -42,8 +43,8 @@ export default function AppRouter() {
       <ToastProvider>
         <OfflineAuthProvider>
           <div className="min-h-[100dvh] bg-gray-100 text-gray-900">
-          {/* Install Prompt - Completely Disabled */}
-          <NoInstallPrompt />
+          {/* Install Popup - Aparece apenas uma vez */}
+          <OneTimeInstallPopup />
           
           {/* Update Notification */}
           <UpdateNotification />
@@ -61,6 +62,7 @@ export default function AppRouter() {
               <Route path="/test-auth" element={<TestAuth />} />
               <Route path="/simple-login" element={<SimpleLogin />} />
               <Route path="/create-owner" element={<CreateOwner />} />
+              <Route path="/create-owner-google" element={<CreateOwnerWithGoogle />} />
               <Route path="/check-tables" element={<CheckTables />} />
               <Route path="/debug-auth" element={<DebugAuth />} />
               <Route path="/simple-auth" element={<SimpleAuth />} />

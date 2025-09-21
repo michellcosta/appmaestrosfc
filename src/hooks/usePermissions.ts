@@ -81,6 +81,24 @@ export function usePermissions() {
     return ['owner', 'admin', 'aux', 'mensalista'].includes(role || '');
   };
 
+  const canCreateGames = () => {
+    if (!user) return false;
+    const role = user.role;
+    return ['owner'].includes(role || '');
+  };
+
+  const canControlMatch = () => {
+    if (!user) return false;
+    const role = user.role;
+    return ['owner', 'admin', 'aux'].includes(role || '');
+  };
+
+  const canSeeGames = () => {
+    if (!user) return false;
+    const role = user.role;
+    return ['owner', 'admin', 'aux', 'mensalista', 'diarista'].includes(role || '');
+  };
+
   return {
     canAccess,
     canSeeRanking,
@@ -92,6 +110,9 @@ export function usePermissions() {
     canPayDaily,
     canCountGoals,
     canSeeMedals,
+    canCreateGames,
+    canControlMatch,
+    canSeeGames,
     userRole: user?.role
   };
 }

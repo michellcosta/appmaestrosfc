@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/auth/OfflineAuthProvider';
 import { CheckCircle, AlertCircle, User, Mail, Crown } from 'lucide-react';
+import { isMainOwner, PROTECTION_MESSAGES } from '@/utils/ownerProtection';
 
 export default function SimpleLogin() {
   const [email, setEmail] = useState('');
@@ -26,6 +27,22 @@ export default function SimpleLogin() {
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  };
+
+  const handleTestLogin = async () => {
+    setLoading(true);
+    try {
+      const success = await signInOffline('teste@maestros.com', 'Usuário Teste');
+      if (success) {
+        showMessage('Login de teste realizado com sucesso!', 'success');
+      } else {
+        showMessage('Erro no login de teste', 'error');
+      }
+    } catch (error) {
+      showMessage('Erro no login de teste', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogin = async () => {
@@ -83,6 +100,12 @@ export default function SimpleLogin() {
   };
 
   const handleLogout = async () => {
+    // Verificar se é o owner principal
+    if (user?.id && isMainOwner(user.id)) {
+      showMessage(PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER, 'error');
+      return;
+    }
+    
     try {
       await signOut();
       showMessage('Logout realizado com sucesso!', 'success');
@@ -140,7 +163,13 @@ export default function SimpleLogin() {
 
             <Button 
               onClick={handleLogout}
-              className="w-full h-14 rounded-2xl bg-gray-700 hover:bg-red-600 border-2 border-gray-600 hover:border-red-500 text-white hover:text-white font-medium text-base transition-all duration-200 active:scale-95"
+              disabled={user?.id ? isMainOwner(user.id) : false}
+              className={`w-full h-14 rounded-2xl border-2 font-medium text-base transition-all duration-200 active:scale-95 ${
+                user?.id && isMainOwner(user.id) 
+                  ? 'bg-gray-600 border-gray-500 text-gray-400 cursor-not-allowed opacity-50' 
+                  : 'bg-gray-700 hover:bg-red-600 border-gray-600 hover:border-red-500 text-white hover:text-white'
+              }`}
+              title={user?.id && isMainOwner(user.id) ? PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER : 'Sair da conta'}
             >
               Sair da Conta
             </Button>
@@ -246,6 +275,22 @@ export default function SimpleLogin() {
                 <Crown className="w-4 h-4" />
                 <span>Entrar como Owner</span>
               </div>
+            )}
+          </Button>
+
+          {/* Botão de teste */}
+          <Button 
+            onClick={handleTestLogin}
+            disabled={loading}
+            className="w-full h-12 rounded-2xl bg-yellow-600 hover:bg-yellow-700 text-white disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm transition-all duration-200 active:scale-95 shadow-lg"
+          >
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Testando...</span>
+              </div>
+            ) : (
+              <span>🧪 Login de Teste</span>
             )}
           </Button>
         </div>

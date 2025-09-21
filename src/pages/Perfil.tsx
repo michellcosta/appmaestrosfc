@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/OfflineAuthProvider';
 import { useGamesStore } from '@/store/gamesStore';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,14 +38,98 @@ import {
   Bell,
   RefreshCw,
   Palette,
-  Zap
+  Zap,
+  Camera,
+  Upload
 } from 'lucide-react';
 import ThemeSelector from '@/components/ThemeSelector';
+import ImageCropper from '@/components/ImageCropper';
+import { isMainOwner, PROTECTION_MESSAGES } from '@/utils/ownerProtection';
 
 export default function PerfilPage() {
-  const { user, loading, signOut, signInWithGoogle } = useAuth();
+  const { user, loading, signOut, signInWithGoogle, updateAvatar } = useAuth();
   const navigate = useNavigate();
-  const { matches, updateMatch, deleteMatch } = useGamesStore();
+  const { matches, updateMatch, deleteMatch, addMatch } = useGamesStore();
+  const permissions = usePermissions();
+  const [showAvatarDialog, setShowAvatarDialog] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de arquivo
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor, selecione apenas arquivos de imagem.');
+      return;
+    }
+
+    // Validar tamanho (máximo 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('A imagem deve ter no máximo 10MB.');
+      return;
+    }
+
+    // Converter para base64 e abrir o recorte
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      setSelectedImage(base64);
+      setShowCropper(true);
+      setShowAvatarDialog(false);
+    };
+    reader.readAsDataURL(file);
+
+    // Limpar o input para permitir selecionar o mesmo arquivo novamente
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCropComplete = async (croppedImage: string) => {
+    setUploadingAvatar(true);
+    setShowCropper(false);
+
+    try {
+      await updateAvatar(croppedImage);
+      setShowAvatarDialog(false);
+      setUploadingAvatar(false);
+    } catch (error) {
+      console.error('Erro ao fazer upload da foto:', error);
+      alert('Erro ao fazer upload da foto. Tente novamente.');
+      setUploadingAvatar(false);
+      setShowAvatarDialog(true);
+    }
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setSelectedImage('');
+    setShowAvatarDialog(true);
+  };
+
+  const handleRemoveAvatar = async () => {
+    try {
+      await updateAvatar('');
+      setShowAvatarDialog(false);
+    } catch (error) {
+      console.error('Erro ao remover foto:', error);
+      alert('Erro ao remover foto. Tente novamente.');
+    }
+  };
+
+  const getAvatarUrl = () => {
+    if (user?.custom_avatar) {
+      return user.custom_avatar;
+    }
+    if (user?.avatar_url) {
+      return user.avatar_url;
+    }
+    return null;
+  };
 
   const getRoleIcon = (role?: string) => {
     switch (role) {
@@ -157,8 +242,19 @@ export default function PerfilPage() {
   };
 
   const handleSaveCreate = () => {
-    // Aqui você adicionaria a lógica para salvar a nova partida
-    console.log('Criando nova partida:', createForm);
+    if (!createForm.date || !createForm.time || !createForm.location) {
+      alert('Por favor, preencha todos os campos obrigatórios.');
+      return;
+    }
+
+    // Adicionar nova partida ao store global
+    addMatch({
+      date: createForm.date,
+      time: createForm.time,
+      location: createForm.location,
+      maxPlayers: createForm.maxPlayers
+    });
+
     alert('Partida criada com sucesso!');
     setCreateModalOpen(false);
     setCreateForm({
@@ -255,12 +351,22 @@ export default function PerfilPage() {
           </div>
           
           <div className="flex items-center space-x-2">
-            {user?.role && (
+            {user?.role === 'owner' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/owner-dashboard')}
+                className="p-2 hover:bg-purple-100 hover:text-purple-700 transition-colors"
+                title="Acesso rápido ao Dashboard do Owner"
+              >
+                <Crown className="w-4 h-4 text-purple-600" />
+              </Button>
+            )}
+            {user?.role && user.role !== 'owner' && (
               <div className="flex items-center space-x-1 text-sm text-maestros-green">
                 {getRoleIcon(user.role)}
                 <span className="hidden sm:inline font-medium">
-                  {user.role === 'owner' ? 'Dono' : 
-                   user.role === 'admin' ? 'Admin' : 
+                  {user.role === 'admin' ? 'Admin' : 
                    user.role === 'aux' ? 'Auxiliar' : 
                    user.role === 'mensalista' ? 'Mensalista' : 
                    user.role === 'diarista' ? 'Diarista' : 
@@ -276,8 +382,26 @@ export default function PerfilPage() {
       <Card>
         <CardContent className='p-6 space-y-4'>
           <div className='flex items-center space-x-4'>
-            <div className='w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center'>
-              <User className='w-8 h-8 text-zinc-600' />
+            <div className='relative'>
+              <div className='w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center overflow-hidden'>
+                {getAvatarUrl() ? (
+                  <img 
+                    src={getAvatarUrl()!} 
+                    alt="Foto de perfil" 
+                    className='w-full h-full object-cover'
+                  />
+                ) : (
+                  <User className='w-8 h-8 text-zinc-600' />
+                )}
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className='absolute -bottom-1 -right-1 w-6 h-6 rounded-full p-0 bg-white border-2 border-white shadow-md hover:bg-zinc-50'
+                onClick={() => setShowAvatarDialog(true)}
+              >
+                <Camera className='w-3 h-3' />
+              </Button>
             </div>
             <div className='flex-1'>
               <h2 className='text-lg font-semibold'>{user.name || 'Usuário'}</h2>
@@ -308,7 +432,7 @@ export default function PerfilPage() {
 
       {/* Abas de Navegação */}
       <Tabs defaultValue="stats" className="w-full">
-        <TabsList className={`grid w-full ${user?.role === 'owner' ? 'grid-cols-4' : 'grid-cols-3'} bg-black border-black h-12 p-1 rounded-xl`}>
+        <TabsList className={`grid w-full grid-cols-3 bg-black border-black h-12 p-1 rounded-xl`}>
           <TabsTrigger 
             value="stats" 
             className="flex items-center justify-center p-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black text-white hover:bg-zinc-800 transition-colors"
@@ -321,14 +445,6 @@ export default function PerfilPage() {
           >
             <Award className="w-5 h-5" />
           </TabsTrigger>
-          {user?.role === 'owner' && (
-            <TabsTrigger 
-              value="dashboard" 
-              className="flex items-center justify-center p-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black text-white hover:bg-zinc-800 transition-colors"
-            >
-              <Crown className="w-5 h-5" />
-            </TabsTrigger>
-          )}
           <TabsTrigger 
             value="settings" 
             className="flex items-center justify-center p-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black text-white hover:bg-zinc-800 transition-colors"
@@ -399,334 +515,24 @@ export default function PerfilPage() {
         </TabsContent>
         
         {/* Dashboard do Owner */}
-        {user?.role === 'owner' && (
-          <TabsContent value="dashboard" className="space-y-4">
-            {/* Cards de Resumo */}
-            <div className='grid grid-cols-2 gap-4'>
-              <Card>
-                <CardContent className='p-4'>
-                  <div className='flex items-center justify-between'>
-                    <div>
-                      <p className='text-sm text-zinc-600 dark:text-zinc-400'>Próximos Jogos</p>
-                      <p className='text-2xl font-bold text-zinc-900 dark:text-zinc-100'>{matches.length}</p>
-                    </div>
-                    <Calendar className='w-8 h-8 text-blue-500' />
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardContent className='p-4'>
-                  <div className='flex items-center justify-between'>
-                    <div>
-                      <p className='text-sm text-zinc-600 dark:text-zinc-400'>Jogadores Ativos</p>
-                      <p className='text-2xl font-bold text-zinc-900 dark:text-zinc-100'>{dashboardData.players.filter(p => p.status === 'active').length}</p>
-                    </div>
-                    <Users className='w-8 h-8 text-green-500' />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className='p-4'>
-                  <div className='flex items-center justify-between'>
-                    <div>
-                      <p className='text-sm text-zinc-600 dark:text-zinc-400'>Receita do Mês</p>
-                      <p className='text-2xl font-bold text-green-600 dark:text-green-400'>R$ {dashboardData.financialStatus.paid}</p>
-                    </div>
-                    <DollarSign className='w-8 h-8 text-green-500' />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className='p-4'>
-                  <div className='flex items-center justify-between'>
-                    <div>
-                      <p className='text-sm text-zinc-600 dark:text-zinc-400'>Pendentes</p>
-                      <p className='text-2xl font-bold text-orange-600 dark:text-orange-400'>R$ {dashboardData.financialStatus.pending}</p>
-                    </div>
-                    <Clock className='w-8 h-8 text-orange-500' />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Próximos Jogos */}
-            <Card>
-              <CardHeader>
-                <CardTitle className='flex items-center gap-2'>
-                  <Calendar className='w-5 h-5' />
-                  Próximos Jogos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className='space-y-3'>
-                {matches.slice(0, 3).map((match) => (
-                  <div key={match.id} className='p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 space-y-3'>
-                    <div className='flex items-start justify-between'>
-                      <div className='flex-1 min-w-0'>
-                        <p className='font-medium text-zinc-900 dark:text-zinc-100 truncate'>{match.location}</p>
-                        <p className='text-sm text-zinc-600 dark:text-zinc-400'>{match.date} às {match.time}</p>
-                        <p className='text-sm text-zinc-600 dark:text-zinc-400'>
-                          {match.confirmedPlayers}/{match.maxPlayers} confirmados
-                        </p>
-                      </div>
-                      <Badge variant={match.status === 'open' ? 'default' : 'secondary'} className='ml-2 flex-shrink-0'>
-                        {match.status === 'open' ? 'Aberto' : 'Fechado'}
-                      </Badge>
-                    </div>
-                    <div className='flex items-center justify-end gap-1'>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className='h-8 w-8 p-0' 
-                        title="Visualizar"
-                        onClick={() => handleViewMatch(match)}
-                      >
-                        <Eye className='w-4 h-4' />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className='h-8 w-8 p-0' 
-                        title="Editar"
-                        onClick={() => handleEditMatch(match)}
-                      >
-                        <Edit className='w-4 h-4' />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className='h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50' 
-                        title="Excluir"
-                        onClick={() => handleDeleteMatch(match)}
-                      >
-                        <Trash2 className='w-4 h-4' />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                <Button 
-                  className='w-full mb-2' 
-                  variant="outline"
-                  onClick={handleRepeatMatch}
-                >
-                  <RefreshCw className='w-4 h-4 mr-2' />
-                  Repetir Partida
-                </Button>
-                <Button 
-                  className='w-full' 
-                  variant="outline"
-                  onClick={handleCreateMatch}
-                >
-                  <Plus className='w-4 h-4 mr-2' />
-                  Nova Partida
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Situação Financeira */}
-            <Card>
-              <CardHeader>
-                <CardTitle className='flex items-center gap-2'>
-                  <DollarSign className='w-5 h-5' />
-                  Situação Financeira
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className='space-y-4'>
-                  <div className='flex justify-between items-center'>
-                    <span className='text-sm text-zinc-600 dark:text-zinc-400'>Total do Mês:</span>
-                    <span className='font-semibold text-zinc-900 dark:text-zinc-100'>R$ {dashboardData.financialStatus.totalThisMonth}</span>
-                  </div>
-                  <div className='flex justify-between items-center'>
-                    <span className='text-sm text-zinc-600 dark:text-zinc-400'>Pagos:</span>
-                    <span className='font-semibold text-green-600 dark:text-green-400'>R$ {dashboardData.financialStatus.paid}</span>
-                  </div>
-                  <div className='flex justify-between items-center'>
-                    <span className='text-sm text-zinc-600 dark:text-zinc-400'>Pendentes:</span>
-                    <span className='font-semibold text-orange-600 dark:text-orange-400'>R$ {dashboardData.financialStatus.pending}</span>
-                  </div>
-                  <div className='w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-2'>
-                    <div 
-                      className='bg-green-500 h-2 rounded-full' 
-                      style={{ 
-                        width: `${(dashboardData.financialStatus.paid / dashboardData.financialStatus.totalThisMonth) * 100}%` 
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Controle de Jogadores */}
-            <Card>
-              <CardHeader>
-                <CardTitle className='flex items-center gap-2'>
-                  <Users className='w-5 h-5' />
-                  Controle de Jogadores
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className='space-y-3'>
-                  {dashboardData.players.slice(0, 4).map((player) => (
-                    <div key={player.id} className='flex items-center justify-between p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700'>
-                      <div className='flex items-center gap-3'>
-                        <div className='w-10 h-10 bg-zinc-200 dark:bg-zinc-700 rounded-full flex items-center justify-center'>
-                          <User className='w-5 h-5 text-zinc-600 dark:text-zinc-400' />
-                        </div>
-                        <div>
-                          <p className='font-medium text-zinc-900 dark:text-zinc-100'>{player.name}</p>
-                          <p className='text-sm text-zinc-600 dark:text-zinc-400'>
-                            {player.lastPayment ? `Último pagamento: ${player.lastPayment}` : 'Sem pagamentos'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className='flex items-center gap-2'>
-                        <Badge 
-                          variant="outline"
-                          className={
-                            player.role === 'admin' ? 'bg-blue-100 text-blue-800' :
-                            player.role === 'aux' ? 'bg-green-100 text-green-800' :
-                            player.role === 'mensalista' ? 'bg-purple-100 text-purple-800' :
-                            'bg-orange-100 text-orange-800'
-                          }
-                        >
-                          {player.role === 'admin' ? 'Admin' :
-                           player.role === 'aux' ? 'Auxiliar' :
-                           player.role === 'mensalista' ? 'Mensalista' : 'Diarista'}
-                        </Badge>
-                        <Badge 
-                          variant={player.status === 'active' ? 'default' : 'secondary'}
-                          className={player.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}
-                        >
-                          {player.status === 'active' ? 'Ativo' : 'Pendente'}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                  <Button className='w-full' variant="outline">
-                    <Plus className='w-4 h-4 mr-2' />
-                    Ver Todos os Jogadores
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
         
         <TabsContent value="settings" className="space-y-4">
            {/* Funcionalidades especiais para Owner */}
-           {user.role === 'owner' && (
+           {(user.role === 'owner' || !user.role) && (
              <>
-               {/* Permissões do Grupo */}
-               <Card>
-                 <CardHeader>
-                   <CardTitle className='flex items-center gap-2'>
-                     <Shield className='w-5 h-5 text-purple-600' />
-                     Permissões do Grupo
-                   </CardTitle>
-                 </CardHeader>
-                 <CardContent className='space-y-3'>
-                   <Button 
-                     variant="outline" 
-                     className='w-full justify-start'
-                     onClick={() => navigate('/admin/manage-admins')}
-                   >
-                     <Users className='w-4 h-4 mr-2' />
-                     Gerenciar Admins
-                   </Button>
-                   
-                   <Button 
-                     variant="outline" 
-                     className='w-full justify-start'
-                     onClick={() => navigate('/admin/configure-access')}
-                   >
-                     <Shield className='w-4 h-4 mr-2' />
-                     Configurar Acessos
-                   </Button>
-                   
-                   <Button 
-                     variant="outline" 
-                     className='w-full justify-start'
-                     onClick={() => navigate('/admin/create-invites')}
-                   >
-                     <UserCheck className='w-4 h-4 mr-2' />
-                     Criar Convites
-                   </Button>
-                   
-                   <Button 
-                     variant="outline" 
-                     className='w-full justify-start'
-                     onClick={() => navigate('/admin/approve-participants')}
-                   >
-                     <CheckCircle className='w-4 h-4 mr-2' />
-                     Aprovar Participantes
-                   </Button>
-                 </CardContent>
-               </Card>
+               {/* Botão de Acesso ao Dashboard Completo */}
+               <Button 
+                 variant="default" 
+                 className='w-full bg-purple-600 hover:bg-purple-700 text-white mb-4'
+                 onClick={() => navigate('/owner-dashboard')}
+               >
+                 <Crown className='w-4 h-4 mr-2' />
+                 Acessar Dashboard Completo
+               </Button>
+               
 
-               {/* Integrações */}
-               <Card>
-                 <CardHeader>
-                   <CardTitle className='flex items-center gap-2'>
-                     <Bell className='w-5 h-5 text-blue-600' />
-                     Integrações
-                   </CardTitle>
-                 </CardHeader>
-                 <CardContent className='space-y-3'>
-                   <Button 
-                     variant="outline" 
-                     className='w-full justify-start'
-                     onClick={() => navigate('/admin/push-notifications')}
-                   >
-                     <Bell className='w-4 h-4 mr-2' />
-                     Notificações Push
-                   </Button>
-                   
-                   <Button 
-                     variant="outline" 
-                     className='w-full justify-start'
-                     onClick={() => navigate('/admin/auto-updates')}
-                   >
-                     <RefreshCw className='w-4 h-4 mr-2' />
-                     Updates Automáticos
-                   </Button>
-                   
-                   <Button 
-                     variant="outline" 
-                     className='w-full justify-start'
-                     onClick={() => navigate('/admin/system-logs')}
-                   >
-                     <FileText className='w-4 h-4 mr-2' />
-                     Logs do Sistema
-                   </Button>
-                 </CardContent>
-               </Card>
 
-               {/* Funcionalidades de Dono */}
-               <Card>
-                 <CardContent className='p-6'>
-                   <h3 className='text-lg font-semibold mb-4 flex items-center'>
-                     <Shield className='w-5 h-5 mr-2 text-purple-600' />
-                     Funcionalidades de Dono
-                   </h3>
-                   <div className='space-y-3'>
-                     <div className='p-3 bg-purple-50 rounded-lg'>
-                       <p className='font-medium text-purple-900'>👑 Acesso Total</p>
-                       <p className='text-sm text-purple-700'>Você tem acesso completo a todas as funcionalidades do sistema</p>
-                     </div>
-                     <div className='p-3 bg-blue-50 rounded-lg'>
-                       <p className='font-medium text-blue-900'>🛡️ Gerenciamento</p>
-                       <p className='text-sm text-blue-700'>Pode gerenciar usuários, convites e configurações</p>
-                     </div>
-                     <div className='p-3 bg-green-50 rounded-lg'>
-                       <p className='font-medium text-green-900'>📊 Relatórios</p>
-                       <p className='text-sm text-green-700'>Acesso a relatórios e estatísticas completas</p>
-                     </div>
-                   </div>
-                 </CardContent>
-               </Card>
              </>
            )}
 
@@ -773,12 +579,20 @@ export default function PerfilPage() {
                </div>
              </CardContent>
            </Card>
+
+
          </TabsContent>
       </Tabs>
 
       <div className='pt-4'>
         <Button 
           onClick={async () => {
+            // Verificar se é o owner principal
+            if (user?.id && isMainOwner(user.id)) {
+              alert(PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER);
+              return;
+            }
+            
             try {
               await signOut();
               alert('Logout realizado com sucesso!');
@@ -788,8 +602,10 @@ export default function PerfilPage() {
               alert('Erro ao fazer logout');
             }
           }} 
+          disabled={user?.id ? isMainOwner(user.id) : false}
           variant="destructive" 
-          className='w-full'
+          className={`w-full ${user?.id && isMainOwner(user.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+          title={user?.id && isMainOwner(user.id) ? PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER : 'Sair da conta'}
         >
           <LogOut className='w-4 h-4 mr-2' />
           Sair da Conta
@@ -971,6 +787,95 @@ export default function PerfilPage() {
               Criar Partida
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Edição de Avatar */}
+      <Dialog open={showAvatarDialog} onOpenChange={setShowAvatarDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Foto de Perfil</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex flex-col items-center space-y-4">
+              <div className='w-24 h-24 bg-zinc-100 rounded-full flex items-center justify-center overflow-hidden'>
+                {getAvatarUrl() ? (
+                  <img 
+                    src={getAvatarUrl()!} 
+                    alt="Foto de perfil atual" 
+                    className='w-full h-full object-cover'
+                  />
+                ) : (
+                  <User className='w-12 h-12 text-zinc-600' />
+                )}
+              </div>
+              
+              <div className="text-center space-y-2">
+                <p className="text-sm text-zinc-600">
+                  {user?.avatar_url && !user?.custom_avatar 
+                    ? 'Foto atual do Google' 
+                    : user?.custom_avatar 
+                    ? 'Foto personalizada' 
+                    : 'Nenhuma foto definida'
+                  }
+                </p>
+                <p className="text-xs text-zinc-500">
+                  Formatos aceitos: JPG, PNG, GIF (máx. 10MB)
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="w-full"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {uploadingAvatar ? 'Enviando...' : 'Escolher Nova Foto'}
+              </Button>
+              
+              {getAvatarUrl() && (
+                <Button 
+                  variant="outline" 
+                  onClick={handleRemoveAvatar}
+                  className="w-full"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Remover Foto
+                </Button>
+              )}
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAvatarDialog(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Recorte de Imagem */}
+      <Dialog open={showCropper} onOpenChange={setShowCropper}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Recortar Foto de Perfil</DialogTitle>
+          </DialogHeader>
+          {selectedImage && (
+            <ImageCropper
+              imageSrc={selectedImage}
+              onCropComplete={handleCropComplete}
+              onCancel={handleCropCancel}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

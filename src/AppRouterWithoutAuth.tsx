@@ -20,6 +20,7 @@ import OwnerDashboard from '@/pages/OwnerDashboard';
 import TestAuth from '@/pages/TestAuth';
 import SimpleLogin from '@/pages/SimpleLogin';
 import CreateOwner from '@/pages/CreateOwner';
+import CreateOwnerWithGoogle from '@/pages/CreateOwnerWithGoogle';
 import CheckTables from '@/pages/CheckTables';
 import DebugAuth from '@/pages/DebugAuth';
 import SimpleAuth from '@/pages/SimpleAuth';
@@ -74,6 +75,7 @@ export default function AppRouterWithoutAuth() {
             <Route path="/test-auth" element={<TestAuth />} />
             <Route path="/simple-login" element={<SimpleLogin />} />
             <Route path="/create-owner" element={<CreateOwner />} />
+            <Route path="/create-owner-google" element={<CreateOwnerWithGoogle />} />
             <Route path="/check-tables" element={<CheckTables />} />
             <Route path="/debug-auth" element={<DebugAuth />} />
             <Route path="/simple-auth" element={<SimpleAuth />} />

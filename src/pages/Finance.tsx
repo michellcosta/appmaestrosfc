@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { DollarSign, CreditCard, TrendingUp, CheckCircle, Clock, XCircle, Crown, Shield, Star, Zap, User } from 'lucide-react';
+import { DollarSign, CreditCard, TrendingUp, CheckCircle, Clock, XCircle, Crown, Shield, Star, Zap, User, Wallet } from 'lucide-react';
 import PaymentButton from '@/components/PaymentButton';
+import DigitalWalletComponent from '@/components/WalletWithdrawal';
 import { useAuth } from '@/auth/OfflineAuthProvider';
+import { useDigitalWalletOffline } from '@/hooks/useDigitalWalletOffline';
 
 type Charge = {
   id: string;
@@ -21,6 +24,23 @@ export default function FinancePage() {
   const [rows, setRows] = useState<Charge[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // Hook da carteira digital (versão offline)
+  const {
+    wallet,
+    transactions,
+    paymentOptions,
+    withdrawalRequests,
+    loading: walletLoading,
+    error: walletError,
+    depositMoney,
+    withdrawMoney,
+    transferMoney,
+    formatCurrency,
+    isOfflineMode,
+    debugInfo
+  } = useDigitalWalletOffline(user?.id || '', user?.group_id);
 
   const getRoleIcon = (role?: string) => {
     switch (role) {
@@ -69,16 +89,27 @@ export default function FinancePage() {
         <div className="flex items-center justify-between p-4">
           <div>
             <h1 className="text-lg font-bold text-gray-900">Financeiro</h1>
-            <p className="text-sm text-gray-600">Controle de pagamentos e mensalidades</p>
+            <p className="text-sm text-gray-600">Controle de pagamentos e carteira digital</p>
           </div>
           
           <div className="flex items-center space-x-2">
-            {user?.role && (
+            {user?.role === 'owner' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/owner-dashboard')}
+              className="p-2 hover:bg-purple-100 hover:text-purple-700 transition-colors"
+              title="Acesso rápido ao Dashboard do Owner"
+            >
+              <Crown className="w-4 h-4 text-purple-600" />
+            </Button>
+          )}
+            
+            {user?.role && user.role !== 'owner' && (
               <div className="flex items-center space-x-1 text-sm text-maestros-green">
                 {getRoleIcon(user.role)}
                 <span className="hidden sm:inline font-medium">
-                  {user.role === 'owner' ? 'Dono' : 
-                   user.role === 'admin' ? 'Admin' : 
+                  {user.role === 'admin' ? 'Admin' : 
                    user.role === 'aux' ? 'Auxiliar' : 
                    user.role === 'mensalista' ? 'Mensalista' : 
                    user.role === 'diarista' ? 'Diarista' : 
@@ -90,91 +121,152 @@ export default function FinancePage() {
         </div>
       </header>
 
-      {/* Resumo Financeiro */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <DollarSign className="w-5 h-5 text-green-600" />
-              <div>
-                <p className="text-sm text-zinc-500">Total Pago</p>
-                <p className="text-lg font-semibold">R$ 1.250,00</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <CreditCard className="w-5 h-5 text-blue-600" />
-              <div>
-                <p className="text-sm text-zinc-500">Pendente</p>
-                <p className="text-lg font-semibold">R$ 180,00</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="w-5 h-5 text-purple-600" />
-              <div>
-                <p className="text-sm text-zinc-500">Este Mês</p>
-                <p className="text-lg font-semibold">R$ 320,00</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Abas de Navegação */}
-      <Tabs defaultValue="payments" className="w-full">
+      <Tabs defaultValue="wallet" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="payments">Pagamentos</TabsTrigger>
-          <TabsTrigger value="monthly">Mensalidades</TabsTrigger>
-          <TabsTrigger value="daily">Diárias</TabsTrigger>
+          <TabsTrigger value="wallet" className="flex items-center gap-2">
+            <Wallet className="w-4 h-4" />
+            Carteira Digital
+          </TabsTrigger>
+          <TabsTrigger value="charges" className="flex items-center gap-2">
+            <CreditCard className="w-4 h-4" />
+            Cobranças
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4" />
+            Histórico
+          </TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="payments" className="space-y-4">
-          <Card>
+
+        <TabsContent value="wallet" className="space-y-4">
+          {/* Debug da carteira digital */}
+          <Card className="bg-green-50 border-green-200">
             <CardContent className="p-4">
-              <h3 className="text-lg font-semibold mb-4">Histórico de Pagamentos</h3>
-              {loading ? (
-                <p className="text-sm text-zinc-500">Carregando...</p>
-              ) : rows.length === 0 ? (
-                <p className="text-sm text-zinc-500">Nenhum pagamento encontrado</p>
-              ) : (
+              <h4 className="font-semibold text-green-800 mb-2">🔍 Debug da Carteira Digital (OFFLINE)</h4>
+              <div className="text-sm space-y-1">
+                <p><strong>Modo:</strong> {isOfflineMode ? '🟢 OFFLINE' : '🔴 ONLINE'}</p>
+                <p><strong>Usuário ID:</strong> {user?.id || 'Não encontrado'}</p>
+                <p><strong>Grupo ID:</strong> {user?.group_id || 'Não encontrado'}</p>
+                <p><strong>Loading:</strong> {walletLoading ? 'Sim' : 'Não'}</p>
+                <p><strong>Erro:</strong> {walletError || 'Nenhum'}</p>
+                <p><strong>Carteira:</strong> {wallet ? 'Carregada' : 'Não carregada'}</p>
+                <p><strong>Transações:</strong> {transactions.length}</p>
+                {wallet && (
+                  <div className="mt-2 p-2 bg-white rounded border">
+                    <p><strong>Saldo:</strong> {formatCurrency(wallet.balance)}</p>
+                    <p><strong>ID da Carteira:</strong> {wallet.id}</p>
+                    <p><strong>Ativa:</strong> {wallet.is_active ? 'Sim' : 'Não'}</p>
+                    <p><strong>Última Atualização:</strong> {new Date(wallet.updated_at).toLocaleString()}</p>
+                  </div>
+                )}
+                <div className="flex gap-2 mt-3">
+                  <Button
+                    onClick={async () => {
+                      try {
+                        console.log('🧪 Testando depósito...');
+                        const result = await depositMoney(25.50, 'PIX');
+                        alert(`Teste de depósito: ${result.success ? 'SUCESSO - R$ 25,50 adicionados!' : 'ERRO - ' + result.error}`);
+                      } catch (err) {
+                        console.error('❌ Erro no teste:', err);
+                        alert('Erro no teste: ' + err.message);
+                      }
+                    }}
+                    className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1"
+                  >
+                    💰 Testar Depósito (+R$ 25,50)
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      try {
+                        console.log('🧪 Testando saque...');
+                        const result = await withdrawMoney(10.00, 'teste@email.com');
+                        alert(`Teste de saque: ${result.success ? 'SUCESSO - R$ 10,00 sacados!' : 'ERRO - ' + result.error}`);
+                      } catch (err) {
+                        console.error('❌ Erro no teste:', err);
+                        alert('Erro no teste: ' + err.message);
+                      }
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1"
+                  >
+                    💸 Testar Saque (-R$ 10,00)
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {walletLoading ? (
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : wallet ? (
+            <DigitalWalletComponent
+              wallet={wallet}
+              paymentOptions={paymentOptions}
+              withdrawalRequests={withdrawalRequests}
+              onProcessPayment={depositMoney}
+              onRequestWithdrawal={withdrawMoney}
+              onAddMoney={depositMoney}
+              formatCurrency={formatCurrency}
+            />
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-gray-600">Erro ao carregar carteira digital</p>
+                {walletError && <p className="text-red-600 text-sm mt-2">{walletError}</p>}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Transações Recentes */}
+          {transactions.length > 0 && (
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-4">Transações Recentes</h3>
                 <div className="space-y-3">
-                  {rows.map((row) => (
-                    <div key={row.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        {getStatusIcon(row.status)}
+                  {transactions.slice(0, 5).map((transaction) => (
+                    <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-2 h-2 rounded-full ${
+                          transaction.type === 'deposit' ? 'bg-green-500' :
+                          transaction.type === 'payment' ? 'bg-red-500' :
+                          transaction.type === 'withdrawal' ? 'bg-orange-500' :
+                          'bg-blue-500'
+                        }`} />
                         <div>
-                          <p className="font-medium">
-                            {row.type === 'mensalista' ? 'Mensalidade' : 'Diária'} - {row.period || 'N/A'}
-                          </p>
-                          <p className="text-sm text-zinc-500">
-                            {new Date(row.created_at).toLocaleDateString('pt-BR')}
+                          <p className="font-medium text-sm">{transaction.description}</p>
+                          <p className="text-xs text-gray-600">
+                            {new Date(transaction.created_at).toLocaleDateString('pt-BR')}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold">R$ {row.amount.toFixed(2)}</p>
-                        <Badge className={getStatusColor(row.status)}>
-                          {row.status}
+                        <p className={`font-bold ${
+                          transaction.type === 'deposit' || transaction.type === 'transfer_in' ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {transaction.type === 'deposit' || transaction.type === 'transfer_in' ? '+' : '-'}
+                          {formatCurrency(transaction.amount_brl)}
+                        </p>
+                        <Badge variant="outline" className="text-xs">
+                          {transaction.status === 'completed' ? 'Concluído' : 
+                           transaction.status === 'pending' ? 'Pendente' : 
+                           transaction.status === 'failed' ? 'Falhou' : 
+                           'Cancelado'}
                         </Badge>
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
-        
-        <TabsContent value="monthly" className="space-y-4">
+
+        <TabsContent value="charges" className="space-y-4">
+          {/* Existing charges content */}
           <Card>
             <CardContent className="p-4">
               <h3 className="text-lg font-semibold mb-4">Mensalidades</h3>

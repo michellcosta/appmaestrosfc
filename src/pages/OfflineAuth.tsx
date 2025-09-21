@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { User, Mail, Shield, CheckCircle } from 'lucide-react';
+import { isMainOwner, PROTECTION_MESSAGES } from '@/utils/ownerProtection';
 
 export default function OfflineAuth() {
   const { user, signInOffline, signOut } = useAuth();
@@ -72,6 +73,12 @@ export default function OfflineAuth() {
   };
 
   const handleLogout = async () => {
+    // Verificar se é o owner principal
+    if (user?.id && isMainOwner(user.id)) {
+      setMessage(PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER);
+      return;
+    }
+    
     try {
       await signOut();
       setMessage('Logout realizado!');
@@ -120,7 +127,13 @@ export default function OfflineAuth() {
               <Button onClick={() => navigate('/')} className='flex-1'>
                 Ir para Dashboard
               </Button>
-              <Button onClick={handleLogout} variant="outline">
+              <Button 
+                onClick={handleLogout} 
+                variant="outline"
+                disabled={user?.id ? isMainOwner(user.id) : false}
+                className={user?.id && isMainOwner(user.id) ? 'opacity-50 cursor-not-allowed' : ''}
+                title={user?.id && isMainOwner(user.id) ? PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER : 'Sair da conta'}
+              >
                 Logout
               </Button>
             </div>

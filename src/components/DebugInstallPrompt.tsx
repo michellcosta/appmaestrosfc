@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from './ui/button';
 import { Download, X } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -16,6 +16,7 @@ export default function DebugInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
+  const [showManualInstructions, setShowManualInstructions] = useState(false);
 
   const addDebugInfo = (info: string) => {
     console.log('🔍 Debug Install:', info);
@@ -92,7 +93,9 @@ export default function DebugInstallPrompt() {
         setShowPrompt(false);
       }
     } else {
-      addDebugInfo('No deferred prompt available');
+      addDebugInfo('No deferred prompt available - showing manual instructions');
+      // Mostrar instruções manuais
+      setShowManualInstructions(true);
     }
   };
 
@@ -174,6 +177,48 @@ export default function DebugInstallPrompt() {
           <div key={i} className="text-gray-600 dark:text-gray-300">{info}</div>
         ))}
       </div>
+      
+      {/* Instrucoes manuais quando o evento nativo nao esta disponivel */}
+      {showManualInstructions && (
+        <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-3">
+            📱 Como instalar manualmente:
+          </h4>
+          
+          {/* Android Chrome */}
+          <div className="mb-3 p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200">
+            <h5 className="text-xs font-semibold text-green-800 dark:text-green-200 mb-1">
+              🤖 Android (Chrome/Edge):
+            </h5>
+            <ol className="text-xs text-green-700 dark:text-green-300 space-y-1">
+              <li>1. Toque no menu (⋮) do navegador</li>
+              <li>2. Procure por "Instalar app" ou "Adicionar à tela inicial"</li>
+              <li>3. Confirme a instalação</li>
+            </ol>
+          </div>
+          
+          {/* iOS Safari */}
+          <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200">
+            <h5 className="text-xs font-semibold text-blue-800 dark:text-blue-200 mb-1">
+              🍎 iPhone/iPad (Safari):
+            </h5>
+            <ol className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+              <li>1. Toque no botão de compartilhar (📤) na barra inferior</li>
+              <li>2. Role para baixo e toque em "Adicionar à Tela Inicial"</li>
+              <li>3. Toque em "Adicionar" no canto superior direito</li>
+            </ol>
+          </div>
+          
+          <Button 
+            onClick={() => setShowManualInstructions(false)}
+            size="sm" 
+            variant="outline"
+            className="w-full mt-2"
+          >
+            Entendi
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

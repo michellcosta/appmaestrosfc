@@ -20,7 +20,6 @@ export function useMenuByRole(profile: Profile | null) {
       { label: 'Perfil', href: '/perfil' },
     ];
 
-    // Aqui você pode checar aprovação do diarista (ex.: profile.approved == true)
     const diaristaAprovado: MenuItem[] = [
       { label: 'Jogos', href: '/' },
       { label: 'Financeiro', href: '/finance' },
@@ -28,8 +27,12 @@ export function useMenuByRole(profile: Profile | null) {
     ];
 
     let userMenu: MenuItem[] = [];
-    if (profile.membership === 'mensalista') userMenu = baseMensalista;
-    else if (profile.membership === 'diarista') userMenu = diaristaPendente; // troque para diaristaAprovado quando tiver flag de aprovação
+    if (profile.membership === 'mensalista') {
+      userMenu = baseMensalista;
+    } else if (profile.membership === 'diarista') {
+      // Verifica se o diarista está aprovado
+      userMenu = profile.approved ? diaristaAprovado : diaristaPendente;
+    }
 
     if (profile.role === 'admin' || profile.role === 'aux') {
       userMenu = [

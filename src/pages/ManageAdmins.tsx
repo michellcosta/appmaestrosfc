@@ -14,11 +14,14 @@ import {
   Users
 } from 'lucide-react';
 import { useToastHelpers } from '@/components/ui/toast';
+import { useAuth } from '@/auth/OfflineAuthProvider';
+import { canDeleteUser, isMainOwner, PROTECTION_MESSAGES } from '@/utils/ownerProtection';
 
 export default function ManageAdmins() {
   const [searchEmail, setSearchEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const { success, error } = useToastHelpers();
+  const { user } = useAuth();
 
   // Mock data - em produção viria do Supabase
   const [admins, setAdmins] = useState([
@@ -71,6 +74,12 @@ export default function ManageAdmins() {
   };
 
   const handleRemoveAdmin = async (adminId: string) => {
+    // Verificar se pode excluir o usuário
+    if (!canDeleteUser(adminId, user?.id)) {
+      error('Acesso negado', PROTECTION_MESSAGES.CANNOT_DELETE_MAIN_OWNER);
+      return;
+    }
+
     setLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -160,6 +169,14 @@ export default function ManageAdmins() {
                       >
                         {admin.status === 'active' ? '✅ Ativo' : '⏳ Pendente'}
                       </Badge>
+                      {isMainOwner(admin.id) && (
+                        <Badge 
+                          variant="destructive"
+                          className="text-xs bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                        >
+                          👑 Owner Principal
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -172,8 +189,17 @@ export default function ManageAdmins() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleRemoveAdmin(admin.id)}
-                    disabled={loading}
-                    className="text-red-600 hover:bg-red-50 hover:border-red-200"
+                    disabled={loading || !canDeleteUser(admin.id, user?.id)}
+                    className={
+                      !canDeleteUser(admin.id, user?.id) 
+                        ? "text-gray-400 cursor-not-allowed" 
+                        : "text-red-600 hover:bg-red-50 hover:border-red-200"
+                    }
+                    title={
+                      !canDeleteUser(admin.id, user?.id) 
+                        ? "O owner principal não pode ser removido" 
+                        : "Remover administrador"
+                    }
                   >
                     <UserMinus className="w-4 h-4" />
                   </Button>

@@ -47,6 +47,8 @@ export interface Venue {
   radius_m: number;
 }
 
+export type DiaristRequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+
 export interface CheckIn {
   id: string;
   match_id: string;
@@ -103,12 +105,79 @@ export interface Payment {
 
 export interface DiaristRequest {
   id: string;
+  user_id: string;
+  match_id: string;
+  status: DiaristRequestStatus;
+  requested_at: string;
+  reviewed_at?: string;
+  reviewed_by?: string;
+  payment_id?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  // Dados relacionados (joins)
+  user?: User;
+  reviewer?: User;
+}
+
+// Tipos para conflitos de pagamento
+export type PaymentConflictReason = 'match_full' | 'duplicate_payment' | 'cancelled_match';
+export type PaymentConflictStatus = 'pending' | 'refunded' | 'failed' | 'resolved';
+
+export interface PaymentConflict {
+  id: string;
   match_id: string;
   user_id: string;
-  status: DiaristStatus;
-  accepted_by?: string;
-  accepted_at?: Date;
-  payment_id?: string;
+  amount: number;
+  payment_method: string;
+  payment_id: string;
+  conflict_reason: PaymentConflictReason;
+  status: PaymentConflictStatus;
+  created_at: string;
+  resolved_at?: string;
+  refund_id?: string;
+  notes?: string;
+  
+  // Relacionamentos
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+  };
+  match?: {
+    id: string;
+    date: string;
+    time: string;
+    location: string;
+  };
+}
+
+// Tipos para participantes de partidas
+export type ParticipantStatus = 'confirmed' | 'cancelled' | 'pending';
+
+export interface MatchParticipant {
+  id: string;
+  match_id: string;
+  user_id: string;
+  status: ParticipantStatus;
+  joined_at: string;
+  payment_confirmed_at?: string;
+  payment_amount?: number;
+  
+  // Relacionamentos
+  user?: {
+    id: string;
+    email: string;
+  };
+}
+
+// Interface para capacidade de partidas
+export interface MatchCapacity {
+  match_id: string;
+  current_participants: number;
+  max_participants: number;
+  is_full: boolean;
+  pending_payments: number;
 }
 
 export interface Notice {

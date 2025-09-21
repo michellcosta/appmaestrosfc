@@ -1,10 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { initializeOwnerProtection } from '@/utils/ownerProtection';
 
 type AppUser = {
   id: string;
   email?: string | null;
   name?: string | null;
   role?: 'owner'|'admin'|'aux'|'mensalista'|'diarista';
+  avatar_url?: string | null;
+  custom_avatar?: string | null;
+  group_id?: string | null;
 };
 
 type AuthCtx = {
@@ -14,6 +18,7 @@ type AuthCtx = {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   signInOffline: (email: string, password: string) => Promise<void>;
+  updateAvatar: (avatarUrl: string) => Promise<void>;
 };
 
 const Ctx = createContext<AuthCtx>({
@@ -23,6 +28,7 @@ const Ctx = createContext<AuthCtx>({
   signOut: async () => {},
   refreshProfile: async () => {},
   signInOffline: async () => {},
+  updateAvatar: async () => {},
 });
 
 export const useAuth = () => useContext(Ctx);
@@ -32,29 +38,112 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Verificar se há usuário offline salvo
-    const checkOfflineUser = () => {
+    let mounted = true;
+
+    const initializeAuth = async () => {
       try {
+        // Verificar se há usuário salvo no localStorage
         const offlineUser = localStorage.getItem('offline_user');
-        if (offlineUser) {
-          const userData = JSON.parse(offlineUser);
-          console.log('✅ Usuário offline encontrado:', userData);
-          setUser(userData);
+        if (offlineUser && mounted) {
+          try {
+            const userData = JSON.parse(offlineUser);
+            
+            // Adicionar group_id se não existir (para usuários antigos)
+            if (!userData.group_id) {
+              userData.group_id = `group_${userData.id.slice(-8)}`;
+              localStorage.setItem('offline_user', JSON.stringify(userData));
+              console.log('🔧 Adicionado group_id ao usuário existente:', userData.group_id);
+            }
+            
+            setUser(userData);
+            
+            // Inicializar proteções do owner principal
+            initializeOwnerProtection(userData);
+          } catch (error) {
+            console.error('❌ Erro ao carregar usuário offline:', error);
+          }
+        }
+
+        // Verificar sessão do Supabase para Google OAuth
+        const { supabase } = await import('@/lib/supabase');
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user && mounted) {
+          const googleUser: AppUser = {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
+            role: 'owner',
+            avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
+            custom_avatar: null,
+            group_id: `group_${session.user.id.slice(-8)}`
+          };
+          
+          localStorage.setItem('offline_user', JSON.stringify(googleUser));
+          setUser(googleUser);
+          
+          // Inicializar proteções do owner principal
+          initializeOwnerProtection(googleUser);
+          
+          console.log('✅ Usuário Google carregado:', googleUser);
         }
       } catch (error) {
-        console.error('❌ Erro ao carregar usuário offline:', error);
+        console.error('❌ Erro ao inicializar auth:', error);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
-    // Aguardar um pouco para garantir que o DOM está pronto
-    const timeout = setTimeout(() => {
-      checkOfflineUser();
-    }, 100);
+    initializeAuth();
+
+    // Listener para mudanças de autenticação do Google
+    const setupAuthListener = async () => {
+      try {
+        const { supabase } = await import('@/lib/supabase');
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            if (!mounted) return;
+
+            if (event === 'SIGNED_IN' && session?.user) {
+              const googleUser: AppUser = {
+                id: session.user.id,
+                email: session.user.email,
+                name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
+                role: 'owner',
+                avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
+                custom_avatar: null
+              };
+              
+              localStorage.setItem('offline_user', JSON.stringify(googleUser));
+              setUser(googleUser);
+              
+              // Inicializar proteções do owner principal
+              initializeOwnerProtection(googleUser);
+              
+              console.log('✅ Login Google realizado:', googleUser);
+            } else if (event === 'SIGNED_OUT') {
+              localStorage.removeItem('offline_user');
+              setUser(null);
+              console.log('✅ Logout Google realizado');
+            }
+          }
+        );
+
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error('❌ Erro ao configurar listener:', error);
+      }
+    };
+
+    const cleanupListener = setupAuthListener();
 
     return () => {
-      clearTimeout(timeout);
+      mounted = false;
+      cleanupListener?.then(cleanup => cleanup?.());
     };
   }, []);
 
@@ -62,11 +151,13 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
     try {
       console.log('🔍 Fazendo login offline...');
       
+      const userId = 'offline-' + Date.now();
       const userData = {
-        id: 'offline-' + Date.now(),
+        id: userId,
         email: email,
         name: email.split('@')[0],
-        role: 'owner' as const
+        role: 'owner' as const,
+        group_id: `group_${userId.slice(-8)}`
       };
 
       // Salvar no localStorage
@@ -131,8 +222,22 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
     }
   };
 
+  const updateAvatar = async (avatarUrl: string) => {
+    try {
+      if (user) {
+        const updatedUser = { ...user, custom_avatar: avatarUrl };
+        localStorage.setItem('offline_user', JSON.stringify(updatedUser));
+        setUser(updatedUser);
+        console.log('✅ Avatar atualizado:', avatarUrl);
+      }
+    } catch (error) {
+      console.error('❌ Erro ao atualizar avatar:', error);
+      throw error;
+    }
+  };
+
   return (
-    <Ctx.Provider value={{ user, loading, signInWithGoogle, signOut, refreshProfile, signInOffline }}>
+    <Ctx.Provider value={{ user, loading, signInWithGoogle, signOut, refreshProfile, signInOffline, updateAvatar }}>
       {children}
     </Ctx.Provider>
   );

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import { Pencil, Trash2, Trophy, Crown, Shield, Star, Zap, User } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +25,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMatchStore, GoalEvent, TeamColor } from "@/store/matchStore";
 import { usePlayersStore } from "@/store/playersStore";
 import { useAuth } from '@/auth/OfflineAuthProvider';
+import { usePermissions } from '@/hooks/usePermissions';
 
 type FilterRange = "week" | "month" | "all";
 
@@ -50,9 +52,7 @@ const TeamBadge: React.FC<{ color: TeamColor; className?: string }> = ({
   </span>
 );
 
-/* mock de permissão local (seu app pode trocar por auth real) */
-const userRole: "owner" | "admin" | "aux" | "mensalista" | "diarista" = "owner";
-const canEdit = (role: typeof userRole) => ["owner", "admin", "aux"].includes(role);
+/* Permissões usando hook real */
 
 /* mock de jogadores por time */
 const defaultTeamPlayers: Record<TeamColor, string[]> = {
@@ -79,18 +79,16 @@ const Match: React.FC = () => {
   } = useMatchStore();
   const { 
     players, 
+    currentMatchId,
     loadPlayersFromTeamDraw, 
     getPlayersByTeam,
+    getActivePlayersByTeam,
     substitutePlayer,
     addSubstitution,
     getPlayerByName,
     loadExampleData
   } = usePlayersStore();
-
-  // Função para obter jogadores ativos por time
-  const getActivePlayersByTeam = (teamColor: TeamColor) => {
-    return getPlayersByTeam(teamColor).filter(player => !player.is_substitute);
-  };
+  const { canControlMatch } = usePermissions();
 
   // Função para obter times disponíveis
   const getAvailableTeams = () => {
@@ -106,6 +104,7 @@ const Match: React.FC = () => {
     return teams;
   };
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const getRoleIcon = (role?: string) => {
     switch (role) {
@@ -187,7 +186,7 @@ const Match: React.FC = () => {
       try {
         // Aqui você pode passar o matchId real quando disponível
         // Por enquanto, vamos tentar carregar dados existentes
-        await loadPlayersFromTeamDraw(currentMatch?.id || '');
+        await loadPlayersFromTeamDraw('');
       } catch (error) {
         console.warn('Erro ao carregar dados do sorteio:', error);
         // Continua usando dados mock em caso de erro
@@ -458,45 +457,23 @@ const Match: React.FC = () => {
           </div>
           
           <div className="flex items-center space-x-2">
-            {canEdit(userRole) && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => loadPlayersFromTeamDraw(currentMatch?.id || '')}
-                  className="text-xs"
-                >
-                  {getAvailableTeams().length > 0 ? (
-                    <>
-                      <Star className="w-3 h-3 mr-1" />
-                      Recarregar Sorteio
-                    </>
-                  ) : (
-                    <>
-                      <User className="w-3 h-3 mr-1" />
-                      Carregar Sorteio
-                    </>
-                  )}
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={loadExampleData}
-                  className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
-                >
-                  <Zap className="w-3 h-3 mr-1" />
-                  Dados Teste
-                </Button>
-              </>
+            {user?.role === 'owner' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/owner-dashboard')}
+                className="p-2 hover:bg-purple-100 hover:text-purple-700 transition-colors"
+                title="Acesso rápido ao Dashboard do Owner"
+              >
+                <Crown className="w-4 h-4 text-purple-600" />
+              </Button>
             )}
             
-            {user?.role && (
+            {user?.role && user.role !== 'owner' && (
               <div className="flex items-center space-x-1 text-sm text-maestros-green">
                 {getRoleIcon(user.role)}
                 <span className="hidden sm:inline font-medium">
-                  {user.role === 'owner' ? 'Dono' : 
-                   user.role === 'admin' ? 'Admin' : 
+                  {user.role === 'admin' ? 'Admin' : 
                    user.role === 'aux' ? 'Auxiliar' : 
                    user.role === 'mensalista' ? 'Mensalista' : 
                    user.role === 'diarista' ? 'Diarista' : 
@@ -532,108 +509,114 @@ const Match: React.FC = () => {
               src="data:audio/wav;base64,UklGRm4AAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYAAAChAAAAAAAaAABSUQAA////AP///wD///8A////AP///wD///8A////AP///wD///8A"
             />
 
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-zinc-600">Duração:</Label>
-              <Select
-                value={String(durationMin)}
-                onValueChange={(v) => setDuration(Number(v))}
-                disabled={roundSafe.running}
-              >
-                <SelectTrigger className="w-[110px]">
-                  <SelectValue placeholder="Minutos" />
-                </SelectTrigger>
-                <SelectContent>
-                  {[5, 8, 10, 12, 15].map((m) => (
-                    <SelectItem key={m} value={String(m)}>
-                      {m} min
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {canControlMatch() && (
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-zinc-600">Duração:</Label>
+                <Select
+                  value={String(durationMin)}
+                  onValueChange={(v) => setDuration(Number(v))}
+                  disabled={roundSafe.running}
+                >
+                  <SelectTrigger className="w-[110px]">
+                    <SelectValue placeholder="Minutos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[5, 8, 10, 12, 15].map((m) => (
+                      <SelectItem key={m} value={String(m)}>
+                        {m} min
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Ações do cronômetro — desktop (≥sm) */}
-            <div className="hidden w-full sm:grid grid-cols-3 gap-2">
-              {!roundSafe.running ? (
-                <Button type="button" onClick={start} className="h-12 w-full">
-                  Iniciar
-                </Button>
-              ) : (
+            {canControlMatch() && (
+              <div className="hidden w-full sm:grid grid-cols-3 gap-2">
+                {!roundSafe.running ? (
+                  <Button type="button" onClick={start} className="h-12 w-full">
+                    Iniciar
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={pause}
+                    className="h-12 w-full bg-amber-500 hover:bg-amber-500/90"
+                  >
+                    Pausar
+                  </Button>
+                )}
                 <Button
                   type="button"
-                  onClick={pause}
-                  className="h-12 w-full bg-amber-500 hover:bg-amber-500/90"
+                  onClick={onRestart}
+                  className="h-12 w-full bg-sky-500 hover:bg-sky-600 text-white"
                 >
-                  Pausar
+                  Recomeçar
                 </Button>
-              )}
-              <Button
-                type="button"
-                onClick={onRestart}
-                className="h-12 w-full bg-sky-500 hover:bg-sky-600 text-white"
-              >
-                Recomeçar
-              </Button>
-              <Button
-                type="button"
-                onClick={openEnd}
-                className="h-12 w-full bg-rose-500 hover:bg-rose-600 text-white"
-              >
-                Encerrar
-              </Button>
-            </div>
+                <Button
+                  type="button"
+                  onClick={openEnd}
+                  className="h-12 w-full bg-rose-500 hover:bg-rose-600 text-white"
+                >
+                  Encerrar
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
       {/* Menu de Controle da Partida (Mobile) */}
-      <div className="md:hidden mb-3">
-        <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-center gap-3">
-              {!roundSafe.running ? (
+      {canControlMatch() && (
+        <div className="md:hidden mb-3">
+          <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-center gap-3">
+                {!roundSafe.running ? (
+                  <button
+                    type="button"
+                    onClick={start}
+                    className="w-12 h-12 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all duration-200 flex items-center justify-center text-white shadow-md hover:shadow-lg"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={pause}
+                    className="w-12 h-12 rounded-full bg-amber-500 hover:bg-amber-600 active:scale-95 transition-all duration-200 flex items-center justify-center text-white shadow-md hover:shadow-lg"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                    </svg>
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={start}
-                  className="w-12 h-12 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all duration-200 flex items-center justify-center text-white shadow-md hover:shadow-lg"
+                  onClick={onRestart}
+                  className="w-12 h-12 rounded-full bg-sky-500 hover:bg-sky-600 active:scale-95 transition-all duration-200 flex items-center justify-center text-white shadow-md hover:shadow-lg"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
+                    <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
                   </svg>
                 </button>
-              ) : (
                 <button
                   type="button"
-                  onClick={pause}
-                  className="w-12 h-12 rounded-full bg-amber-500 hover:bg-amber-600 active:scale-95 transition-all duration-200 flex items-center justify-center text-white shadow-md hover:shadow-lg"
+                  onClick={openEnd}
+                  className="w-12 h-12 rounded-full bg-rose-500 hover:bg-rose-600 active:scale-95 transition-all duration-200 flex items-center justify-center text-white shadow-md hover:shadow-lg"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                    <path d="M6 6h12v12H6z"/>
                   </svg>
                 </button>
-              )}
-              <button
-                type="button"
-                onClick={onRestart}
-                className="w-12 h-12 rounded-full bg-sky-500 hover:bg-sky-600 active:scale-95 transition-all duration-200 flex items-center justify-center text-white shadow-md hover:shadow-lg"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
-                </svg>
-              </button>
-              <button
-                type="button"
-                onClick={openEnd}
-                className="w-12 h-12 rounded-full bg-rose-500 hover:bg-rose-600 active:scale-95 transition-all duration-200 flex items-center justify-center text-white shadow-md hover:shadow-lg"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 6h12v12H6z"/>
-                </svg>
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Placar */}
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
@@ -655,7 +638,7 @@ const Match: React.FC = () => {
                   <span className="text-lg font-bold tabular-nums">
                     {roundSafe.scores[team] ?? 0}
                   </span>
-                  {canEdit(userRole) && getAvailableTeams().length > 0 && (
+                  {canControlMatch() && getAvailableTeams().length > 0 && (
                     <Button
                       type="button"
                       variant="outline"
@@ -668,17 +651,19 @@ const Match: React.FC = () => {
                       ⇄
                     </Button>
                   )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openGoal(team)}
-                    disabled={!roundSafe.running}
-                    aria-label={"Adicionar gol do " + team}
-                    className="h-8 w-8 p-0"
-                  >
-                    +
-                  </Button>
+                  {canControlMatch() && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openGoal(team)}
+                      disabled={!roundSafe.running}
+                      aria-label={"Adicionar gol do " + team}
+                      className="h-8 w-8 p-0"
+                    >
+                      +
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
@@ -713,7 +698,7 @@ const Match: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    {canEdit(userRole) && (
+                    {canControlMatch() && (
                       <div className="flex items-center gap-2">
                         {/* Mobile: ícones compactos */}
                         <Button

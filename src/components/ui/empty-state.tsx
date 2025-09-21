@@ -11,6 +11,7 @@ import {
   Plus,
   RefreshCw
 } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
 
 type EmptyStateProps = {
   icon: React.ComponentType<{ className?: string }>;
@@ -78,15 +79,17 @@ export function EmptyState({
 
 // Predefined empty states
 export function EmptyGames() {
+  const { canCreateGames } = usePermissions();
+
   return (
     <EmptyState
       icon={Calendar}
       title="Nenhum jogo agendado"
       description="Não há jogos programados no momento. Crie um novo jogo para começar."
-      action={{
+      action={canCreateGames() ? {
         label: "Criar Jogo",
         onClick: () => window.location.href = '/create-game'
-      }}
+      } : undefined}
     />
   );
 }

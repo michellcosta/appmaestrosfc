@@ -1,5 +1,6 @@
 // src/pages/Ranking.tsx
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -46,6 +47,7 @@ function inRange(dateIso: string | null | undefined, range: Range) {
 export default function RankingPage() {
   const { canSeeRanking, canSeeVote } = usePermissions();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"ranking" | "voting">("ranking");
 
   const getRoleIcon = (role?: string) => {
@@ -200,12 +202,23 @@ export default function RankingPage() {
           </div>
           
           <div className="flex items-center space-x-2">
-            {user?.role && (
+            {user?.role === 'owner' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/owner-dashboard')}
+                className="p-2 hover:bg-purple-100 hover:text-purple-700 transition-colors"
+                title="Acesso rápido ao Dashboard do Owner"
+              >
+                <Crown className="w-4 h-4 text-purple-600" />
+              </Button>
+            )}
+            
+            {user?.role && user.role !== 'owner' && (
               <div className="flex items-center space-x-1 text-sm text-maestros-green">
                 {getRoleIcon(user.role)}
                 <span className="hidden sm:inline font-medium">
-                  {user.role === 'owner' ? 'Dono' : 
-                   user.role === 'admin' ? 'Admin' : 
+                  {user.role === 'admin' ? 'Admin' : 
                    user.role === 'aux' ? 'Auxiliar' : 
                    user.role === 'mensalista' ? 'Mensalista' : 
                    user.role === 'diarista' ? 'Diarista' : 

@@ -39,7 +39,7 @@ export default function ConfigureAccess() {
       canSeeRanking: true,
       canSeeVote: true,
       canSeeFinance: true,
-      canCreateGames: true,
+      canCreateGames: false,
       canManagePlayers: true
     }
   });

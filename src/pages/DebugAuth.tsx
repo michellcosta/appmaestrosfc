@@ -3,6 +3,7 @@ import { useAuth } from '@/auth/OfflineAuthProvider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
+import { isMainOwner, PROTECTION_MESSAGES } from '@/utils/ownerProtection';
 
 export default function DebugAuth() {
   const { user, loading, signInWithGoogle, signOut } = useAuth();
@@ -131,7 +132,20 @@ export default function DebugAuth() {
             <CardTitle>🚪 Ações de Usuário</CardTitle>
           </CardHeader>
           <CardContent>
-            <Button onClick={signOut} variant="destructive" className='w-full'>
+            <Button 
+              onClick={async () => {
+                // Verificar se é o owner principal
+                if (user?.id && isMainOwner(user.id)) {
+                  alert(PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER);
+                  return;
+                }
+                await signOut();
+              }} 
+              variant="destructive" 
+              className={`w-full ${user?.id && isMainOwner(user.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={user?.id ? isMainOwner(user.id) : false}
+              title={user?.id && isMainOwner(user.id) ? PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER : 'Sair da conta'}
+            >
               Sair da Conta
             </Button>
           </CardContent>

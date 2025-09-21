@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import { copyFileSync } from "fs";
+import { copyFileSync, readFileSync } from "fs";
 import type { ViteDevServer } from "vite";
 import type { IncomingMessage, ServerResponse } from "http";
 
@@ -20,6 +20,21 @@ export default defineConfig(({ mode }) => ({
     {
       name: 'api-middleware',
       configureServer(server: ViteDevServer) {
+        // Middleware para servir o service worker durante desenvolvimento
+        server.middlewares.use('/sw.js', (req: IncomingMessage, res: ServerResponse) => {
+          try {
+            const swContent = readFileSync('public/sw.js', 'utf-8');
+            res.setHeader('Content-Type', 'application/javascript');
+            res.setHeader('Service-Worker-Allowed', '/');
+            res.statusCode = 200;
+            res.end(swContent);
+          } catch (error) {
+            console.error('❌ Erro ao servir Service Worker:', error);
+            res.statusCode = 404;
+            res.end('Service Worker not found');
+          }
+        });
+
         // Armazenamento em memória para dados
         let syncData: any = null;
         

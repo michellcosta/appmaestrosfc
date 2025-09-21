@@ -25,11 +25,13 @@ interface PlayersStore {
   
   // Gerenciamento de times
   getPlayersByTeam: (teamColor: TeamColor) => PlayerWithTeam[]
+  getActivePlayersByTeam: (teamColor: TeamColor) => PlayerWithTeam[]
   getAvailablePlayersForTeam: (teamColor: TeamColor) => PlayerWithTeam[]
   getAllAvailablePlayers: () => PlayerWithTeam[]
   
   // Substituições
   substitutePlayer: (playerId: string, substituteId: string, teamColor: TeamColor) => void
+  addSubstitution: (teamColor: TeamColor, playerOutName: string, playerInName: string) => void
   addPlayerToTeam: (player: User, teamColor: TeamColor) => void
   removePlayerFromTeam: (playerId: string) => void
   
@@ -310,6 +312,9 @@ export const usePlayersStore = create<PlayersStore>()(
             id: '1',
             name: 'Michell',
             email: 'michell@example.com',
+            role: 'mensalista',
+            shirt_size: 'G',
+            created_at: new Date(),
             team_color: 'Preto',
             is_substitute: false,
             position: 'Atacante',
@@ -319,42 +324,57 @@ export const usePlayersStore = create<PlayersStore>()(
             id: '2',
             name: 'Thiago',
             email: 'thiago@example.com',
+            role: 'mensalista',
+            shirt_size: 'G',
+            created_at: new Date(),
             team_color: 'Preto',
             is_substitute: false,
-            position: 'Meia',
+            position: 'Meio',
             stars: 3
           },
           {
             id: '3',
             name: 'Sérgio Jr',
             email: 'sergio@example.com',
+            role: 'mensalista',
+            shirt_size: 'GG',
+            created_at: new Date(),
             team_color: 'Verde',
             is_substitute: false,
-            position: 'Zagueiro',
+            position: 'Zaga',
             stars: 4
           },
           {
             id: '4',
             name: 'Oton',
             email: 'oton@example.com',
+            role: 'mensalista',
+            shirt_size: 'G',
+            created_at: new Date(),
             team_color: 'Verde',
             is_substitute: false,
-            position: 'Goleiro',
+            position: 'Gol',
             stars: 5
           },
           {
             id: '5',
             name: 'Jorge',
             email: 'jorge@example.com',
+            role: 'diarista',
+            shirt_size: 'G',
+            created_at: new Date(),
             team_color: 'Cinza',
             is_substitute: false,
-            position: 'Meia',
+            position: 'Meio',
             stars: 3
           },
           {
             id: '6',
             name: 'Yuri',
             email: 'yuri@example.com',
+            role: 'mensalista',
+            shirt_size: 'GG',
+            created_at: new Date(),
             team_color: 'Cinza',
             is_substitute: false,
             position: 'Atacante',
@@ -364,15 +384,21 @@ export const usePlayersStore = create<PlayersStore>()(
             id: '7',
             name: 'Maurício',
             email: 'mauricio@example.com',
+            role: 'diarista',
+            shirt_size: 'G',
+            created_at: new Date(),
             team_color: 'Vermelho',
             is_substitute: false,
-            position: 'Zagueiro',
+            position: 'Zaga',
             stars: 3
           },
           {
             id: '8',
             name: 'Gabriel',
             email: 'gabriel@example.com',
+            role: 'mensalista',
+            shirt_size: 'G',
+            created_at: new Date(),
             team_color: 'Vermelho',
             is_substitute: false,
             position: 'Atacante',

@@ -29,7 +29,7 @@ export const useGamesStore = create<GamesStore>()(
         // Dados iniciais mockados - atualizados
         {
           id: 1,
-          date: '2025-01-26',
+          date: '2025-01-25',
           time: '20:00',
           location: 'R. Renato Bazin, 705-751 - Laranjal, São Gonçalo - RJ, 24725-140',
           maxPlayers: 25,
@@ -39,7 +39,7 @@ export const useGamesStore = create<GamesStore>()(
         },
         {
           id: 2,
-          date: '2025-01-28',
+          date: '2025-01-27',
           time: '19:30',
           location: 'R. Renato Bazin, 705-751 - Laranjal, São Gonçalo - RJ, 24725-140',
           maxPlayers: 25,

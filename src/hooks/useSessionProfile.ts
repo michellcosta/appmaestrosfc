@@ -7,6 +7,7 @@ export type Profile = {
   role: 'owner'|'admin'|'aux'|'player';
   membership: 'mensalista'|'diarista'|null;
   notifications_enabled?: boolean;
+  approved?: boolean;
 };
 
 export function useSessionProfile() {
@@ -27,7 +28,7 @@ export function useSessionProfile() {
         if (session?.user?.id) {
           const { data, error } = await supabase
             .from('profiles')
-            .select('id,email,role,membership,notifications_enabled')
+            .select('id,email,role,membership,notifications_enabled,approved')
             .eq('id', session.user.id)
             .single();
           if (error) setError(error.message);
