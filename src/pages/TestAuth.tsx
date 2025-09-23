@@ -70,8 +70,8 @@ export default function TestAuth() {
           </div>
           
           <div className="text-sm text-zinc-500">
-            <p>URL: {process.env.NEXT_PUBLIC_SUPABASE_URL || 'Usando fallback'}</p>
-        <p>Key: {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Configurada' : 'Usando fallback'}</p>
+            <p>URL: {import.meta.env.VITE_SUPABASE_URL || 'Usando fallback'}</p>
+                <p>Key: {import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Configurada' : 'Usando fallback'}</p>
           </div>
         </CardContent>
       </Card>
