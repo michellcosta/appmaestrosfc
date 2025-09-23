@@ -302,13 +302,13 @@ export default function PerfilPage() {
   if (!user) {
     return (
       <div className='p-4 sm:p-6 space-y-4'>
-        <h1 className='text-lg font-bold text-gray-900'>Perfil</h1>
-        <Card>
+        <h1 className='text-lg font-bold text-gray-900 dark:text-zinc-100'>Perfil</h1>
+        <Card className="dark:bg-zinc-800 dark:border-zinc-700">
           <CardContent className='p-6 text-center space-y-4'>
             <User className='w-12 h-12 mx-auto text-zinc-400' />
             <div>
-              <h3 className='text-lg font-semibold'>Faça login para continuar</h3>
-              <p className='text-sm text-zinc-500'>Entre com sua conta Google para acessar todas as funcionalidades</p>
+              <h3 className='text-lg font-semibold dark:text-zinc-100'>Faça login para continuar</h3>
+              <p className='text-sm text-zinc-500 dark:text-zinc-400'>Entre com sua conta Google para acessar todas as funcionalidades</p>
             </div>
             <div className='space-y-2'>
               <Button 
@@ -320,7 +320,7 @@ export default function PerfilPage() {
                     alert('Erro ao fazer login. Verifique se o Google OAuth está configurado.');
                   }
                 }} 
-                className='w-full'
+                className='w-full flex items-center justify-center'
               >
                 <Mail className='w-4 h-4 mr-2' />
                 Entrar com Google
@@ -329,7 +329,7 @@ export default function PerfilPage() {
               <Button 
                 onClick={() => navigate('/offline-auth')} 
                 variant="outline"
-                className='w-full'
+                className='w-full flex items-center justify-center'
               >
                 <User className='w-4 h-4 mr-2' />
                 Login de Teste (Owner)
@@ -343,11 +343,11 @@ export default function PerfilPage() {
 
   return (
     <div className='p-4 sm:p-6 space-y-4 pb-20'>
-      <header className="bg-white border-b border-gray-200 shadow-sm rounded-lg mb-4">
+      <header className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 shadow-sm rounded-lg mb-4">
         <div className="flex items-center justify-between p-4">
           <div>
-            <h1 className='text-lg font-bold text-gray-900'>Perfil</h1>
-            <p className='text-sm text-gray-600'>Dados do jogador, posição e estrelas</p>
+            <h1 className='text-lg font-bold text-gray-900 dark:text-zinc-100'>Perfil</h1>
+            <p className='text-sm text-gray-600 dark:text-zinc-400'>Dados do jogador, posição e estrelas</p>
           </div>
           
           <div className="flex items-center space-x-2">
@@ -356,14 +356,14 @@ export default function PerfilPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate('/owner-dashboard')}
-                className="p-2 hover:bg-purple-100 hover:text-purple-700 transition-colors"
+                className="p-2 hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:text-purple-700 dark:hover:text-purple-400 transition-colors"
                 title="Acesso rápido ao Dashboard do Owner"
               >
-                <Crown className="w-4 h-4 text-purple-600" />
+                <Crown className="w-4 h-4 text-purple-600 dark:text-purple-400" />
               </Button>
             )}
             {user?.role && user.role !== 'owner' && (
-              <div className="flex items-center space-x-1 text-sm text-maestros-green">
+              <div className="flex items-center space-x-1 text-sm text-maestros-green dark:text-green-400">
                 {getRoleIcon(user.role)}
                 <span className="hidden sm:inline font-medium">
                   {user.role === 'admin' ? 'Admin' : 
@@ -379,11 +379,12 @@ export default function PerfilPage() {
       </header>
       
       {/* Informações do Usuário */}
-      <Card>
-        <CardContent className='p-6 space-y-4'>
-          <div className='flex items-center space-x-4'>
+      <Card className="dark:bg-zinc-800 dark:border-zinc-700">
+        <CardContent className='p-6 space-y-6'>
+          {/* Foto do Perfil Centralizada */}
+          <div className='flex flex-col items-center space-y-4'>
             <div className='relative'>
-              <div className='w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center overflow-hidden'>
+              <div className='w-24 h-24 bg-zinc-100 dark:bg-zinc-700 rounded-full flex items-center justify-center overflow-hidden'>
                 {getAvatarUrl() ? (
                   <img 
                     src={getAvatarUrl()!} 
@@ -391,30 +392,32 @@ export default function PerfilPage() {
                     className='w-full h-full object-cover'
                   />
                 ) : (
-                  <User className='w-8 h-8 text-zinc-600' />
+                  <User className='w-12 h-12 text-zinc-600 dark:text-zinc-400' />
                 )}
               </div>
               <Button
                 size="sm"
                 variant="outline"
-                className='absolute -bottom-1 -right-1 w-6 h-6 rounded-full p-0 bg-white border-2 border-white shadow-md hover:bg-zinc-50'
+                className='absolute -bottom-2 -right-2 w-6 h-6 rounded-full p-0 bg-white dark:bg-zinc-800 border border-white dark:border-zinc-600 shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-700'
                 onClick={() => setShowAvatarDialog(true)}
               >
-                <Camera className='w-3 h-3' />
+                <Edit className='w-2.5 h-2.5' />
               </Button>
             </div>
-            <div className='flex-1'>
-              <h2 className='text-lg font-semibold'>{user.name || 'Usuário'}</h2>
-              <p className='text-sm text-zinc-500'>{user.email || 'E-mail não disponível'}</p>
+            
+            {/* Informações do Usuário Centralizadas */}
+            <div className='text-center'>
+              <h2 className='text-xl font-semibold dark:text-zinc-100'>{user.name || 'Usuário'}</h2>
+              <p className='text-sm text-zinc-500 dark:text-zinc-400 mt-1'>{user.email || 'E-mail não disponível'}</p>
               {user.role && (
                 <Badge 
                   variant="secondary" 
-                  className={`mt-2 ${
+                  className={`mt-3 ${
                     user.role === 'owner' 
-                      ? 'bg-purple-100 text-purple-800 border-purple-200' 
+                      ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800' 
                       : user.role === 'admin'
-                      ? 'bg-blue-100 text-blue-800 border-blue-200'
-                      : 'bg-green-100 text-green-800 border-green-200'
+                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+                      : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800'
                   }`}
                 >
                   <Shield className='w-3 h-3 mr-1' />
@@ -432,22 +435,22 @@ export default function PerfilPage() {
 
       {/* Abas de Navegação */}
       <Tabs defaultValue="stats" className="w-full">
-        <TabsList className={`grid w-full grid-cols-3 bg-black border-black h-12 p-1 rounded-xl`}>
+        <TabsList className="w-full bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 h-12 p-1 rounded-xl flex items-center justify-center">
           <TabsTrigger 
             value="stats" 
-            className="flex items-center justify-center p-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black text-white hover:bg-zinc-800 transition-colors"
+            className="flex-1 flex items-center justify-center h-full rounded-lg data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-zinc-600 dark:data-[state=active]:text-white text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
           >
             <BarChart3 className="w-5 h-5" />
           </TabsTrigger>
           <TabsTrigger 
             value="achievements" 
-            className="flex items-center justify-center p-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black text-white hover:bg-zinc-800 transition-colors"
+            className="flex-1 flex items-center justify-center h-full rounded-lg data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-zinc-600 dark:data-[state=active]:text-white text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
           >
             <Award className="w-5 h-5" />
           </TabsTrigger>
           <TabsTrigger 
             value="settings" 
-            className="flex items-center justify-center p-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black text-white hover:bg-zinc-800 transition-colors"
+            className="flex-1 flex items-center justify-center h-full rounded-lg data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-zinc-600 dark:data-[state=active]:text-white text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
           >
             <Settings className="w-5 h-5" />
           </TabsTrigger>
@@ -498,15 +501,15 @@ export default function PerfilPage() {
                 <div className='flex items-center space-x-3 p-3 bg-green-50 rounded-lg'>
                   <Star className='w-5 h-5 text-green-600' />
                   <div>
-                    <p className='font-medium'>Jogador Mais Votado</p>
-                    <p className='text-sm text-zinc-500'>Agosto 2024</p>
+                    <p className='font-medium dark:text-zinc-100'>Jogador Mais Votado</p>
+                    <p className='text-sm text-zinc-500 dark:text-zinc-400'>Agosto 2024</p>
                   </div>
                 </div>
-                <div className='flex items-center space-x-3 p-3 bg-blue-50 rounded-lg'>
-                  <Calendar className='w-5 h-5 text-blue-600' />
+                <div className='flex items-center space-x-3 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg'>
+                  <Calendar className='w-5 h-5 text-blue-600 dark:text-blue-400' />
                   <div>
-                    <p className='font-medium'>Presença Perfeita</p>
-                    <p className='text-sm text-zinc-500'>Últimos 3 meses</p>
+                    <p className='font-medium dark:text-zinc-100'>Presença Perfeita</p>
+                    <p className='text-sm text-zinc-500 dark:text-zinc-400'>Últimos 3 meses</p>
                   </div>
                 </div>
               </div>
@@ -524,7 +527,7 @@ export default function PerfilPage() {
                {/* Botão de Acesso ao Dashboard Completo */}
                <Button 
                  variant="default" 
-                 className='w-full bg-purple-600 hover:bg-purple-700 text-white mb-4'
+                 className='w-full bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 text-white mb-4 flex items-center justify-center'
                  onClick={() => navigate('/owner-dashboard')}
                >
                  <Crown className='w-4 h-4 mr-2' />
@@ -537,17 +540,17 @@ export default function PerfilPage() {
            )}
 
            {/* Configurações de Aparência */}
-           <Card>
+           <Card className="dark:bg-zinc-800 dark:border-zinc-700">
              <CardContent className='p-6'>
-               <h3 className='text-lg font-semibold mb-4 flex items-center'>
-                 <Palette className='w-5 h-5 mr-2 text-blue-600' />
+               <h3 className='text-lg font-semibold mb-4 flex items-center dark:text-zinc-100'>
+                 <Palette className='w-5 h-5 mr-2 text-blue-600 dark:text-blue-400' />
                  Aparência
                </h3>
                <div className='space-y-4'>
                  <div className='flex justify-between items-center'>
                    <div>
-                     <span className='text-sm font-medium'>Tema</span>
-                     <p className='text-xs text-zinc-500'>Escolha entre claro, escuro ou automático</p>
+                     <span className='text-sm font-medium dark:text-zinc-100'>Tema</span>
+                     <p className='text-xs text-zinc-500 dark:text-zinc-400'>Escolha entre claro, escuro ou automático</p>
                    </div>
                    <ThemeSelector />
                  </div>
@@ -556,25 +559,25 @@ export default function PerfilPage() {
            </Card>
 
            {/* Configurações da Conta */}
-           <Card>
+           <Card className="dark:bg-zinc-800 dark:border-zinc-700">
              <CardContent className='p-6'>
-               <h3 className='text-lg font-semibold mb-4'>Configurações da Conta</h3>
+               <h3 className='text-lg font-semibold mb-4 dark:text-zinc-100'>Configurações da Conta</h3>
                <div className='space-y-3'>
                  <div className='flex justify-between items-center'>
-                   <span className='text-sm text-zinc-500'>ID do Usuário:</span>
-                   <span className='text-sm font-mono'>{user.id}</span>
+                   <span className='text-sm text-zinc-500 dark:text-zinc-400'>ID do Usuário:</span>
+                   <span className='text-sm font-mono dark:text-zinc-100'>{user.id}</span>
                  </div>
                  <div className='flex justify-between items-center'>
-                   <span className='text-sm text-zinc-500'>E-mail:</span>
-                   <span className='text-sm'>{user.email || 'Não informado'}</span>
+                   <span className='text-sm text-zinc-500 dark:text-zinc-400'>E-mail:</span>
+                   <span className='text-sm dark:text-zinc-100'>{user.email || 'Não informado'}</span>
                  </div>
                  <div className='flex justify-between items-center'>
-                   <span className='text-sm text-zinc-500'>Nome:</span>
-                   <span className='text-sm'>{user.name || 'Não informado'}</span>
+                   <span className='text-sm text-zinc-500 dark:text-zinc-400'>Nome:</span>
+                   <span className='text-sm dark:text-zinc-100'>{user.name || 'Não informado'}</span>
                  </div>
                  <div className='flex justify-between items-center'>
-                   <span className='text-sm text-zinc-500'>Tipo de Acesso:</span>
-                   <Badge variant="outline">{user.role || 'Não definido'}</Badge>
+                   <span className='text-sm text-zinc-500 dark:text-zinc-400'>Tipo de Acesso:</span>
+                   <Badge variant="outline" className="dark:border-zinc-600 dark:text-zinc-300">{user.role || 'Não definido'}</Badge>
                  </div>
                </div>
              </CardContent>
@@ -604,7 +607,7 @@ export default function PerfilPage() {
           }} 
           disabled={user?.id ? isMainOwner(user.id) : false}
           variant="destructive" 
-          className={`w-full ${user?.id && isMainOwner(user.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`w-full flex items-center justify-center ${user?.id && isMainOwner(user.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
           title={user?.id && isMainOwner(user.id) ? PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER : 'Sair da conta'}
         >
           <LogOut className='w-4 h-4 mr-2' />
@@ -614,34 +617,34 @@ export default function PerfilPage() {
 
       {/* Modal de Visualizar */}
       <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md dark:bg-zinc-800 dark:border-zinc-700">
           <DialogHeader>
-            <DialogTitle>Detalhes do Jogo</DialogTitle>
+            <DialogTitle className="dark:text-zinc-100">Detalhes do Jogo</DialogTitle>
           </DialogHeader>
           {selectedMatch && (
             <div className="space-y-4">
               <div>
-                <Label className="text-sm font-medium text-zinc-600">Local</Label>
-                <p className="text-sm">{selectedMatch.location}</p>
+                <Label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Local</Label>
+                <p className="text-sm dark:text-zinc-100">{selectedMatch.location}</p>
               </div>
               <div>
-                <Label className="text-sm font-medium text-zinc-600">Data e Hora</Label>
-                <p className="text-sm">{selectedMatch.date} às {selectedMatch.time}</p>
+                <Label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Data e Hora</Label>
+                <p className="text-sm dark:text-zinc-100">{selectedMatch.date} às {selectedMatch.time}</p>
               </div>
               <div>
-                <Label className="text-sm font-medium text-zinc-600">Status</Label>
-                <Badge variant={selectedMatch.status === 'Aberto' ? 'default' : 'secondary'}>
+                <Label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Status</Label>
+                <Badge variant={selectedMatch.status === 'Aberto' ? 'default' : 'secondary'} className="dark:border-zinc-600">
                   {selectedMatch.status}
                 </Badge>
               </div>
               <div>
-                <Label className="text-sm font-medium text-zinc-600">Jogadores Confirmados</Label>
-                <p className="text-sm">{selectedMatch.confirmedPlayers}</p>
+                <Label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Jogadores Confirmados</Label>
+                <p className="text-sm dark:text-zinc-100">{selectedMatch.confirmedPlayers}</p>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setViewModalOpen(false)}>
+            <Button variant="outline" onClick={() => setViewModalOpen(false)} className="dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700">
               Fechar
             </Button>
           </DialogFooter>
@@ -650,9 +653,9 @@ export default function PerfilPage() {
 
       {/* Modal de Editar */}
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md dark:bg-zinc-800 dark:border-zinc-700">
           <DialogHeader>
-            <DialogTitle>Editar Jogo</DialogTitle>
+            <DialogTitle className="dark:text-zinc-100">Editar Jogo</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -707,18 +710,18 @@ export default function PerfilPage() {
 
       {/* Modal de Excluir */}
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md dark:bg-zinc-800 dark:border-zinc-700">
           <DialogHeader>
-            <DialogTitle>Confirmar Exclusão</DialogTitle>
+            <DialogTitle className="dark:text-zinc-100">Confirmar Exclusão</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p className="text-sm text-zinc-600">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
               Tem certeza que deseja excluir este jogo? Esta ação não pode ser desfeita.
             </p>
             {selectedMatch && (
-              <div className="mt-4 p-3 bg-zinc-50 rounded-lg">
-                <p className="text-sm font-medium">{selectedMatch.location}</p>
-                <p className="text-xs text-zinc-500">{selectedMatch.date} às {selectedMatch.time}</p>
+              <div className="mt-4 p-3 bg-zinc-50 dark:bg-zinc-700 rounded-lg">
+                <p className="text-sm font-medium dark:text-zinc-100">{selectedMatch.location}</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">{selectedMatch.date} às {selectedMatch.time}</p>
               </div>
             )}
           </div>
@@ -735,9 +738,9 @@ export default function PerfilPage() {
 
       {/* Modal de Criar Partida */}
       <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md dark:bg-zinc-800 dark:border-zinc-700">
           <DialogHeader>
-            <DialogTitle>Criar Nova Partida</DialogTitle>
+            <DialogTitle className="dark:text-zinc-100">Criar Nova Partida</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -829,7 +832,7 @@ export default function PerfilPage() {
               <Button 
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingAvatar}
-                className="w-full"
+                className="w-full flex items-center justify-center"
               >
                 <Upload className="w-4 h-4 mr-2" />
                 {uploadingAvatar ? 'Enviando...' : 'Escolher Nova Foto'}
@@ -839,7 +842,7 @@ export default function PerfilPage() {
                 <Button 
                   variant="outline" 
                   onClick={handleRemoveAvatar}
-                  className="w-full"
+                  className="w-full flex items-center justify-center"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Remover Foto

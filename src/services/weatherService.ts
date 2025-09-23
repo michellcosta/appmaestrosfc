@@ -36,7 +36,7 @@ class WeatherService {
 
   constructor() {
     // Para usar uma API real, adicione sua chave aqui ou nas variáveis de ambiente
-    this.apiKey = import.meta.env.REACT_APP_OPENWEATHER_API_KEY || '';
+    this.apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY || '';
     this.baseUrl = 'https://api.openweathermap.org/data/2.5';
   }
 

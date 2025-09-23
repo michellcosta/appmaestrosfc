@@ -64,8 +64,8 @@ export default function DebugAuth() {
 
   const checkEnvironment = () => {
     addLog('🔍 Verificando variáveis de ambiente...');
-    addLog(`VITE_SUPABASE_URL: ${import.meta.env.VITE_SUPABASE_URL ? '✅ Definida' : '❌ Não definida'}`);
-    addLog(`VITE_SUPABASE_ANON_KEY: ${import.meta.env.VITE_SUPABASE_ANON_KEY ? '✅ Definida' : '❌ Não definida'}`);
+    addLog(`NEXT_PUBLIC_SUPABASE_URL: ${process.env.NEXT_PUBLIC_SUPABASE_URL ? '✅ Definida' : '❌ Não definida'}`);
+    addLog(`NEXT_PUBLIC_SUPABASE_ANON_KEY: ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✅ Definida' : '❌ Não definida'}`);
     addLog(`URL atual: ${window.location.origin}`);
   };
 

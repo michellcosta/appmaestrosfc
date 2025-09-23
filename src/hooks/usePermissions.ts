@@ -93,6 +93,12 @@ export function usePermissions() {
     return ['owner', 'admin', 'aux'].includes(role || '');
   };
 
+  const canDrawTeams = () => {
+    if (!user) return false;
+    const role = user.role;
+    return ['owner', 'admin', 'aux'].includes(role || '');
+  };
+
   const canSeeGames = () => {
     if (!user) return false;
     const role = user.role;
@@ -112,6 +118,7 @@ export function usePermissions() {
     canSeeMedals,
     canCreateGames,
     canControlMatch,
+    canDrawTeams,
     canSeeGames,
     userRole: user?.role
   };

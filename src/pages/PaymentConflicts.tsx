@@ -156,8 +156,8 @@ export default function PaymentConflicts() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Acesso Negado</h2>
-          <p className="text-gray-600">Você não tem permissão para acessar esta página.</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-zinc-100 mb-2">Acesso Negado</h2>
+          <p className="text-gray-600 dark:text-zinc-400">Você não tem permissão para acessar esta página.</p>
         </div>
       </div>
     );
@@ -168,7 +168,7 @@ export default function PaymentConflicts() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Carregando conflitos...</p>
+          <p className="mt-2 text-gray-600 dark:text-zinc-400">Carregando conflitos...</p>
         </div>
       </div>
     );
@@ -179,14 +179,14 @@ export default function PaymentConflicts() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Conflitos de Pagamento</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-zinc-100">Conflitos de Pagamento</h1>
+          <p className="text-gray-600 dark:text-zinc-400 mt-2">
             Gerencie conflitos quando partidas ficam cheias ou há problemas de pagamento
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-orange-600" />
-          <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+          <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+          <Badge variant="secondary" className="bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300">
             {pendingConflicts.length} pendentes
           </Badge>
           <Button
@@ -202,10 +202,10 @@ export default function PaymentConflicts() {
       </div>
 
       {/* Conflitos Pendentes */}
-      <Card>
+      <Card className="dark:bg-zinc-800 dark:border-zinc-700">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-orange-600" />
+          <CardTitle className="flex items-center gap-2 dark:text-zinc-100">
+            <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             Conflitos Pendentes ({pendingConflicts.length})
           </CardTitle>
         </CardHeader>
@@ -218,27 +218,27 @@ export default function PaymentConflicts() {
               return (
                 <div
                   key={conflict.id}
-                  className="border rounded-lg p-4 bg-orange-50 border-orange-200"
+                  className="border rounded-lg p-4 bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800"
                 >
                   <div className="flex items-start justify-between">
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-orange-600" />
-                        <span className="font-medium text-orange-800">
+                        <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                        <span className="font-medium text-orange-800 dark:text-orange-300">
                           {getConflictReasonText(conflict.conflict_reason)}
                         </span>
-                        <Badge variant="secondary" className="bg-red-100 text-red-800">
+                        <Badge variant="secondary" className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300">
                           {getStatusBadge(conflict.status)}
                         </Badge>
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-gray-600" />
-                        <span className="font-medium">{userName}</span>
+                        <User className="h-4 w-4 text-gray-600 dark:text-zinc-400" />
+                        <span className="font-medium dark:text-zinc-100">{userName}</span>
                       </div>
                       
                       {match && (
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-zinc-400">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
                             {new Date(match.date).toLocaleDateString('pt-BR')}
@@ -256,22 +256,22 @@ export default function PaymentConflicts() {
                       
                       <div className="flex items-center gap-4 text-sm">
                         <span className="flex items-center gap-1">
-                          <DollarSign className="h-4 w-4 text-green-600" />
-                          <span className="font-medium text-green-600">
+                          <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <span className="font-medium text-green-600 dark:text-green-400">
                             R$ {conflict.amount.toFixed(2)}
                           </span>
                         </span>
                         <span className="flex items-center gap-1">
-                          <CreditCard className="h-4 w-4 text-gray-600" />
-                          <span className="text-gray-600">{conflict.payment_method}</span>
+                          <CreditCard className="h-4 w-4 text-gray-600 dark:text-zinc-400" />
+                          <span className="text-gray-600 dark:text-zinc-400">{conflict.payment_method}</span>
                         </span>
                       </div>
                       
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-600 dark:text-zinc-400">
                         Conflito detectado em: {new Date(conflict.created_at).toLocaleDateString('pt-BR')} às {new Date(conflict.created_at).toLocaleTimeString('pt-BR')}
                       </div>
                       
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-zinc-500">
                         ID do Pagamento: {conflict.payment_id}
                       </div>
                     </div>
@@ -315,7 +315,7 @@ export default function PaymentConflicts() {
               );
             })}
             {pendingConflicts.length === 0 && (
-              <p className="text-gray-500 text-center py-4">
+              <p className="text-gray-500 dark:text-zinc-500 text-center py-4">
                 Nenhum conflito pendente
               </p>
             )}
@@ -324,10 +324,10 @@ export default function PaymentConflicts() {
       </Card>
 
       {/* Histórico de Conflitos */}
-      <Card>
+      <Card className="dark:bg-zinc-800 dark:border-zinc-700">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
+          <CardTitle className="flex items-center gap-2 dark:text-zinc-100">
+            <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
             Histórico de Conflitos Resolvidos
           </CardTitle>
         </CardHeader>
@@ -340,19 +340,19 @@ export default function PaymentConflicts() {
               return (
                 <div
                   key={conflict.id}
-                  className="border rounded-lg p-4 flex items-center justify-between"
+                  className="border rounded-lg p-4 flex items-center justify-between dark:border-zinc-700 dark:bg-zinc-900/50"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-600">
+                      <span className="font-medium text-gray-600 dark:text-zinc-300">
                         {getConflictReasonText(conflict.conflict_reason)}
                       </span>
-                      <span className="text-gray-400">•</span>
-                      <span className="font-medium">{userName}</span>
+                      <span className="text-gray-400 dark:text-zinc-500">•</span>
+                      <span className="font-medium dark:text-zinc-100">{userName}</span>
                     </div>
                     
                     {match && (
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-zinc-400">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
                           {new Date(match.date).toLocaleDateString('pt-BR')}
@@ -364,18 +364,18 @@ export default function PaymentConflicts() {
                       </div>
                     )}
                     
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-600 dark:text-zinc-400">
                       Resolvido em: {conflict.resolved_at && new Date(conflict.resolved_at).toLocaleDateString('pt-BR')}
                     </div>
                     
                     {conflict.refund_id && (
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-zinc-500">
                         ID do Estorno: {conflict.refund_id}
                       </div>
                     )}
                     
                     {conflict.notes && (
-                      <div className="text-sm text-gray-600 flex items-start gap-1">
+                      <div className="text-sm text-gray-600 dark:text-zinc-400 flex items-start gap-1">
                         <MessageSquare className="h-3 w-3 mt-0.5" />
                         <span>{conflict.notes}</span>
                       </div>
@@ -389,7 +389,7 @@ export default function PaymentConflicts() {
               );
             })}
             {resolvedConflicts.length === 0 && (
-              <p className="text-gray-500 text-center py-4">
+              <p className="text-gray-500 dark:text-zinc-500 text-center py-4">
                 Nenhum conflito resolvido
               </p>
             )}

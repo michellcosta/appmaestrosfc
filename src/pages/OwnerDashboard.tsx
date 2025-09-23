@@ -314,11 +314,11 @@ export default function OwnerDashboard() {
   if (!user || user.role !== 'owner') {
     return (
       <div className='p-4 sm:p-6'>
-        <Card>
+        <Card className="dark:bg-zinc-800 dark:border-zinc-700">
           <CardContent className='p-6 text-center space-y-4'>
             <Shield className='w-12 h-12 mx-auto text-red-500' />
-            <h2 className='text-lg font-semibold'>Acesso Restrito</h2>
-            <p className='text-sm text-zinc-500'>Apenas o dono do grupo tem acesso a esta área.</p>
+            <h2 className='text-lg font-semibold dark:text-zinc-100'>Acesso Restrito</h2>
+            <p className='text-sm text-zinc-500 dark:text-zinc-400'>Apenas o dono do grupo tem acesso a esta área.</p>
           </CardContent>
         </Card>
       </div>
@@ -328,18 +328,18 @@ export default function OwnerDashboard() {
   return (
     <div className='p-4 sm:p-6 space-y-6'>
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm rounded-lg mb-4">
+      <header className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 shadow-sm rounded-lg mb-4">
         <div className="p-4">
           <div className='flex items-center justify-between'>
             <div className="flex items-center space-x-3">
-              <Crown className='w-4 h-4 text-role-owner' />
+              <Crown className='w-4 h-4 text-role-owner dark:text-purple-400' />
               <div>
-                <h1 className='text-lg font-bold text-gray-900'>Dashboard do Dono</h1>
-                <p className='text-sm text-gray-600'>Painel administrativo completo</p>
+                <h1 className='text-lg font-bold text-gray-900 dark:text-zinc-100'>Dashboard do Dono</h1>
+                <p className='text-sm text-gray-600 dark:text-zinc-400'>Painel administrativo completo</p>
               </div>
             </div>
             <div className='flex items-center gap-3'>
-          <Badge variant="secondary" className='bg-purple-100 text-purple-800'>
+          <Badge variant="secondary" className='bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700'>
             <Crown className='w-3 h-3 mr-1' />
             Owner
           </Badge>
@@ -363,7 +363,7 @@ export default function OwnerDashboard() {
               }
             }}
             disabled={user?.id ? isMainOwner(user.id) : false}
-            className={user?.id && isMainOwner(user.id) ? 'opacity-50 cursor-not-allowed' : ''}
+            className={`${user?.id && isMainOwner(user.id) ? 'opacity-50 cursor-not-allowed' : ''} dark:bg-red-600 dark:hover:bg-red-700`}
             title={user?.id && isMainOwner(user.id) ? PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER : 'Sair da conta'}
           >
             <LogOut className='w-4 h-4 mr-2' />
@@ -376,67 +376,67 @@ export default function OwnerDashboard() {
 
       {/* Cards de Resumo */}
       <div className='grid grid-cols-2 gap-4'>
-        <Card>
+        <Card className="dark:bg-zinc-800 dark:border-zinc-700">
           <CardContent className='p-4'>
             <div className='flex items-center justify-between'>
               <div>
                 <p className='text-sm text-zinc-600 dark:text-zinc-400'>Próximos Jogos</p>
                 <p className='text-2xl font-bold text-zinc-900 dark:text-zinc-100'>{matches.length}</p>
               </div>
-              <Calendar className='w-8 h-8 text-blue-500' />
+              <Calendar className='w-8 h-8 text-blue-500 dark:text-blue-400' />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="dark:bg-zinc-800 dark:border-zinc-700">
           <CardContent className='p-4'>
             <div className='flex items-center justify-between'>
               <div>
                 <p className='text-sm text-zinc-600 dark:text-zinc-400'>Jogadores Ativos</p>
                 <p className='text-2xl font-bold text-zinc-900 dark:text-zinc-100'>{dashboardData.players.filter(p => p.status === 'active').length}</p>
               </div>
-              <Users className='w-8 h-8 text-green-500' />
+              <Users className='w-8 h-8 text-green-500 dark:text-green-400' />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="dark:bg-zinc-800 dark:border-zinc-700">
           <CardContent className='p-4'>
             <div className='flex items-center justify-between'>
               <div>
                 <p className='text-sm text-zinc-600 dark:text-zinc-400'>Receita do Mês</p>
                 <p className='text-2xl font-bold text-green-600 dark:text-green-400'>R$ {dashboardData.financialStatus.paid}</p>
               </div>
-              <DollarSign className='w-8 h-8 text-green-500' />
+              <DollarSign className='w-8 h-8 text-green-500 dark:text-green-400' />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="dark:bg-zinc-800 dark:border-zinc-700">
           <CardContent className='p-4'>
             <div className='flex items-center justify-between'>
               <div>
                 <p className='text-sm text-zinc-600 dark:text-zinc-400'>Pendentes</p>
                 <p className='text-2xl font-bold text-orange-600 dark:text-orange-400'>R$ {dashboardData.financialStatus.pending}</p>
               </div>
-              <Clock className='w-8 h-8 text-orange-500' />
+              <Clock className='w-8 h-8 text-orange-500 dark:text-orange-400' />
             </div>
           </CardContent>
         </Card>
 
         {/* Card de Apoio ao Artista - Condicional */}
         {config.showInDashboard && config.enabledCards.helpArtist && (
-          <Card className="bg-gradient-to-br from-pink-50 to-red-50 border-pink-200 hover:shadow-md transition-shadow cursor-pointer" onClick={openDonationModal}>
+          <Card className="bg-gradient-to-br from-pink-50 to-red-50 dark:from-pink-900/20 dark:to-red-900/20 border-pink-200 dark:border-pink-800 hover:shadow-md transition-shadow cursor-pointer" onClick={openDonationModal}>
             <CardContent className='p-4'>
               <div className='flex items-center justify-between'>
                 <div>
-                  <p className='text-sm text-pink-600 font-medium'>Ajude o Artista</p>
-                  <p className='text-lg font-bold text-pink-800'>Apoie o projeto</p>
+                  <p className='text-sm text-pink-600 dark:text-pink-400 font-medium'>Ajude o Artista</p>
+                  <p className='text-lg font-bold text-pink-800 dark:text-pink-300'>Apoie o projeto</p>
                 </div>
-                <Heart className='w-8 h-8 text-pink-500' />
+                <Heart className='w-8 h-8 text-pink-500 dark:text-pink-400' />
               </div>
               <div className='mt-2'>
-                <p className='text-xs text-pink-600'>Clique para contribuir</p>
+                <p className='text-xs text-pink-600 dark:text-pink-400'>Clique para contribuir</p>
               </div>
             </CardContent>
           </Card>
@@ -444,17 +444,17 @@ export default function OwnerDashboard() {
 
         {/* Card de Café para o Dev - Condicional */}
         {config.showInDashboard && config.enabledCards.coffeeForDev && (
-          <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200 hover:shadow-md transition-shadow cursor-pointer" onClick={openDonationModal}>
+          <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-800 hover:shadow-md transition-shadow cursor-pointer" onClick={openDonationModal}>
             <CardContent className='p-4'>
               <div className='flex items-center justify-between'>
                 <div>
-                  <p className='text-sm text-amber-600 font-medium'>Café pro Dev</p>
-                  <p className='text-lg font-bold text-amber-800'>Energize o código</p>
+                  <p className='text-sm text-amber-600 dark:text-amber-400 font-medium'>Café pro Dev</p>
+                  <p className='text-lg font-bold text-amber-800 dark:text-amber-300'>Energize o código</p>
                 </div>
-                <Coffee className='w-8 h-8 text-amber-500' />
+                <Coffee className='w-8 h-8 text-amber-500 dark:text-amber-400' />
               </div>
               <div className='mt-2'>
-                <p className='text-xs text-amber-600'>Combustível para inovar</p>
+                <p className='text-xs text-amber-600 dark:text-amber-400'>Combustível para inovar</p>
               </div>
             </CardContent>
           </Card>
@@ -463,24 +463,24 @@ export default function OwnerDashboard() {
 
       {/* Tabs de Navegação */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview" className="flex items-center gap-1 sm:gap-2">
+        <TabsList className="w-full dark:bg-zinc-800 dark:border-zinc-700 flex items-center justify-center">
+          <TabsTrigger value="overview" className="flex-1 flex items-center gap-1 sm:gap-2 dark:data-[state=active]:bg-zinc-700 dark:text-zinc-300 dark:data-[state=active]:text-zinc-100">
             <BarChart3 className="w-4 h-4" />
             <span className="hidden sm:inline">Visão Geral</span>
           </TabsTrigger>
-          <TabsTrigger value="matches" className="flex items-center gap-1 sm:gap-2">
+          <TabsTrigger value="matches" className="flex-1 flex items-center gap-1 sm:gap-2 dark:data-[state=active]:bg-zinc-700 dark:text-zinc-300 dark:data-[state=active]:text-zinc-100">
             <Calendar className="w-4 h-4" />
             <span className="hidden sm:inline">Partidas</span>
           </TabsTrigger>
-          <TabsTrigger value="players" className="flex items-center gap-1 sm:gap-2">
+          <TabsTrigger value="players" className="flex-1 flex items-center gap-1 sm:gap-2 dark:data-[state=active]:bg-zinc-700 dark:text-zinc-300 dark:data-[state=active]:text-zinc-100">
             <Users className="w-4 h-4" />
             <span className="hidden sm:inline">Jogadores</span>
           </TabsTrigger>
-          <TabsTrigger value="finance" className="flex items-center gap-1 sm:gap-2">
+          <TabsTrigger value="finance" className="flex-1 flex items-center gap-1 sm:gap-2 dark:data-[state=active]:bg-zinc-700 dark:text-zinc-300 dark:data-[state=active]:text-zinc-100">
             <DollarSign className="w-4 h-4" />
             <span className="hidden sm:inline">Financeiro</span>
           </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-1 sm:gap-2">
+          <TabsTrigger value="settings" className="flex-1 flex items-center gap-1 sm:gap-2 dark:data-[state=active]:bg-zinc-700 dark:text-zinc-300 dark:data-[state=active]:text-zinc-100">
             <Settings className="w-4 h-4" />
             <span className="hidden sm:inline">Configurações</span>
           </TabsTrigger>
@@ -542,9 +542,9 @@ export default function OwnerDashboard() {
           </Card>
 
           {/* Situação Financeira */}
-          <Card>
+          <Card className="dark:bg-zinc-800 dark:border-zinc-700">
             <CardHeader>
-              <CardTitle className='flex items-center gap-2'>
+              <CardTitle className='flex items-center gap-2 dark:text-zinc-100'>
                 <DollarSign className='w-5 h-5' />
                 Situação Financeira
               </CardTitle>
@@ -576,9 +576,9 @@ export default function OwnerDashboard() {
           </Card>
 
           {/* Pagamentos Recentes */}
-          <Card>
+          <Card className="dark:bg-zinc-800 dark:border-zinc-700">
             <CardHeader>
-              <CardTitle className='flex items-center gap-2'>
+              <CardTitle className='flex items-center gap-2 dark:text-zinc-100'>
                 <CreditCard className='w-5 h-5' />
                 Pagamentos Recentes
               </CardTitle>
@@ -592,10 +592,10 @@ export default function OwnerDashboard() {
                       <p className='text-sm text-zinc-600 dark:text-zinc-400'>{payment.date}</p>
                     </div>
                     <div className='text-right'>
-                      <p className='font-semibold'>R$ {payment.amount}</p>
+                      <p className='font-semibold dark:text-zinc-100'>R$ {payment.amount}</p>
                       <Badge 
                         variant={payment.status === 'paid' ? 'default' : 'secondary'}
-                        className={payment.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}
+                        className={payment.status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'}
                       >
                         {payment.status === 'paid' ? 'Pago' : 'Pendente'}
                       </Badge>
@@ -607,24 +607,24 @@ export default function OwnerDashboard() {
           </Card>
 
           {/* Funcionalidades de Dono */}
-          <Card>
+          <Card className="dark:bg-zinc-800 dark:border-zinc-700">
             <CardContent className='p-6'>
-              <h3 className='text-lg font-semibold mb-4 flex items-center'>
-                <Shield className='w-5 h-5 mr-2 text-purple-600' />
+              <h3 className='text-lg font-semibold mb-4 flex items-center dark:text-zinc-100'>
+                <Shield className='w-5 h-5 mr-2 text-purple-600 dark:text-purple-400' />
                 Funcionalidades de Dono
               </h3>
               <div className='space-y-3'>
-                <div className='p-3 bg-purple-50 rounded-lg'>
-                  <p className='font-medium text-purple-900'>👑 Acesso Total</p>
-                  <p className='text-sm text-purple-700'>Você tem acesso completo a todas as funcionalidades do sistema</p>
+                <div className='p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg'>
+                  <p className='font-medium text-purple-900 dark:text-purple-300'>👑 Acesso Total</p>
+                  <p className='text-sm text-purple-700 dark:text-purple-400'>Você tem acesso completo a todas as funcionalidades do sistema</p>
                 </div>
-                <div className='p-3 bg-blue-50 rounded-lg'>
-                  <p className='font-medium text-blue-900'>🛡️ Gerenciamento</p>
-                  <p className='text-sm text-blue-700'>Pode gerenciar usuários, convites e configurações</p>
+                <div className='p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg'>
+                  <p className='font-medium text-blue-900 dark:text-blue-300'>🛡️ Gerenciamento</p>
+                  <p className='text-sm text-blue-700 dark:text-blue-400'>Pode gerenciar usuários, convites e configurações</p>
                 </div>
-                <div className='p-3 bg-green-50 rounded-lg'>
-                  <p className='font-medium text-green-900'>📊 Relatórios</p>
-                  <p className='text-sm text-green-700'>Acesso a relatórios e estatísticas completas</p>
+                <div className='p-3 bg-green-50 dark:bg-green-900/20 rounded-lg'>
+                  <p className='font-medium text-green-900 dark:text-green-300'>📊 Relatórios</p>
+                  <p className='text-sm text-green-700 dark:text-green-400'>Acesso a relatórios e estatísticas completas</p>
                 </div>
               </div>
             </CardContent>
@@ -1016,20 +1016,20 @@ export default function OwnerDashboard() {
 
       {/* Modal de Edição de Jogo */}
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] dark:bg-zinc-800 dark:border-zinc-700">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 dark:text-zinc-100">
               <Edit className="w-5 h-5" />
               Editar Jogo
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="dark:text-zinc-400">
               Faça as alterações necessárias nos dados do jogo.
             </DialogDescription>
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="date" className="text-right">
+              <Label htmlFor="date" className="text-right dark:text-zinc-300">
                 Data
               </Label>
               <Input
@@ -1037,12 +1037,12 @@ export default function OwnerDashboard() {
                 type="date"
                 value={editForm.date}
                 onChange={(e) => setEditForm(prev => ({ ...prev, date: e.target.value }))}
-                className="col-span-3"
+                className="col-span-3 dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100"
               />
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="time" className="text-right">
+              <Label htmlFor="time" className="text-right dark:text-zinc-300">
                 Horário
               </Label>
               <Input
@@ -1050,12 +1050,12 @@ export default function OwnerDashboard() {
                 type="time"
                 value={editForm.time}
                 onChange={(e) => setEditForm(prev => ({ ...prev, time: e.target.value }))}
-                className="col-span-3"
+                className="col-span-3 dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100"
               />
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="location" className="text-right">
+              <Label htmlFor="location" className="text-right dark:text-zinc-300">
                 Local
               </Label>
               <Input
@@ -1063,12 +1063,12 @@ export default function OwnerDashboard() {
                 value={editForm.location}
                 onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
                 placeholder="Ex: Campo do Flamengo"
-                className="col-span-3"
+                className="col-span-3 dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100 dark:placeholder-zinc-400"
               />
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="maxPlayers" className="text-right">
+              <Label htmlFor="maxPlayers" className="text-right dark:text-zinc-300">
                 Vagas
               </Label>
               <Input
@@ -1078,17 +1078,17 @@ export default function OwnerDashboard() {
                 max="30"
                 value={editForm.maxPlayers}
                 onChange={(e) => setEditForm(prev => ({ ...prev, maxPlayers: parseInt(e.target.value) || 22 }))}
-                className="col-span-3"
+                className="col-span-3 dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100"
               />
             </div>
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={closeEditModal}>
+            <Button variant="outline" onClick={closeEditModal} className="dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700">
               <X className="w-4 h-4 mr-2" />
               Cancelar
             </Button>
-            <Button onClick={saveMatchChanges}>
+            <Button onClick={saveMatchChanges} className="dark:bg-blue-600 dark:hover:bg-blue-700">
               <Save className="w-4 h-4 mr-2" />
               Salvar Alterações
             </Button>
@@ -1098,23 +1098,23 @@ export default function OwnerDashboard() {
 
       {/* Modal de Confirmação de Exclusão */}
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] dark:bg-zinc-800 dark:border-zinc-700">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 dark:text-zinc-100">
               <AlertCircle className="w-5 h-5 text-red-500" />
               Confirmar Exclusão
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="dark:text-zinc-400">
               Tem certeza que deseja excluir esta partida? Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
           
           {matchToDelete && (
             <div className="py-4">
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <h3 className="font-semibold text-red-900">{matchToDelete.location}</h3>
-                <p className="text-sm text-red-700">{matchToDelete.date} às {matchToDelete.time}</p>
-                <p className="text-sm text-red-600 mt-1">
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <h3 className="font-semibold text-red-900 dark:text-red-300">{matchToDelete.location}</h3>
+                <p className="text-sm text-red-700 dark:text-red-400">{matchToDelete.date} às {matchToDelete.time}</p>
+                <p className="text-sm text-red-600 dark:text-red-400 mt-1">
                   {matchToDelete.confirmedPlayers} jogadores confirmados
                 </p>
               </div>
@@ -1122,11 +1122,11 @@ export default function OwnerDashboard() {
           )}
           
           <DialogFooter>
-            <Button variant="outline" onClick={closeDeleteModal}>
+            <Button variant="outline" onClick={closeDeleteModal} className="dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700">
               <X className="w-4 h-4 mr-2" />
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={confirmDeleteMatch}>
+            <Button variant="destructive" onClick={confirmDeleteMatch} className="dark:bg-red-600 dark:hover:bg-red-700">
               <Trash2 className="w-4 h-4 mr-2" />
               Excluir Partida
             </Button>
@@ -1136,13 +1136,13 @@ export default function OwnerDashboard() {
 
       {/* Modal de Criação de Partida */}
       <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md dark:bg-zinc-800 dark:border-zinc-700">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 dark:text-zinc-100">
               <Plus className="w-5 h-5" />
               Nova Partida
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="dark:text-zinc-400">
               Preencha os dados para criar uma nova partida.
             </DialogDescription>
           </DialogHeader>
@@ -1150,40 +1150,43 @@ export default function OwnerDashboard() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="create-date">Data</Label>
+                <Label htmlFor="create-date" className="dark:text-zinc-300">Data</Label>
                 <Input
                   id="create-date"
                   type="date"
                   value={createForm.date}
                   onChange={(e) => setCreateForm(prev => ({ ...prev, date: e.target.value }))}
+                  className="dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100"
                 />
               </div>
               <div>
-                <Label htmlFor="create-time">Horário</Label>
+                <Label htmlFor="create-time" className="dark:text-zinc-300">Horário</Label>
                 <Input
                   id="create-time"
                   type="time"
                   value={createForm.time}
                   onChange={(e) => setCreateForm(prev => ({ ...prev, time: e.target.value }))}
+                  className="dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100"
                 />
               </div>
             </div>
             
             <div>
-              <Label htmlFor="create-location">Local (Endereço)</Label>
+              <Label htmlFor="create-location" className="dark:text-zinc-300">Local (Endereço)</Label>
               <Input
                 id="create-location"
                 placeholder="Ex: Rua das Flores, 123 - Bairro, Cidade - Estado"
                 value={createForm.location}
                 onChange={(e) => setCreateForm(prev => ({ ...prev, location: e.target.value }))}
+                className="dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100 dark:placeholder-zinc-400"
               />
-              <p className="text-xs text-zinc-500 mt-1">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                 💡 Cole aqui o endereço completo do Google Maps para facilitar a navegação
               </p>
             </div>
             
             <div>
-              <Label htmlFor="create-maxPlayers">Número de Vagas</Label>
+              <Label htmlFor="create-maxPlayers" className="dark:text-zinc-300">Número de Vagas</Label>
               <Input
                 id="create-maxPlayers"
                 type="number"
@@ -1191,12 +1194,13 @@ export default function OwnerDashboard() {
                 max="30"
                 value={createForm.maxPlayers}
                 onChange={(e) => setCreateForm(prev => ({ ...prev, maxPlayers: parseInt(e.target.value) || 22 }))}
+                className="dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100"
               />
             </div>
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={closeCreateModal}>
+            <Button variant="outline" onClick={closeCreateModal} className="dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700">
               <X className="w-4 h-4 mr-2" />
               Cancelar
             </Button>

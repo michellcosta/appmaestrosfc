@@ -139,7 +139,7 @@ export default function RankingPage() {
   }, [canSeeVote]);
 
   const filtered = useMemo(() => {
-    let rows = stats.filter((r) => inRange(r.last_event_at, range));
+    const rows = stats.filter((r) => inRange(r.last_event_at, range));
     if (pos !== "Geral") {
       // Quando você tiver a coluna "position" na view, dá para filtrar aqui.
       // rows = rows.filter(r => r.position === pos);

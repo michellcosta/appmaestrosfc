@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
@@ -53,23 +53,5 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    
-    <!-- Service Worker Registration -->
-        <script>
-          if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-              navigator.serviceWorker.register('/sw.js')
-                .then((registration) => {
-                  console.log('Service Worker registered successfully:', registration.scope);
-                  console.log('Protocol:', window.location.protocol);
-                })
-                .catch((error) => {
-                  console.error('Service Worker registration failed:', error);
-                });
-            });
-          } else {
-            console.log('Service Worker não suportado neste navegador');
-          }
-        </script>
   </body>
 </html>

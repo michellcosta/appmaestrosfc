@@ -81,17 +81,17 @@ const WeatherForecast: React.FC<WeatherForecastProps> = ({ date, location, time,
 
   if (loading) {
     return (
-      <Card className={`rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 ${className}`}>
+      <Card className={`rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 ${className}`}>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2 text-zinc-900 dark:text-zinc-100">
             <Cloud className="w-4 h-4" />
             Previsão do Tempo
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
           <div className="animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
           </div>
         </CardContent>
       </Card>
@@ -100,24 +100,24 @@ const WeatherForecast: React.FC<WeatherForecastProps> = ({ date, location, time,
 
   if (error || !weather) {
     return (
-      <Card className={`rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 ${className}`}>
+      <Card className={`rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 ${className}`}>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2 text-zinc-900 dark:text-zinc-100">
             <Cloud className="w-4 h-4" />
             Previsão do Tempo
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <p className="text-sm text-zinc-500">{error || 'Dados não disponíveis'}</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">{error || 'Dados não disponíveis'}</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className={`rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 ${className}`}>
+    <Card className={`rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 ${className}`}>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2">
+        <CardTitle className="text-sm font-semibold flex items-center gap-2 text-zinc-900 dark:text-zinc-100">
           <Cloud className="w-4 h-4" />
           Previsão do Tempo
         </CardTitle>
@@ -129,7 +129,7 @@ const WeatherForecast: React.FC<WeatherForecastProps> = ({ date, location, time,
             {getWeatherIcon(weather.condition, weather.description)}
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold">{weather.temperature}°C</span>
+                <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{weather.temperature}°C</span>
                 <Badge className={getTemperatureColor(weather.temperature)}>
                   {weather.temperature >= 25 ? 'Quente' : weather.temperature >= 15 ? 'Agradável' : 'Fresco'}
                 </Badge>

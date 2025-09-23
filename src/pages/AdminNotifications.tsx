@@ -127,15 +127,15 @@ export default function AdminNotifications() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Pendente</Badge>;
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">Pendente</Badge>;
       case 'approved':
-        return <Badge variant="secondary" className="bg-green-100 text-green-800">Aprovada</Badge>;
+        return <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Aprovada</Badge>;
       case 'rejected':
-        return <Badge variant="secondary" className="bg-red-100 text-red-800">Rejeitada</Badge>;
+        return <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Rejeitada</Badge>;
       case 'cancelled':
-        return <Badge variant="secondary" className="bg-gray-100 text-gray-800">Cancelada</Badge>;
+        return <Badge variant="secondary" className="bg-gray-100 text-gray-800 dark:bg-zinc-700 dark:text-zinc-300">Cancelada</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="secondary" className="dark:bg-zinc-700 dark:text-zinc-300">{status}</Badge>;
     }
   };
 
@@ -148,8 +148,8 @@ export default function AdminNotifications() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Acesso Negado</h2>
-          <p className="text-gray-600">Você não tem permissão para acessar esta página.</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-zinc-100 mb-2">Acesso Negado</h2>
+          <p className="text-gray-600 dark:text-zinc-400">Você não tem permissão para acessar esta página.</p>
         </div>
       </div>
     );
@@ -160,7 +160,7 @@ export default function AdminNotifications() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Carregando notificações...</p>
+          <p className="mt-2 text-gray-600 dark:text-zinc-400">Carregando notificações...</p>
         </div>
       </div>
     );
@@ -173,24 +173,24 @@ export default function AdminNotifications() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Notificações</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-zinc-100">Notificações</h1>
+          <p className="text-gray-600 dark:text-zinc-400 mt-2">
             Gerencie solicitações de participação de diaristas
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Bell className="h-5 w-5 text-gray-600" />
-          <Badge variant="secondary" className="bg-red-100 text-red-800">
+          <Bell className="h-5 w-5 text-gray-600 dark:text-zinc-400" />
+          <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
             {pendingRequests.length} pendentes
           </Badge>
         </div>
       </div>
 
       {/* Solicitações Pendentes */}
-      <Card>
+      <Card className="dark:bg-zinc-800 dark:border-zinc-700">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 dark:text-zinc-100">
+            <Bell className="h-5 w-5 dark:text-zinc-400" />
             Solicitações Pendentes ({pendingRequests.length})
           </CardTitle>
         </CardHeader>
@@ -203,19 +203,19 @@ export default function AdminNotifications() {
               return (
                 <div
                   key={request.id}
-                  className="border rounded-lg p-4 bg-yellow-50 border-yellow-200"
+                  className="border rounded-lg p-4 bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800"
                 >
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-gray-600" />
-                        <span className="font-medium">{diaristName}</span>
+                        <User className="h-4 w-4 text-gray-600 dark:text-zinc-400" />
+                        <span className="font-medium dark:text-zinc-100">{diaristName}</span>
                         {request.user?.email && (
-                          <span className="text-sm text-gray-600">({request.user.email})</span>
+                          <span className="text-sm text-gray-600 dark:text-zinc-400">({request.user.email})</span>
                         )}
                       </div>
                       {match && (
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-zinc-400">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
                             {new Date(match.date).toLocaleDateString('pt-BR')}
@@ -228,19 +228,19 @@ export default function AdminNotifications() {
                             <MapPin className="h-4 w-4" />
                             {match.venue}
                           </span>
-                          <span className="font-medium text-green-600">
+                          <span className="font-medium text-green-600 dark:text-green-400">
                             R$ {match.price.toFixed(2)}
                           </span>
                         </div>
                       )}
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-600 dark:text-zinc-400">
                         Solicitado em: {new Date(request.requested_at).toLocaleDateString('pt-BR')} às {new Date(request.requested_at).toLocaleTimeString('pt-BR')}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
                         onClick={() => handleReviewAction(request.id, 'approve', diaristName)}
                         disabled={reviewingRequest === request.id}
                       >
@@ -250,7 +250,7 @@ export default function AdminNotifications() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="border-red-300 text-red-600 hover:bg-red-50"
+                        className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/30"
                         onClick={() => handleReviewAction(request.id, 'reject', diaristName)}
                         disabled={reviewingRequest === request.id}
                       >
@@ -263,7 +263,7 @@ export default function AdminNotifications() {
               );
             })}
             {pendingRequests.length === 0 && (
-              <p className="text-gray-500 text-center py-4">
+              <p className="text-gray-500 dark:text-zinc-400 text-center py-4">
                 Nenhuma solicitação pendente
               </p>
             )}
@@ -272,10 +272,10 @@ export default function AdminNotifications() {
       </Card>
 
       {/* Histórico de Solicitações */}
-      <Card>
+      <Card className="dark:bg-zinc-800 dark:border-zinc-700">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 dark:text-zinc-100">
+            <Bell className="h-5 w-5 dark:text-zinc-400" />
             Histórico de Solicitações
           </CardTitle>
         </CardHeader>
@@ -288,18 +288,18 @@ export default function AdminNotifications() {
               return (
                 <div
                   key={request.id}
-                  className="border rounded-lg p-4 flex items-center justify-between"
+                  className="border rounded-lg p-4 flex items-center justify-between dark:border-zinc-600"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-gray-600" />
-                      <span className="font-medium">{diaristName}</span>
+                      <User className="h-4 w-4 text-gray-600 dark:text-zinc-400" />
+                      <span className="font-medium dark:text-zinc-100">{diaristName}</span>
                       {request.user?.email && (
-                        <span className="text-sm text-gray-600">({request.user.email})</span>
+                        <span className="text-sm text-gray-600 dark:text-zinc-400">({request.user.email})</span>
                       )}
                     </div>
                     {match && (
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-zinc-400">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
                           {new Date(match.date).toLocaleDateString('pt-BR')}
@@ -312,21 +312,21 @@ export default function AdminNotifications() {
                           <MapPin className="h-4 w-4" />
                           {match.venue}
                         </span>
-                        <span className="font-medium text-green-600">
+                        <span className="font-medium text-green-600 dark:text-green-400">
                           R$ {match.price.toFixed(2)}
                         </span>
                       </div>
                     )}
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-600 dark:text-zinc-400">
                       Solicitado em: {new Date(request.requested_at).toLocaleDateString('pt-BR')}
                     </div>
                     {request.reviewed_at && (
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-600 dark:text-zinc-400">
                         Revisado em: {new Date(request.reviewed_at).toLocaleDateString('pt-BR')}
                       </div>
                     )}
                     {request.notes && (
-                      <div className="text-sm text-gray-600 flex items-start gap-1">
+                      <div className="text-sm text-gray-600 dark:text-zinc-400 flex items-start gap-1">
                         <MessageSquare className="h-3 w-3 mt-0.5" />
                         <span>Observações: {request.notes}</span>
                       </div>
@@ -339,7 +339,7 @@ export default function AdminNotifications() {
               );
             })}
             {requests.length === 0 && (
-              <p className="text-gray-500 text-center py-4">
+              <p className="text-gray-500 dark:text-zinc-400 text-center py-4">
                 Nenhuma solicitação encontrada
               </p>
             )}
@@ -349,18 +349,18 @@ export default function AdminNotifications() {
 
       {/* Modal de Confirmação de Revisão */}
       <Dialog open={reviewModal.isOpen} onOpenChange={(open) => setReviewModal(prev => ({ ...prev, isOpen: open }))}>
-        <DialogContent>
+        <DialogContent className="dark:bg-zinc-800 dark:border-zinc-700">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="dark:text-zinc-100">
               {reviewModal.action === 'approve' ? 'Aprovar' : 'Rejeitar'} Solicitação
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="dark:text-zinc-400">
               Você está {reviewModal.action === 'approve' ? 'aprovando' : 'rejeitando'} a solicitação de {reviewModal.diaristName}.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">
+              <label className="text-sm font-medium dark:text-zinc-100">
                 Observações {reviewModal.action === 'reject' ? '(obrigatório)' : '(opcional)'}
               </label>
               <Textarea
@@ -371,21 +371,21 @@ export default function AdminNotifications() {
                     ? 'Adicione observações sobre a aprovação...'
                     : 'Explique o motivo da rejeição...'
                 }
-                className="mt-1"
+                className="mt-1 dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100 dark:placeholder-zinc-400"
               />
             </div>
             
             {reviewModal.action === 'approve' && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                <p className="text-green-800 text-sm">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 dark:bg-green-900/20 dark:border-green-800">
+                <p className="text-green-800 text-sm dark:text-green-400">
                   ✅ Ao aprovar, o diarista receberá uma notificação e poderá prosseguir com o pagamento.
                 </p>
               </div>
             )}
             
             {reviewModal.action === 'reject' && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-red-800 text-sm">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 dark:bg-red-900/20 dark:border-red-800">
+                <p className="text-red-800 text-sm dark:text-red-400">
                   ❌ Ao rejeitar, o diarista receberá uma notificação com o motivo da rejeição.
                 </p>
               </div>
@@ -395,7 +395,7 @@ export default function AdminNotifications() {
               <Button 
                 variant="outline" 
                 onClick={() => setReviewModal(prev => ({ ...prev, isOpen: false }))}
-                className="flex-1"
+                className="flex-1 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
                 disabled={reviewingRequest === reviewModal.requestId}
               >
                 Cancelar
@@ -404,8 +404,8 @@ export default function AdminNotifications() {
                 onClick={confirmReview}
                 className={`flex-1 ${
                   reviewModal.action === 'approve' 
-                    ? 'bg-green-600 hover:bg-green-700' 
-                    : 'bg-red-600 hover:bg-red-700'
+                    ? 'bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700' 
+                    : 'bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700'
                 }`}
                 disabled={
                   reviewingRequest === reviewModal.requestId || 

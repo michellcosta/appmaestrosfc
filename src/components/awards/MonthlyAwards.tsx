@@ -23,7 +23,12 @@ function toMonthKey(d: Date) {
 
 function monthLabel(monthKey: string) {
   const [y, m] = monthKey.split("-").slice(0, 2);
-  return /;
+  const months = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  const monthIndex = parseInt(m, 10) - 1;
+  return `${months[monthIndex]} ${y}`;
 }
 
 export default function MonthlyAwards({

@@ -449,11 +449,11 @@ const Match: React.FC = () => {
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-5 pb-[120px] sm:pb-5">
-      <header className="bg-white border-b border-gray-200 shadow-sm rounded-lg mb-4">
+      <header className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 shadow-sm rounded-lg mb-4">
         <div className="flex items-center justify-between p-4">
           <div>
-            <h1 className="text-lg font-bold text-gray-900">Partida ao Vivo</h1>
-            <p className="text-sm text-gray-600">Rodada {roundSafe.number}</p>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Partida ao Vivo</h1>
+            <p className="text-sm text-gray-600 dark:text-zinc-400">Rodada {roundSafe.number}</p>
           </div>
           
           <div className="flex items-center space-x-2">
@@ -462,15 +462,15 @@ const Match: React.FC = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate('/owner-dashboard')}
-                className="p-2 hover:bg-purple-100 hover:text-purple-700 transition-colors"
+                className="p-2 hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
                 title="Acesso rápido ao Dashboard do Owner"
               >
-                <Crown className="w-4 h-4 text-purple-600" />
+                <Crown className="w-4 h-4 text-purple-600 dark:text-purple-400" />
               </Button>
             )}
             
             {user?.role && user.role !== 'owner' && (
-              <div className="flex items-center space-x-1 text-sm text-maestros-green">
+              <div className="flex items-center space-x-1 text-sm text-maestros-green dark:text-green-400">
                 {getRoleIcon(user.role)}
                 <span className="hidden sm:inline font-medium">
                   {user.role === 'admin' ? 'Admin' : 

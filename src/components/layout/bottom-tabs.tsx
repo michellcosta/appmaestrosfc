@@ -56,7 +56,7 @@ export const BottomTabs: React.FC = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-tabbar border-t border-border shadow-xl">
-      <div className="grid grid-cols-6 h-tabbar">
+      <div className="flex h-tabbar">
         {tabs.map((tab) => {
           const isActive = location.pathname === tab.path;
           return (
@@ -64,7 +64,7 @@ export const BottomTabs: React.FC = () => {
               key={tab.id}
               onClick={() => navigate(tab.path)}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 transition-all duration-200",
+                "flex-1 flex flex-col items-center justify-center gap-1 transition-all duration-200",
                 "hover:bg-accent/50 active:scale-95",
                 isActive && "text-tabbar-active"
               )}

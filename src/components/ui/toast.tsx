@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -10,6 +10,10 @@ type Toast = {
   title: string;
   description?: string;
   duration?: number;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 };
 
 type ToastContextType = {
@@ -32,9 +36,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
     // Auto remove after duration
     const duration = toast.duration || 5000;
-    setTimeout(() => {
-      removeToast(id);
-    }, duration);
+    if (duration > 0) {
+      setTimeout(() => {
+        removeToast(id);
+      }, duration);
+    }
   }, []);
 
   const removeToast = useCallback((id: string) => {
@@ -63,8 +69,12 @@ export function useToast() {
 
 function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: string) => void }) {
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2">
-      {toasts.map((toast) => (
+    <div 
+      className="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"
+      aria-live="polite"
+      aria-label="Notificações"
+    >
+      {toasts.map(toast => (
         <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
       ))}
     </div>
@@ -72,84 +82,121 @@ function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: 
 }
 
 function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) => void }) {
-  const getIcon = () => {
-    switch (toast.type) {
+  const getToastStyles = (type: ToastType) => {
+    const baseStyles = "pointer-events-auto relative flex items-start gap-3 p-4 rounded-lg shadow-lg backdrop-blur-sm border transition-all duration-300 animate-smooth-fade-in";
+    
+    switch (type) {
       case 'success':
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
+        return `${baseStyles} bg-green-50/95 border-green-200 text-green-800`;
       case 'error':
-        return <AlertCircle className="w-5 h-5 text-red-600" />;
+        return `${baseStyles} bg-red-50/95 border-red-200 text-red-800`;
       case 'warning':
-        return <AlertTriangle className="w-5 h-5 text-yellow-600" />;
+        return `${baseStyles} bg-yellow-50/95 border-yellow-200 text-yellow-800`;
       case 'info':
-        return <Info className="w-5 h-5 text-blue-600" />;
+        return `${baseStyles} bg-blue-50/95 border-blue-200 text-blue-800`;
       default:
-        return <Info className="w-5 h-5 text-gray-600" />;
+        return `${baseStyles} bg-gray-50/95 border-gray-200 text-gray-800`;
     }
   };
 
-  const getBackgroundColor = () => {
-    switch (toast.type) {
+  const getIcon = (type: ToastType) => {
+    const iconProps = { className: "h-5 w-5 mt-0.5 flex-shrink-0", "aria-hidden": "true" };
+    
+    switch (type) {
       case 'success':
-        return 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800';
+        return <CheckCircle {...iconProps} className={`${iconProps.className} text-green-600`} />;
       case 'error':
-        return 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800';
+        return <AlertCircle {...iconProps} className={`${iconProps.className} text-red-600`} />;
       case 'warning':
-        return 'bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800';
+        return <AlertTriangle {...iconProps} className={`${iconProps.className} text-yellow-600`} />;
       case 'info':
-        return 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800';
+        return <Info {...iconProps} className={`${iconProps.className} text-blue-600`} />;
       default:
-        return 'bg-gray-50 border-gray-200 dark:bg-gray-900/20 dark:border-gray-800';
+        return <Info {...iconProps} className={`${iconProps.className} text-gray-600`} />;
     }
   };
+
+  // Announce to screen readers
+  useEffect(() => {
+    const message = `${toast.type}: ${toast.title}${toast.description ? '. ' + toast.description : ''}`;
+    
+    // Create a temporary element for screen reader announcement
+    const announcement = document.createElement('div');
+    announcement.setAttribute('aria-live', 'assertive');
+    announcement.setAttribute('aria-atomic', 'true');
+    announcement.className = 'sr-only';
+    announcement.textContent = message;
+    
+    document.body.appendChild(announcement);
+    
+    // Clean up after announcement
+    setTimeout(() => {
+      if (document.body.contains(announcement)) {
+        document.body.removeChild(announcement);
+      }
+    }, 1000);
+  }, [toast]);
 
   return (
-    <div className={`animate-slide-in-right max-w-sm w-full ${getBackgroundColor()} border rounded-lg shadow-lg p-4`}>
-      <div className="flex items-start space-x-3">
-        <div className="flex-shrink-0">
-          {getIcon()}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            {toast.title}
-          </h4>
-          {toast.description && (
-            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-              {toast.description}
-            </p>
-          )}
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onRemove(toast.id)}
-          className="flex-shrink-0 p-1 h-auto"
-        >
-          <X className="w-4 h-4" />
-        </Button>
+    <div
+      role="alert"
+      aria-live="polite"
+      aria-atomic="true"
+      className={getToastStyles(toast.type)}
+    >
+      {getIcon(toast.type)}
+      
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-sm mb-1">
+          {toast.title}
+        </h3>
+        {toast.description && (
+          <p className="text-sm opacity-90">
+            {toast.description}
+          </p>
+        )}
+        
+        {toast.action && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toast.action.onClick}
+            className="mt-2 h-auto p-0 text-sm font-medium underline hover:no-underline"
+          >
+            {toast.action.label}
+          </Button>
+        )}
       </div>
+      
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onRemove(toast.id)}
+        className="flex-shrink-0 h-6 w-6 rounded-md hover:bg-black/10 focus:ring-2 focus:ring-offset-2 focus:ring-current"
+        aria-label={`Fechar notificação: ${toast.title}`}
+      >
+        <X className="h-4 w-4" aria-hidden="true" />
+      </Button>
     </div>
   );
 }
 
-// Convenience functions
 export function useToastHelpers() {
   const { addToast } = useToast();
 
-  const success = (title: string, description?: string) => {
-    addToast({ type: 'success', title, description });
+  return {
+    success: (title: string, description?: string, action?: Toast['action']) => 
+      addToast({ type: 'success', title, description, action }),
+    
+    error: (title: string, description?: string, action?: Toast['action']) => 
+      addToast({ type: 'error', title, description, action }),
+    
+    warning: (title: string, description?: string, action?: Toast['action']) => 
+      addToast({ type: 'warning', title, description, action }),
+    
+    info: (title: string, description?: string, action?: Toast['action']) => 
+      addToast({ type: 'info', title, description, action }),
+    
+    custom: (toast: Omit<Toast, 'id'>) => addToast(toast)
   };
-
-  const error = (title: string, description?: string) => {
-    addToast({ type: 'error', title, description });
-  };
-
-  const warning = (title: string, description?: string) => {
-    addToast({ type: 'warning', title, description });
-  };
-
-  const info = (title: string, description?: string) => {
-    addToast({ type: 'info', title, description });
-  };
-
-  return { success, error, warning, info };
 }

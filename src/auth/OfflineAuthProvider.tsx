@@ -62,6 +62,19 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
           } catch (error) {
             console.error('❌ Erro ao carregar usuário offline:', error);
           }
+        } else if (mounted) {
+          // Criar usuário padrão para teste se não houver nenhum
+          const defaultUser: AppUser = {
+            id: 'test-user-owner',
+            email: 'owner@maestros.com',
+            name: 'Owner Teste',
+            role: 'owner',
+            group_id: 'group_test123'
+          };
+          
+          localStorage.setItem('offline_user', JSON.stringify(defaultUser));
+          setUser(defaultUser);
+          console.log('✅ Usuário padrão criado para teste:', defaultUser);
         }
 
         // Verificar sessão do Supabase para Google OAuth

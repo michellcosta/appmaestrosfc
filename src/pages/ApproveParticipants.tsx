@@ -103,46 +103,46 @@ export default function ApproveParticipants() {
   return (
     <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 space-y-6">
       <div className="animate-fade-in-up">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <UserCheck className="w-6 h-6 text-green-600" />
+        <h1 className="text-2xl font-bold flex items-center gap-2 dark:text-zinc-100">
+          <UserCheck className="w-6 h-6 text-green-600 dark:text-green-400" />
           Aprovar Participantes
         </h1>
-        <p className="text-sm text-zinc-500">Gerencie as solicitações de participação no grupo</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">Gerencie as solicitações de participação no grupo</p>
       </div>
 
       {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="animate-scale-in">
+        <Card className="animate-scale-in dark:bg-zinc-800 dark:border-zinc-700">
           <CardContent className="p-4 text-center">
-            <Clock className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
-            <h3 className="text-2xl font-bold text-yellow-600">{pendingParticipants.length}</h3>
-            <p className="text-sm text-zinc-500">Aguardando Aprovação</p>
+            <Clock className="w-8 h-8 text-yellow-600 dark:text-yellow-400 mx-auto mb-2" />
+            <h3 className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{pendingParticipants.length}</h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">Aguardando Aprovação</p>
           </CardContent>
         </Card>
         
-        <Card className="animate-scale-in" style={{ animationDelay: '100ms' }}>
+        <Card className="animate-scale-in dark:bg-zinc-800 dark:border-zinc-700" style={{ animationDelay: '100ms' }}>
           <CardContent className="p-4 text-center">
-            <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-            <h3 className="text-2xl font-bold text-green-600">{approvedParticipants.length}</h3>
-            <p className="text-sm text-zinc-500">Aprovados</p>
+            <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
+            <h3 className="text-2xl font-bold text-green-600 dark:text-green-400">{approvedParticipants.length}</h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">Aprovados</p>
           </CardContent>
         </Card>
         
-        <Card className="animate-scale-in" style={{ animationDelay: '200ms' }}>
+        <Card className="animate-scale-in dark:bg-zinc-800 dark:border-zinc-700" style={{ animationDelay: '200ms' }}>
           <CardContent className="p-4 text-center">
-            <XCircle className="w-8 h-8 text-red-600 mx-auto mb-2" />
-            <h3 className="text-2xl font-bold text-red-600">{rejectedParticipants.length}</h3>
-            <p className="text-sm text-zinc-500">Rejeitados</p>
+            <XCircle className="w-8 h-8 text-red-600 dark:text-red-400 mx-auto mb-2" />
+            <h3 className="text-2xl font-bold text-red-600 dark:text-red-400">{rejectedParticipants.length}</h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">Rejeitados</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Lista de Participantes Pendentes */}
       {pendingParticipants.length > 0 && (
-        <Card className="animate-fade-in-up">
+        <Card className="animate-fade-in-up dark:bg-zinc-800 dark:border-zinc-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-yellow-600" />
+            <CardTitle className="flex items-center gap-2 dark:text-zinc-100">
+              <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
               Aguardando Aprovação ({pendingParticipants.length})
             </CardTitle>
           </CardHeader>
@@ -151,7 +151,7 @@ export default function ApproveParticipants() {
               {pendingParticipants.map((participant, index) => (
                 <div 
                   key={participant.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700 dark:border-zinc-600 transition-colors"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <div className="flex items-center space-x-4">
@@ -159,14 +159,14 @@ export default function ApproveParticipants() {
                       <Users className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold">{participant.name}</h3>
-                      <p className="text-sm text-zinc-500">{participant.email}</p>
-                      <p className="text-sm text-zinc-500">{participant.phone}</p>
+                      <h3 className="font-semibold dark:text-zinc-100">{participant.name}</h3>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400">{participant.email}</p>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400">{participant.phone}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs dark:border-zinc-600 dark:text-zinc-300">
                           {participant.role === 'mensalista' ? '⭐ Mensalista' : '💫 Diarista'}
                         </Badge>
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-xs dark:bg-zinc-700 dark:text-zinc-300">
                           Convidado por {participant.invitedBy}
                         </Badge>
                       </div>
@@ -174,7 +174,7 @@ export default function ApproveParticipants() {
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-zinc-400">
+                    <span className="text-xs text-zinc-400 dark:text-zinc-500">
                       {new Date(participant.requestDate).toLocaleDateString('pt-BR')}
                     </span>
                     <div className="flex gap-2">
@@ -182,7 +182,7 @@ export default function ApproveParticipants() {
                         size="sm"
                         onClick={() => handleApprove(participant.id)}
                         disabled={loading === participant.id}
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
                       >
                         <CheckCircle className="w-4 h-4 mr-1" />
                         {loading === participant.id ? 'Aprovando...' : 'Aprovar'}
@@ -192,7 +192,7 @@ export default function ApproveParticipants() {
                         variant="outline"
                         onClick={() => handleReject(participant.id)}
                         disabled={loading === participant.id}
-                        className="text-red-600 hover:bg-red-50 hover:border-red-200"
+                        className="text-red-600 hover:bg-red-50 hover:border-red-200 dark:text-red-400 dark:border-zinc-600 dark:hover:bg-red-900/30 dark:hover:border-red-800"
                       >
                         <UserX className="w-4 h-4 mr-1" />
                         Rejeitar
@@ -208,10 +208,10 @@ export default function ApproveParticipants() {
 
       {/* Lista de Participantes Aprovados */}
       {approvedParticipants.length > 0 && (
-        <Card className="animate-fade-in-up">
+        <Card className="animate-fade-in-up dark:bg-zinc-800 dark:border-zinc-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
+            <CardTitle className="flex items-center gap-2 dark:text-zinc-100">
+              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
               Participantes Aprovados ({approvedParticipants.length})
             </CardTitle>
           </CardHeader>
@@ -220,21 +220,21 @@ export default function ApproveParticipants() {
               {approvedParticipants.map((participant) => (
                 <div 
                   key={participant.id}
-                  className="flex items-center justify-between p-3 border rounded-lg bg-green-50 dark:bg-green-900/20"
+                  className="flex items-center justify-between p-3 border rounded-lg bg-green-50 dark:bg-green-900/20 dark:border-zinc-600"
                 >
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
                       <CheckCircle className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold">{participant.name}</h3>
-                      <p className="text-sm text-zinc-500">{participant.email}</p>
-                      <Badge variant="outline" className="text-xs">
+                      <h3 className="font-semibold dark:text-zinc-100">{participant.name}</h3>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400">{participant.email}</p>
+                      <Badge variant="outline" className="text-xs dark:border-zinc-600 dark:text-zinc-300">
                         {participant.role === 'mensalista' ? '⭐ Mensalista' : '💫 Diarista'}
                       </Badge>
                     </div>
                   </div>
-                  <span className="text-xs text-zinc-400">
+                  <span className="text-xs text-zinc-400 dark:text-zinc-500">
                     Aprovado em {new Date(participant.requestDate).toLocaleDateString('pt-BR')}
                   </span>
                 </div>

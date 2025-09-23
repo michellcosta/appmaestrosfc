@@ -20,20 +20,7 @@ export default defineConfig(({ mode }) => ({
     {
       name: 'api-middleware',
       configureServer(server: ViteDevServer) {
-        // Middleware para servir o service worker durante desenvolvimento
-        server.middlewares.use('/sw.js', (req: IncomingMessage, res: ServerResponse) => {
-          try {
-            const swContent = readFileSync('public/sw.js', 'utf-8');
-            res.setHeader('Content-Type', 'application/javascript');
-            res.setHeader('Service-Worker-Allowed', '/');
-            res.statusCode = 200;
-            res.end(swContent);
-          } catch (error) {
-            console.error('❌ Erro ao servir Service Worker:', error);
-            res.statusCode = 404;
-            res.end('Service Worker not found');
-          }
-        });
+
 
         // Armazenamento em memória para dados
         let syncData: any = null;
@@ -156,22 +143,15 @@ export default defineConfig(({ mode }) => ({
           });
         }
       },
-    // Plugin para copiar sw.js
-    {
-      name: 'copy-sw',
-      writeBundle() {
-        try {
-          copyFileSync('public/sw.js', 'dist/sw.js');
-          console.log('✅ Service Worker copiado para dist/');
-        } catch (error) {
-          console.error('❌ Erro ao copiar Service Worker:', error);
-        }
-      }
-    }
+
   ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  define: {
+    'process.env': 'import.meta.env',
+    'process.env.NODE_ENV': JSON.stringify(mode),
   },
 }));

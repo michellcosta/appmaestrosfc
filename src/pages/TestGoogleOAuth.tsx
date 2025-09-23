@@ -18,8 +18,8 @@ export default function TestGoogleOAuth() {
       console.log('🔍 Testando Google OAuth...');
       
       // Verificar configuração do Supabase
-      const url = import.meta.env.VITE_SUPABASE_URL;
-      const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
       
       console.log('📊 Configuração do Supabase:');
       console.log('URL:', url);
@@ -56,8 +56,8 @@ export default function TestGoogleOAuth() {
   };
 
   const checkSupabaseConfig = () => {
-    const url = import.meta.env.VITE_SUPABASE_URL;
-    const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     
     console.log('🔍 Configuração do Supabase:');
     console.log('URL:', url);

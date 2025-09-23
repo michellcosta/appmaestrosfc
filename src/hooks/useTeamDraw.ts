@@ -17,7 +17,7 @@ export interface UseTeamDrawReturn {
   
   // Ações
   loadTeamDraw: (matchId: string) => Promise<void>
-  drawTeams: (matchId: string) => Promise<void>
+  drawTeams: (matchId: string, playersPerTeam?: 6 | 7) => Promise<void>
   refreshTeamDraw: () => Promise<void>
   
   // Substituições
@@ -83,39 +83,15 @@ export const useTeamDraw = (matchId?: string): UseTeamDrawReturn => {
   }
 
   // Sortear times
-  const drawTeams = async (targetMatchId: string) => {
+  const drawTeams = async (targetMatchId: string, playersPerTeam: 6 | 7 = 6) => {
     try {
-      // Primeiro, verificar se há check-ins suficientes
-      const { data: checkins, error: checkinsError } = await supabase
-        .from('checkins')
-        .select('user_id')
-        .eq('match_id', targetMatchId)
-
-      if (checkinsError) {
-        throw new Error(`Erro ao verificar check-ins: ${checkinsError.message}`)
-      }
-
-      if (!checkins || checkins.length < 4) {
-        throw new Error('É necessário pelo menos 4 jogadores com check-in para sortear times')
-      }
-
-      // Chamar função do Supabase para sortear times
-      const { data, error } = await supabase.functions.invoke('drawTeams', {
-        body: { matchId: targetMatchId }
-      })
-
-      if (error) {
-        throw new Error(`Erro ao sortear times: ${error.message}`)
-      }
-
-      if (!data.ok) {
-        throw new Error(data.error || 'Erro desconhecido ao sortear times')
-      }
-
+      // Usar implementação local para desenvolvimento
+      await storeDrawTeams(targetMatchId, playersPerTeam)
+      
       // Recarregar dados após sorteio
       await loadTeamDraw(targetMatchId)
       
-      return data.teams
+      return { success: true }
     } catch (error: any) {
       console.error('Erro ao sortear times:', error)
       throw error

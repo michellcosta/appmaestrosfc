@@ -230,7 +230,7 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
             variant="outline"
             size="sm"
             onClick={handleRotate}
-            className="flex-1"
+            className="flex-1 flex items-center justify-center"
           >
             <RotateCw className="w-4 h-4 mr-2" />
             Girar

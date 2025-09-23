@@ -17,8 +17,8 @@ const ThemeContext = createContext<ThemeContextType>({
 export const useTheme = () => useContext(ThemeContext);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('light');
-  const [isDark, setIsDark] = useState(false);
+  const [theme, setTheme] = useState<Theme>('dark');
+  const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
     // Carregar tema salvo

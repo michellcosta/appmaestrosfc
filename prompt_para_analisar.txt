@@ -1,0 +1,401 @@
+(refatoração focada em performance e escala)
+
+> Contexto do produto App: Maestros FC (futebol amador).
+Stack: Next.js 14 (App Router) + Supabase (Auth/Postgres/RLS/Realtime/Edge Functions) + Vercel.
+Fluxos críticos: partidas ao vivo (start/pause/reset, gols/cartões/subs, sorteio de times), leitura pública (placar/ranking/arteilharia/histórico), check-in com geolocalização (~30 m) e Pix (mensalista/diarista) com webhooks e carteira.
+
+
+
+> Objetivo Recriar as partes públicas e de tempo real para aguentar 3k–6k CCU e preparar caminho para 10k+ com cache forte. Priorize render no servidor, cache CDN 1–2s, views/materialized views e WebSocket por sala (sem tick de 1s). Tudo sem vazar segredos.
+
+
+
+
+---
+
+1) Arquitetura & diretórios
+
+Next.js 14 (App Router)
+
+Páginas públicas em Server Components:
+
+app/scoreboard/page.tsx (placar agregado)
+
+app/ranking/page.tsx
+
+app/artilharia/page.tsx
+
+app/historico/page.tsx (paginação por cursor)
+
+
+Páginas operacionais (staff/admin) podem usar Client Components apenas onde necessário.
+
+Route Handlers para ações que escrevem e invalidam cache:
+
+app/api/matches/[id]/goal/route.ts
+
+app/api/matches/[id]/card/route.ts
+
+app/api/matches/[id]/start|pause|resume|reset/route.ts
+
+app/api/payments/webhook/route.ts (idempotente)
+
+
+
+WebSocket (Hub)
+
+Um servidor WS com salas por partida: /ws?match_id=UUID.
+
+Sem tick de 1s. Enviar apenas eventos discretos (start, pause, goal, card, sub).
+
+Ping/pong 30s, compressão habilitada, backpressure por cliente.
+
+
+Supabase
+
+Tabelas base fechadas ao público (RLS).
+
+Views e Materialized Views para placar/ranking/artilharia.
+
+Função checkin() com geofence 30 m (PostGIS) — SECURITY DEFINER.
+
+Índices críticos e refresh concorrente.
+
+
+
+
+---
+
+2) Regras gerais de desempenho
+
+NUNCA usar fetch(..., { cache: "no-store" }) em páginas públicas.
+
+Padrão para leitura pública:
+fetch(url, { next: { revalidate: 2, tags: ['scoreboard' | 'ranking' | 'artilharia' | 'historico'] } })
+
+Após qualquer escrita, chamar revalidateTag(...) nas tags certas.
+
+Paginação por cursor (keyset) no histórico; evitar offset.
+
+Cabeçalho CDN (quando aplicável): Cache-Control: public, s-maxage=2, stale-while-revalidate=30.
+
+
+
+---
+
+3) Código — utilitários de fetch
+
+// web/lib/api.ts
+export function apiBase() { return process.env.NEXT_PUBLIC_API_URL!; }
+
+export async function getPublic(path: string, tag: string) {
+  return fetch(${apiBase()}${path}, { next: { revalidate: 2, tags: [tag] } });
+}
+
+export async function getPrivate(path: string, init?: RequestInit) {
+  return fetch(${apiBase()}${path}, { cache: 'no-store', ...init });
+}
+
+
+---
+
+4) Páginas públicas (Server Components)
+
+// app/scoreboard/page.tsx
+export const revalidate = 2;
+import ScoreboardView from './ScoreboardView';
+export default async function Page() {
+  const res = await fetch(${process.env.NEXT_PUBLIC_API_URL}/public/scoreboard, {
+    next: { revalidate: 2, tags: ['scoreboard'] }
+  });
+  const data = await res.json();
+  return <ScoreboardView data={data} />; // componente leve, sem efeitos
+}
+
+// app/ranking/page.tsx (igual padrão, tag 'ranking')
+// app/artilharia/page.tsx (tag 'artilharia')
+
+
+---
+
+5) Ações que invalidam cache
+
+// app/api/matches/[id]/goal/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
+
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  // 1) Registrar gol (chamar API interna/Supabase)
+  // 2) Refresh das MVs (ver seção Supabase) – pode ser via RPC/Edge Function
+  // 3) Invalidação seletiva
+  revalidateTag('scoreboard');
+  revalidateTag('ranking');
+  revalidateTag('artilharia');
+  return NextResponse.json({ ok: true });
+}
+
+
+---
+
+6) WebSocket — especificação de implementação
+
+Endpoint: wss://<host>/ws?match_id=<uuid>
+
+Ao conectar, cliente entra em uma sala (Room) baseada em match_id.
+
+Eventos (JSON):
+{"type":"start"|"pause"|"resume"|"reset"|"goal"|"card"|"sub","match_id":"...","payload":{...},"ts":<unix_ms>}
+
+Servidor:
+
+map[matchID]*Room com clients: map[*Conn]bool
+
+EnableCompression=true
+
+WritePump com canal de saída por cliente
+
+PingInterval=30s, fechar se não houver pong
+
+
+Cliente (placar staff): renderiza timer local com base em último start/pause (sincroniza a cada ~10s).
+
+
+(Se o TRAE não suportar Go/WS nativo, gerar um Edge Runtime WS em Node compatível com Vercel, mantendo os requisitos acima.)
+
+
+---
+
+7) Supabase — SQL (índices, views, MVs, RLS, check-in)
+
+-- Extensões
+create extension if not exists pgcrypto;
+create extension if not exists postgis;
+
+-- Índices de eventos
+create index if not exists events_match_time on public.events(match_id, created_at desc);
+create index if not exists events_goal_match on public.events(match_id) where type = 'goal';
+create index if not exists events_player_time on public.events(player_id, created_at desc);
+
+-- Geofence (30m)
+alter table public.matches add column if not exists venue_lat double precision;
+alter table public.matches add column if not exists venue_lng double precision;
+alter table public.matches add column if not exists venue_geog geography(Point,4326);
+update public.matches
+set venue_geog = st_setsrid(st_makepoint(venue_lng, venue_lat),4326)::geography
+where venue_lng is not null and venue_lat is not null;
+create index if not exists matches_venue_gist on public.matches using gist(venue_geog);
+
+-- View placar
+create or replace view public.v_scoreboard as
+select
+  m.id as match_id,
+  m.team_a, m.team_b,
+  coalesce(sum(case when e.type='goal' and e.team='A' then 1 end),0) as score_a,
+  coalesce(sum(case when e.type='goal' and e.team='B' then 1 end),0) as score_b,
+  m.date_time
+from public.matches m
+left join public.events e on e.match_id = m.id
+group by m.id;
+
+-- Materialized Views
+create materialized view if not exists public.mv_scoreboard as
+select * from public.v_scoreboard;
+create unique index if not exists mv_scoreboard_pk on public.mv_scoreboard(match_id);
+
+create materialized view if not exists public.mv_artilharia as
+select p.id as player_id, p.name, count(*) as gols
+from public.events e join public.players p on p.id = e.player_id
+where e.type = 'goal'
+group by p.id, p.name
+order by gols desc;
+create index if not exists mv_artilharia_gols on public.mv_artilharia(gols desc);
+
+create materialized view if not exists public.mv_ranking as
+with sb as (select * from public.v_scoreboard),
+a as (select team_a as team, score_a as gf, score_b as ga from sb),
+b as (select team_b as team, score_b as gf, score_a as ga from sb),
+all_rows as (
+  select team,
+         case when gf>ga then 3 when gf=ga then 1 else 0 end as pts,
+         case when gf>ga then 1 else 0 end as w,
+         case when gf=ga then 1 else 0 end as d,
+         case when gf<ga then 1 else 0 end as l,
+         gf, ga
+  from (select * from a union all select * from b) t
+)
+select team, sum(w) wins, sum(d) draws, sum(l) losses,
+       sum(pts) points, sum(gf) gf, sum(ga) ga, sum(gf-ga) gd
+from all_rows group by team;
+create unique index if not exists mv_ranking_team on public.mv_ranking(team);
+
+-- Refresh concorrente (chamar após evento)
+-- (Pode ser via RPC/Edge Function)
+refresh materialized view concurrently public.mv_scoreboard;
+refresh materialized view concurrently public.mv_artilharia;
+refresh materialized view concurrently public.mv_ranking;
+
+-- RLS: público lê só views/MVs; tabelas base fechadas
+revoke all on table public.players, public.matches, public.events from anon;
+grant select on public.mv_scoreboard, public.mv_artilharia, public.mv_ranking, public.v_scoreboard to anon;
+
+alter table public.events enable row level security;
+create policy events_insert_auth on public.events
+  for insert to authenticated
+  with check (auth.role() = 'authenticated');
+
+-- Check-in seguro por função
+create or replace function public.checkin(p_match uuid, p_lat double precision, p_lng double precision)
+returns void language plpgsql security definer as $$
+begin
+  perform 1 from public.matches m
+   where m.id = p_match
+     and m.venue_geog is not null
+     and st_dwithin(m.venue_geog, st_setsrid(st_makepoint(p_lng,p_lat),4326)::geography, 30);
+  if not found then raise exception 'Fora da área de check-in'; end if;
+
+  insert into public.events(match_id, type, meta)
+  values (p_match, 'checkin', jsonb_build_object('lat',p_lat,'lng',p_lng,'uid',auth.uid()));
+end; $$;
+
+revoke all on function public.checkin from anon;
+grant execute on function public.checkin to authenticated;
+
+
+---
+
+8) Paginação por cursor (histórico)
+
+// /public/history?cursor=<ISO> → retorna { items, next_cursor }
+-- SQL: where created_at < $1 order by created_at desc limit 50
+
+
+---
+
+9) Pix & webhooks (idempotência)
+
+Tabela webhook_events(idempotency_key text primary key, raw jsonb, created_at timestamptz default now()).
+
+No POST /api/payments/webhook:
+
+1. Validar assinatura.
+
+
+2. insert ... on conflict do nothing em webhook_events.
+
+
+3. Se inseriu, aplicar crédito/carteira e emitir revalidateTag('wallet' | 'ranking').
+
+
+
+
+
+---
+
+10) Cache/CDN no Next
+
+// next.config.mjs (quando expor rotas públicas via Next)
+export async function headers() {
+  return [
+    {
+      source: "/(scoreboard|ranking|artilharia)",
+      headers: [
+        { key: "Cache-Control", value: "public, s-maxage=2, stale-while-revalidate=30" }
+      ]
+    }
+  ];
+}
+
+
+---
+
+11) Scripts de carga (inclua na raiz)
+
+Artillery (artillery.yaml) – público:
+
+config:
+  target: "https://SEU-APP.vercel.app"
+  phases:
+    - duration: 60
+      arrivalRate: 50
+    - duration: 180
+      arrivalRate: 100
+scenarios:
+  - name: publico
+    flow:
+      - get: { url: "/scoreboard" }
+      - get: { url: "/ranking" }
+      - get: { url: "/artilharia" }
+
+k6 HTTP (k6-http.js):
+
+import http from 'k6/http';
+import { sleep, check } from 'k6';
+export const options = { vus: 200, duration: '2m' };
+export default function () {
+  const a = http.get(${__ENV.TARGET}/scoreboard);
+  const b = http.get(${__ENV.TARGET}/ranking);
+  check(a, { '200': r => r.status === 200 });
+  check(b, { '200': r => r.status === 200 });
+  sleep(1);
+}
+
+k6 WS (k6-ws.js):
+
+import ws from 'k6/ws';
+import { check } from 'k6';
+export const options = { vus: 200, duration: '2m' };
+export default function () {
+  const url = ${__ENV.WS}/ws?match_id=${__ENV.MATCH};
+  const res = ws.connect(url, {}, socket => {
+    socket.setTimeout(() => socket.close(), 60000);
+  });
+  check(res, { 'status 101': r => r && r.status === 101 });
+}
+
+
+---
+
+12) Variáveis de ambiente (exemplo)
+
+NEXT_PUBLIC_API_URL=https://SEU-API
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE=*** (NÃO expor ao cliente)
+WEBHOOK_SECRET=...
+
+
+---
+
+13) Critérios de aceite (para o TRAE seguir)
+
+Público (scoreboard/ranking/artilharia): RSC + revalidate: 2 + revalidateTag nas ações.
+
+Zero no-store nas leituras públicas.
+
+WS por sala, sem tick por segundo, com compressão + ping/pong.
+
+Views/MVs criadas e público com SELECT apenas nelas.
+
+Refresh MV após eventos.
+
+Histórico com paginação por cursor.
+
+Webhook Pix idempotente e que invalida wallet/ranking.
+
+Headers de cache: s-maxage=2, stale-while-revalidate=30.
+
+Entrega com scripts Artillery/k6 prontos.
+
+
+> Meta de escala esperada após refator
+(ordem de grandeza, leitura pública + alguns operadores staff)
+
+Com cache 1–2s + MVs + WS por sala: 3k–6k CCU estável.
+
+Preparado para 10k+ após validar CDN, shard de WS e payloads mínimos.
+
+
+
+
+
+---

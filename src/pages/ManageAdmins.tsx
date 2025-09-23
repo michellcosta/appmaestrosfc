@@ -95,18 +95,18 @@ export default function ManageAdmins() {
   return (
     <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 space-y-6">
       <div className="animate-fade-in-up">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Shield className="w-6 h-6 text-blue-600" />
+        <h1 className="text-2xl font-bold flex items-center gap-2 dark:text-zinc-100">
+          <Shield className="w-6 h-6 text-blue-600 dark:text-blue-400" />
           Gerenciar Administradores
         </h1>
-        <p className="text-sm text-zinc-500">Gerencie as permissões dos administradores do grupo</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">Gerencie as permissões dos administradores do grupo</p>
       </div>
 
       {/* Adicionar Admin */}
-      <Card className="animate-fade-in-up">
+      <Card className="animate-fade-in-up dark:bg-zinc-800 dark:border-zinc-700">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <UserPlus className="w-5 h-5 text-green-600" />
+          <CardTitle className="flex items-center gap-2 dark:text-zinc-100">
+            <UserPlus className="w-5 h-5 text-green-600 dark:text-green-400" />
             Adicionar Administrador
           </CardTitle>
         </CardHeader>
@@ -117,27 +117,27 @@ export default function ManageAdmins() {
               placeholder="Digite o email do novo admin"
               value={searchEmail}
               onChange={(e) => setSearchEmail(e.target.value)}
-              className="flex-1"
+              className="flex-1 dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100 dark:placeholder-zinc-400"
             />
             <Button 
               onClick={handleAddAdmin}
               disabled={loading || !searchEmail}
-              className="bg-gradient-primary hover:opacity-90"
+              className="bg-gradient-primary hover:opacity-90 dark:bg-blue-600 dark:hover:bg-blue-700"
             >
               {loading ? 'Adicionando...' : 'Adicionar'}
             </Button>
           </div>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
             O usuário receberá um convite por email para se tornar administrador
           </p>
         </CardContent>
       </Card>
 
       {/* Lista de Admins */}
-      <Card className="animate-fade-in-up">
+      <Card className="animate-fade-in-up dark:bg-zinc-800 dark:border-zinc-700">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-purple-600" />
+          <CardTitle className="flex items-center gap-2 dark:text-zinc-100">
+            <Users className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             Administradores Ativos ({admins.length})
           </CardTitle>
         </CardHeader>
@@ -146,33 +146,33 @@ export default function ManageAdmins() {
             {admins.map((admin, index) => (
               <div 
                 key={admin.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="flex items-center justify-between p-4 border dark:border-zinc-700 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-primary dark:bg-blue-600 rounded-full flex items-center justify-center">
                     <Crown className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">{admin.name}</h3>
-                    <p className="text-sm text-zinc-500">{admin.email}</p>
+                    <h3 className="font-semibold dark:text-zinc-100">{admin.name}</h3>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">{admin.email}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <Badge 
                         variant={admin.role === 'admin' ? 'default' : 'secondary'}
-                        className="text-xs"
+                        className="text-xs dark:border-zinc-600"
                       >
                         {admin.role === 'admin' ? '🛡️ Admin' : '⚡ Auxiliar'}
                       </Badge>
                       <Badge 
                         variant={admin.status === 'active' ? 'default' : 'outline'}
-                        className="text-xs"
+                        className="text-xs dark:border-zinc-600"
                       >
                         {admin.status === 'active' ? '✅ Ativo' : '⏳ Pendente'}
                       </Badge>
                       {isMainOwner(admin.id) && (
                         <Badge 
                           variant="destructive"
-                          className="text-xs bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                          className="text-xs bg-gradient-to-r from-purple-600 to-blue-600 text-white dark:from-purple-700 dark:to-blue-700"
                         >
                           👑 Owner Principal
                         </Badge>
@@ -182,7 +182,7 @@ export default function ManageAdmins() {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-zinc-400">
+                  <span className="text-xs text-zinc-400 dark:text-zinc-500">
                     Adicionado em {new Date(admin.addedDate).toLocaleDateString('pt-BR')}
                   </span>
                   <Button
@@ -192,8 +192,8 @@ export default function ManageAdmins() {
                     disabled={loading || !canDeleteUser(admin.id, user?.id)}
                     className={
                       !canDeleteUser(admin.id, user?.id) 
-                        ? "text-gray-400 cursor-not-allowed" 
-                        : "text-red-600 hover:bg-red-50 hover:border-red-200"
+                        ? "text-gray-400 cursor-not-allowed dark:text-zinc-600 dark:border-zinc-700" 
+                        : "text-red-600 hover:bg-red-50 hover:border-red-200 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:border-red-800 dark:border-zinc-600"
                     }
                     title={
                       !canDeleteUser(admin.id, user?.id) 
