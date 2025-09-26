@@ -316,11 +316,23 @@ export default function OwnerDashboard() {
           avatar_url: player.avatar_url || '',
           custom_avatar: player.custom_avatar || '',
           created_at: player.created_at || new Date(),
-          status: 'active' // Assumindo todos como ativos
+          status: 'active', // Assumindo todos como ativos
+          stars: player.stars || 5
         }));
 
-      setOfflinePlayers(filteredPlayers);
-      setShowOfflineSyncNotice(filteredPlayers.length > 0);
+      // REMOVER DUPLICATAS por id para evitar problemas de duplicação na exclusão
+      const uniquePlayers = [];
+      const seenIds = new Set();
+      
+      for (const player of filteredPlayers) {
+        if (!seenIds.has(player.id)) {
+          seenIds.add(player.id);
+          uniquePlayers.push(player);
+        }
+      }
+
+      setOfflinePlayers(uniquePlayers);
+      setShowOfflineSyncNotice(uniquePlayers.length > 0);
     } catch (error) {
       console.error('Erro ao carregar jogadores offline:', error);
     } finally {
@@ -403,7 +415,7 @@ export default function OwnerDashboard() {
     
     setShowAddPlayerModal(false);
     alert(`Jogador ${newPlayer.name} adicionado com sucesso!`);
-    loadOfflinePlayers();
+    // loadOfflinePlayers(); Removido - atualização state local já foi feito
   };
 
   // Função para abrir modal de edição de jogador
@@ -463,7 +475,7 @@ export default function OwnerDashboard() {
     });
     
     alert(`Jogador ${playerForm.name} atualizado com sucesso!`);
-    loadOfflinePlayers();
+    // loadOfflinePlayers(); Removido para evitar problemas de carregamento
   };
 
   // Função para abrir modal de exclusão
@@ -486,7 +498,7 @@ export default function OwnerDashboard() {
     setPlayerToDelete(null);
     
     alert(`Jogador ${playerToDelete.name} excluído com sucesso!`);
-    loadOfflinePlayers();
+    // Removida a chamada desnecessária loadOfflinePlayers() que causava problemas
   };
 
   // useEffect para carregar jogadores ao iniciar
