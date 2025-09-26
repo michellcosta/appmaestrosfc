@@ -67,7 +67,7 @@ export default function PerfilPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Estados para informações do jogador
-  const [playerPosition, setPlayerPosition] = useState('Meia-Armador');
+  const [playerPosition, setPlayerPosition] = useState('Meia');
   const [shirtSize, setShirtSize] = useState('G');
   const [isEditingInfo, setIsEditingInfo] = useState(false);
 
@@ -357,64 +357,72 @@ export default function PerfilPage() {
               </div>
 
               {/* Informações do jogador */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+              <div className="bg-zinc-50 dark:bg-zinc-800 rounded-xl p-4 mt-4 border border-zinc-200 dark:border-zinc-700">
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-4 flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Informações do Jogador
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Posição do jogador */}
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                    <Target className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                    <Target className="w-5 h-5 text-green-600 dark:text-green-400" />
                   </div>
                   <div className="text-left flex-1">
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Posição</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">Posição</p>
                     {isEditingInfo ? (
                       <select 
                         value={playerPosition}
                         onChange={(e) => setPlayerPosition(e.target.value)}
-                        className="text-sm font-medium text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded px-2 py-1"
+                        className="text-sm font-medium text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg px-3 py-2 w-full"
                       >
                         <option value="Goleiro">Goleiro</option>
                         <option value="Zagueiro">Zagueiro</option>
-                        <option value="Meia-Armador">Meia-Armador</option>
+                        <option value="Meia">Meia</option>
                         <option value="Atacante">Atacante</option>
                       </select>
                     ) : (
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{playerPosition}</p>
+                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{playerPosition}</p>
                     )}
                   </div>
                 </div>
 
                 {/* Tamanho da camisa */}
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                    <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                    <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div className="text-left flex-1">
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Tamanho</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">Tamanho</p>
                     {isEditingInfo ? (
                       <select 
                         value={shirtSize}
                         onChange={(e) => setShirtSize(e.target.value)}
-                        className="text-sm font-medium text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded px-2 py-1"
+                        className="text-sm font-medium text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg px-3 py-2 w-full"
                       >
                         <option value="G">G</option>
                         <option value="GG">GG</option>
-                        <option value="GGG">GGG</option>
-                        <option value="GGGG">GGGG</option>
                       </select>
                     ) : (
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{shirtSize}</p>
+                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{shirtSize}</p>
                     )}
                   </div>
+                </div>
                 </div>
               </div>
 
               {/* Botão editar info do jogador */}
-              <div className="flex justify-end mt-2">
+              <div className="flex justify-end mt-4">
                 <button
                   onClick={() => setIsEditingInfo(!isEditingInfo)}
-                  className="flex items-center gap-1 px-3 py-1 text-xs bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors"
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                    isEditingInfo 
+                      ? 'bg-green-600 hover:bg-green-700 text-white shadow-md' 
+                      : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-300'
+                  }`}
                 >
                   {isEditingInfo ? 'Salvar' : 'Editar'}
-                  <Edit className="w-3 h-3" />
+                  <Edit className="w-4 h-4" />
                 </button>
               </div>
               
