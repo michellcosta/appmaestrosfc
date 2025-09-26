@@ -102,6 +102,47 @@ export default function Login() {
     }, 2000);
   };
 
+  // Função para login offline como usuário de teste
+  const handleOfflineLogin = (role: 'owner' | 'admin') => {
+    setLoading(true);
+    setMessage(`🔄 Entrando como ${role} teste...`);
+    
+    try {
+      // Limpar dados de teste antigos primeiro
+      localStorage.removeItem('offline_user');
+      localStorage.removeItem('user_data');
+      
+      // Criar usuário de teste baseado no role
+      const testUser = {
+        id: role === 'owner' ? 'owner-test-' + Date.now() : 'admin-test-' + Date.now(),
+        email: role === 'owner' ? 'owner@maestros.com' : 'admin@maestros.com',
+        name: role === 'owner' ? 'Owner Teste' : 'Admin Teste',
+        role: role,
+        group_id: `group_${Date.now()}`
+      };
+      
+      // Salvar no localStorage para auth system
+      localStorage.setItem('offline_user', JSON.stringify(testUser));
+      
+      console.log(`✅ Usuário de teste ${role} criado:`, testUser);
+      setMessage(`✅ Conectado como ${testUser.name}!`);
+      
+      // Redirecionar depois de um pequeno delay para mostrar feedback
+      setTimeout(() => {
+        setMessage('');
+        navigate('/home');
+      }, 1000);
+      
+    } catch (error) {
+      console.error('❌ Erro no login offline:', error);
+      setMessage(`❌ Erro ao fazer login offline: ${error}`);
+    } finally {
+      setTimeout(() => {
+        setLoading(false);
+      }, 1500);
+    }
+  };
+
   // Debug - timeout seguro para evitar crash
   React.useEffect(() => {
     console.log('🔍 Login component mounted');
@@ -204,6 +245,35 @@ export default function Login() {
                 }`}>{message}</p>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Modo Offline Section */}
+        <div className="mt-6 space-y-3">
+          <div className="text-center">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+              Ou faça login offline para testes
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <button 
+              onClick={() => handleOfflineLogin('owner')}
+              disabled={loading}
+              className="w-full py-3 px-4 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 rounded-lg text-white font-medium text-sm transition-colors duration-200 text-center flex items-center justify-center gap-2"
+            >
+              <Shield className="w-4 h-4 text-yellow-400" />
+              Entrar como Owner Teste (Offline)
+            </button>
+            
+            <button 
+              onClick={() => handleOfflineLogin('admin')}
+              disabled={loading}
+              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-lg text-white font-medium text-sm transition-colors duration-200 text-center flex items-center justify-center gap-2"
+            >
+              <Shield className="w-4 h-4 text-blue-200" />
+              Entrar como Admin Teste (Offline)
+            </button>
           </div>
         </div>
 
