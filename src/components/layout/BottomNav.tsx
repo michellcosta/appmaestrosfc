@@ -9,8 +9,13 @@ export default function BottomNav() {
   const { user } = useAuth();
   const { isDark } = useTheme();
 
+  // Não mostrar o BottomNav na página de login
+  if (pathname === '/' || pathname === '/login') {
+    return null;
+  }
+
   const menuItems = [
-    { href: '/', label: 'Jogos', icon: Home },
+    { href: '/home', label: 'Jogos', icon: Home },
     { href: '/match', label: 'Partida', icon: Trophy },
     { href: '/finance', label: 'Financeiro', icon: DollarSign },
     { href: '/ranking', label: 'Ranking', icon: BarChart3 },

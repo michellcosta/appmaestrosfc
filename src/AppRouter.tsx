@@ -32,6 +32,7 @@ const CreateOwnerWithGoogle = React.lazy(() => import('@/pages/CreateOwnerWithGo
 const CheckTables = React.lazy(() => import('@/pages/CheckTables'));
 const DebugAuth = React.lazy(() => import('@/pages/DebugAuth'));
 const SimpleAuth = React.lazy(() => import('@/pages/SimpleAuth'));
+const Login = React.lazy(() => import('@/pages/Login'));
 const OfflineAuth = React.lazy(() => import('@/pages/OfflineAuth'));
 const TestGoogleAuth = React.lazy(() => import('@/pages/TestGoogleAuth'));
 const TestGoogleOAuth = React.lazy(() => import('@/pages/TestGoogleOAuth'));
@@ -63,7 +64,9 @@ export default function AppRouter() {
           <div className="mx-auto w-full max-w-4xl pb-20 pt-4">
             <Suspense fallback={<PageLoader />}>
               <Routes>
-                <Route path="/" element={<HomePage />} />
+                <Route path="/" element={<Login />} />
+                <Route path="/home" element={<HomePage />} />
+                <Route path="/fetch" element={<HomePage />} />
                 <Route path="/match" element={<Match />} />
                 <Route path="/finance" element={<FinancePage />} />
                 <Route path="/vote" element={<Navigate to="/ranking" replace />} />
@@ -78,6 +81,7 @@ export default function AppRouter() {
                 <Route path="/check-tables" element={<CheckTables />} />
                 <Route path="/debug-auth" element={<DebugAuth />} />
                 <Route path="/simple-auth" element={<SimpleAuth />} />
+                <Route path="/login" element={<Login />} />
                 <Route path="/offline-auth" element={<OfflineAuth />} />
                 <Route path="/test-google-auth" element={<TestGoogleAuth />} />
                 <Route path="/test-google-oauth" element={<TestGoogleOAuth />} />

@@ -134,17 +134,12 @@ export default function DebugAuth() {
           <CardContent>
             <Button 
               onClick={async () => {
-                // Verificar se é o owner principal
-                if (user?.id && isMainOwner(user.id)) {
-                  alert(PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER);
-                  return;
-                }
                 await signOut();
+                window.location.href = '/login';
               }} 
               variant="destructive" 
-              className={`w-full ${user?.id && isMainOwner(user.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
-              disabled={user?.id ? isMainOwner(user.id) : false}
-              title={user?.id && isMainOwner(user.id) ? PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER : 'Sair da conta'}
+              className="w-full"
+              title="Sair da conta"
             >
               Sair da Conta
             </Button>

@@ -675,24 +675,22 @@ export default function OwnerDashboard() {
             variant="destructive" 
             size="sm"
             onClick={async () => {
-              // Verificar se é o owner principal
-              if (user?.id && isMainOwner(user.id)) {
-                alert(PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER);
-                return;
-              }
-              
+              // Permitir logout sempre
               try {
                 await signOut();
+                localStorage.clear();
+                sessionStorage.clear();
                 alert('Logout realizado com sucesso!');
-                window.location.href = '/';
+                window.location.href = '/login';
               } catch (error) {
                 console.error('Erro ao fazer logout:', error);
-                alert('Erro ao fazer logout');
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = '/login';
               }
             }}
-            disabled={user?.id ? isMainOwner(user.id) : false}
-            className={`${user?.id && isMainOwner(user.id) ? 'opacity-50 cursor-not-allowed' : ''} dark:bg-red-600 dark:hover:bg-red-700`}
-            title={user?.id && isMainOwner(user.id) ? PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER : 'Sair da conta'}
+            className="dark:bg-red-600 dark:hover:bg-red-700"
+            title="Sair da conta"
           >
             <LogOut className='w-4 h-4 mr-2' />
             Sair

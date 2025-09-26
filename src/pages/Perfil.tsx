@@ -267,24 +267,24 @@ export default function PerfilPage() {
   };
 
   const handleSignOut = async () => {
-    if (user?.id && isMainOwner(user.id)) {
-      alert(PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER);
-      return;
-    }
-
+    // Permitir logout sempre (remover proteção bloqueante para sair da conta)
     try {
       console.log('🔍 Iniciando logout do usuário...');
       
       // Realizar logout completo
       await signOut();
       
-      // Redirecionar para home (será exibido login)
-      navigate('/');
+      // Redirecionar para página de login
+      navigate('/login');
       
       console.log('✅ Logout e redirecionamento completos');
     } catch (error) {
       console.error('❌ Erro ao fazer logout:', error);
-      alert('Erro ao fazer logout. Tente novamente.');
+      // Force logout se errooccurrer - usar redirect completo
+      localStorage.removeItem('offline_user');
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/login';
     }
   };
 
@@ -759,13 +759,8 @@ export default function PerfilPage() {
         <Button 
           variant="destructive"
           onClick={handleSignOut}
-          disabled={user?.id ? isMainOwner(user.id) : false}
-          className={
-            user?.id && isMainOwner(user.id)
-              ? 'w-full flex items-center justify-center opacity-50 cursor-not-allowed'
-              : 'w-full flex items-center justify-center'
-          }
-          title={user?.id && isMainOwner(user.id) ? PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER : 'Sair da conta'}
+          className="w-full flex items-center justify-center"
+          title="Sair da conta"
         >
           <LogOut className='w-4 h-4 mr-2' />
           Sair da Conta

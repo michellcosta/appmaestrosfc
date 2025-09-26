@@ -73,15 +73,13 @@ export default function OfflineAuth() {
   };
 
   const handleLogout = async () => {
-    // Verificar se é o owner principal
-    if (user?.id && isMainOwner(user.id)) {
-      setMessage(PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER);
-      return;
-    }
-    
+    // Permitir logout sempre
     try {
       await signOut();
       setMessage('Logout realizado!');
+      setTimeout(() => {
+        navigate('/login');
+      }, 1000);
     } catch (error) {
       setMessage(`Erro: ${error}`);
     }
@@ -124,15 +122,13 @@ export default function OfflineAuth() {
             </div>
             
             <div className='flex gap-2'>
-              <Button onClick={() => navigate('/')} className='flex-1'>
+              <Button onClick={() => navigate('/home')} className='flex-1'>
                 Ir para Dashboard
               </Button>
               <Button 
                 onClick={handleLogout} 
                 variant="outline"
-                disabled={user?.id ? isMainOwner(user.id) : false}
-                className={user?.id && isMainOwner(user.id) ? 'opacity-50 cursor-not-allowed' : ''}
-                title={user?.id && isMainOwner(user.id) ? PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER : 'Sair da conta'}
+                title="Sair da conta"
               >
                 Logout
               </Button>

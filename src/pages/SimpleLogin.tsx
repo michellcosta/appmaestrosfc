@@ -100,17 +100,12 @@ export default function SimpleLogin() {
   };
 
   const handleLogout = async () => {
-    // Verificar se é o owner principal
-    if (user?.id && isMainOwner(user.id)) {
-      showMessage(PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER, 'error');
-      return;
-    }
-    
+    // Permitir logout sempre
     try {
       await signOut();
       showMessage('Logout realizado com sucesso!', 'success');
       setTimeout(() => {
-        window.location.reload();
+        window.location.href = '/login';
       }, 1500);
     } catch (error) {
       console.error('Erro no logout:', error);
@@ -163,13 +158,8 @@ export default function SimpleLogin() {
 
             <Button 
               onClick={handleLogout}
-              disabled={user?.id ? isMainOwner(user.id) : false}
-              className={`w-full h-14 rounded-2xl border-2 font-medium text-base transition-all duration-200 active:scale-95 ${
-                user?.id && isMainOwner(user.id) 
-                  ? 'bg-gray-600 border-gray-500 text-gray-400 cursor-not-allowed opacity-50' 
-                  : 'bg-gray-700 hover:bg-red-600 border-gray-600 hover:border-red-500 text-white hover:text-white'
-              }`}
-              title={user?.id && isMainOwner(user.id) ? PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER : 'Sair da conta'}
+              className="w-full h-14 rounded-2xl border-2 font-medium text-base transition-all duration-200 active:scale-95 bg-gray-700 hover:bg-red-600 border-gray-600 hover:border-red-500 text-white hover:text-white"
+              title="Sair da conta"
             >
               Sair da Conta
             </Button>

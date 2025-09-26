@@ -299,8 +299,12 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
         console.log('⚠️ Supabase logout falhou (continuando com logout local)');
       }
       
-      // Limpar dados locais
+      // Limpar dados locais - mais fileira gatilo
       localStorage.removeItem('offline_user');
+      localStorage.removeItem('user_data');
+      localStorage.removeItem('player_data');
+      // Limpar qualquer session data
+      sessionStorage.clear();
       setUser(null);
       
       console.log('✅ Logout completo realizado');

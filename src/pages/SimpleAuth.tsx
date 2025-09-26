@@ -50,7 +50,7 @@ export default function SimpleAuth() {
         setMessage(`Erro: ${error.message}`);
       } else {
         setMessage('Login realizado com sucesso!');
-        navigate('/');
+        navigate('/home');
       }
     } catch (error) {
       setMessage(`Erro: ${error}`);
