@@ -415,6 +415,7 @@ export default function PerfilPage() {
                     )}
                   </div>
                 </div>
+                </div>
               </div>
 
               {/* Botão editar info do jogador */}
