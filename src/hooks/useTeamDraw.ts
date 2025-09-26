@@ -17,7 +17,7 @@ export interface UseTeamDrawReturn {
   
   // Ações
   loadTeamDraw: (matchId: string) => Promise<void>
-  drawTeams: (matchId: string, playersPerTeam?: 6 | 7) => Promise<void>
+  drawTeams: (matchId: string, playersPerTeam?: 5 | 6) => Promise<void>
   refreshTeamDraw: () => Promise<void>
   
   // Substituições
@@ -83,7 +83,7 @@ export const useTeamDraw = (matchId?: string): UseTeamDrawReturn => {
   }
 
   // Sortear times
-  const drawTeams = async (targetMatchId: string, playersPerTeam: 6 | 7 = 6) => {
+  const drawTeams = async (targetMatchId: string, playersPerTeam: 5 | 6 = 5) => {
     try {
       // Usar implementação local para desenvolvimento
       await storeDrawTeams(targetMatchId, playersPerTeam)

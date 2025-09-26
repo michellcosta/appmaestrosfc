@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Trash2, Trophy, Crown, Shield, Star, Zap, User } from "lucide-react";
+import { Pencil, Trash2, Trophy, Crown, Shield, Star, Zap, User, RotateCcw, Database, History, AlertTriangle, Sparkles, Zap as ZapIcon, FileText, Download, Calendar } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useMatchStore, GoalEvent, TeamColor } from "@/store/matchStore";
 import { usePlayersStore } from "@/store/playersStore";
+import { usePlayerStatsStore } from "@/store/playerStatsStore";
+import { useGamesStore } from "@/store/gamesStore";
 import { useAuth } from '@/auth/OfflineAuthProvider';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -63,7 +65,7 @@ const defaultTeamPlayers: Record<TeamColor, string[]> = {
 };
 
 const Match: React.FC = () => {
-  const {
+  const { 
     round,
     durationMin,
     events,
@@ -76,6 +78,11 @@ const Match: React.FC = () => {
     editGoal,
     deleteGoal,
     endRoundChooseNext,
+    clearHistory,
+    clearEvents,
+    clearAll,
+    resetToInitialState,
+    recomputeScores,
   } = useMatchStore();
   const { 
     players, 
@@ -88,6 +95,14 @@ const Match: React.FC = () => {
     getPlayerByName,
     loadExampleData
   } = usePlayersStore();
+  const { 
+    stats: persistentStats, 
+    addGoal: addPersistentGoal, 
+    addAssist: addPersistentAssist,
+    resetStats,
+    shouldResetStats
+  } = usePlayerStatsStore();
+  const { getUpcomingMatches } = useGamesStore();
   const { canControlMatch } = usePermissions();
 
   // Função para obter times disponíveis
@@ -196,14 +211,124 @@ const Match: React.FC = () => {
     loadTeamData();
   }, [loadPlayersFromTeamDraw]);
 
+  // Verificar se precisa resetar estatísticas quando chegar próxima partida
+  useEffect(() => {
+    const upcomingMatches = getUpcomingMatches();
+    if (upcomingMatches.length > 0) {
+      const nextMatchDate = upcomingMatches[0].date;
+      if (shouldResetStats(nextMatchDate)) {
+        console.log('🔄 Nova partida detectada! Resetando estatísticas dos jogadores...');
+        resetStats(nextMatchDate);
+      }
+    }
+  }, [getUpcomingMatches, shouldResetStats, resetStats]);
+
   const [endOpen, setEndOpen] = useState(false);
-  const [nextTeamChoice, setNextTeamChoice] = useState<TeamColor | "_auto">("_auto");
+  const [nextTeamChoice, setNextTeamChoice] = useState<TeamColor>("Preto");
 
   /* Modal de Substituições */
   const [substitutionOpen, setSubstitutionOpen] = useState(false);
   const [substitutionTeam, setSubstitutionTeam] = useState<TeamColor>("Preto");
   const [playerOut, setPlayerOut] = useState<string>("");
   const [playerIn, setPlayerIn] = useState<string>("");
+
+  /* Modal de Gols da Rodada */
+  const [roundGoalsOpen, setRoundGoalsOpen] = useState(false);
+  const [selectedRoundHistory, setSelectedRoundHistory] = useState<typeof historySafe[0] | null>(null);
+
+  /* Estados para animação de empate */
+  const [tieAnimationOpen, setTieAnimationOpen] = useState(false);
+  const [tieWinner, setTieWinner] = useState<TeamColor | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [savedTieWinner, setSavedTieWinner] = useState<TeamColor | null>(null);
+  const [tieTimeout, setTieTimeout] = useState<number | null>(null);
+
+  // Cleanup de estados de empate quando componente desmonta
+  useEffect(() => {
+    return () => {
+      if (tieTimeout) {
+        clearTimeout(tieTimeout);
+      }
+    };
+  }, [tieTimeout]);
+
+  /* Função para limpar estados de empate */
+  const clearTieStates = () => {
+    if (tieTimeout) {
+      clearTimeout(tieTimeout);
+      setTieTimeout(null);
+    }
+    setTieAnimationOpen(false);
+    setTieWinner(null);
+    setIsAnimating(false);
+    setSavedTieWinner(null);
+  };
+
+  /* Função para determinar vencedor em empate com animação */
+  const determineTieWinner = (leftTeam: TeamColor, rightTeam: TeamColor) => {
+    // Validar times
+    const validTeams: TeamColor[] = ['Preto', 'Verde', 'Cinza', 'Vermelho'];
+    if (!validTeams.includes(leftTeam) || !validTeams.includes(rightTeam)) {
+      console.error('❌ Times inválidos para empate:', leftTeam, rightTeam);
+      return;
+    }
+
+    // Limpar estados anteriores
+    clearTieStates();
+    
+    setIsAnimating(true);
+    setTieAnimationOpen(true);
+    
+    // Animação de 3 segundos com as cores dos times
+    const timeout = setTimeout(() => {
+      // Sorteio justo entre os dois times
+      const winner = Math.random() > 0.5 ? leftTeam : rightTeam;
+      setTieWinner(winner);
+      setIsAnimating(false);
+      setTieTimeout(null);
+    }, 3000);
+    
+    setTieTimeout(timeout);
+  };
+
+  /* Função para confirmar vencedor do empate */
+  const confirmTieWinner = () => {
+    if (!tieWinner) {
+      console.error('❌ Nenhum vencedor de empate para confirmar');
+      return;
+    }
+
+    try {
+      // Salvar o vencedor do empate para usar no modal de encerrar rodada
+      setSavedTieWinner(tieWinner);
+      
+      console.log('🏆 Empate - Vencedor salvo:', tieWinner);
+      
+      // Fechar modal de empate e abrir modal de encerrar rodada
+      setTieAnimationOpen(false);
+      setTieWinner(null);
+      setIsAnimating(false);
+      
+      // Abrir modal de encerrar rodada para escolher próximo adversário
+      setEndOpen(true);
+    } catch (error) {
+      console.error('❌ Erro ao confirmar vencedor do empate:', error);
+      clearTieStates();
+    }
+  };
+
+  /* Função para fechar modal de empate de forma controlada */
+  const handleTieModalClose = (open: boolean) => {
+    if (!open) {
+      if (isAnimating) {
+        // Se estiver animando, não permite fechar
+        setTieAnimationOpen(true);
+        return;
+      }
+      // Limpar todos os estados de empate
+      clearTieStates();
+    }
+  };
 
   /* Helpers */
   const playerOptions = (team: TeamColor) => {
@@ -250,6 +375,11 @@ const Match: React.FC = () => {
     if (!goalOpen) return;
     if (goalAssist !== "none" && goalAssist === goalAuthor) setGoalAssist("none");
   }, [goalAuthor, goalAssist, goalOpen]);
+
+  // Recomputar scores quando a página carregar
+  useEffect(() => {
+    recomputeScores();
+  }, [recomputeScores]);
 
   const saveGoal = () => {
     if (!goalAuthor) {
@@ -315,6 +445,12 @@ const Match: React.FC = () => {
         editGoal(goalEditId, { author: goalAuthor, assist: assistVal ?? null });
       } else {
         addGoal({ team: goalTeam, author: goalAuthor, assist: assistVal ?? null });
+        
+        // Salvar estatísticas persistentes
+        addPersistentGoal(goalAuthor);
+        if (assistVal) {
+          addPersistentAssist(assistVal);
+        }
       }
       setGoalOpen(false);
       setGoalEditId(null);
@@ -345,23 +481,48 @@ const Match: React.FC = () => {
     (t) => t !== left && t !== right
   );
 
-  // estatísticas sessão
+  // estatísticas persistentes (acumulam gols de todas as partidas)
   const stats = useMemo(() => {
-    const table: Record<string, { g: number; a: number }> = {};
+    // Combinar estatísticas persistentes com gols da sessão atual
+    const sessionStats: Record<string, { g: number; a: number }> = {};
+    
+    // Contar gols da sessão atual
     for (const e of eventsSafe) {
       if (e.author) {
-        table[e.author] = table[e.author] || { g: 0, a: 0 };
-        table[e.author].g += 1;
+        sessionStats[e.author] = sessionStats[e.author] || { g: 0, a: 0 };
+        sessionStats[e.author].g += 1;
       }
       if (e.assist) {
-        table[e.assist] = table[e.assist] || { g: 0, a: 0 };
-        table[e.assist].a += 1;
+        sessionStats[e.assist] = sessionStats[e.assist] || { g: 0, a: 0 };
+        sessionStats[e.assist].a += 1;
       }
     }
-    return Object.entries(table)
+
+    // Combinar com estatísticas persistentes
+    const combinedStats: Record<string, { g: number; a: number }> = {};
+    
+    // Adicionar estatísticas persistentes
+    persistentStats.forEach(player => {
+      combinedStats[player.name] = {
+        g: player.goals,
+        a: player.assists
+      };
+    });
+
+    // Adicionar gols da sessão atual
+    Object.entries(sessionStats).forEach(([name, stats]) => {
+      if (combinedStats[name]) {
+        combinedStats[name].g += stats.g;
+        combinedStats[name].a += stats.a;
+      } else {
+        combinedStats[name] = stats;
+      }
+    });
+
+    return Object.entries(combinedStats)
       .map(([name, ga]) => ({ name, g: ga.g, a: ga.a }))
       .sort((a, b) => b.g - a.g || b.a - a.a || a.name.localeCompare(b.name));
-  }, [eventsSafe]);
+  }, [eventsSafe, persistentStats]);
 
   // filtro histórico
   const [historyFilter, setHistoryFilter] = useState<FilterRange>("week");
@@ -393,14 +554,94 @@ const Match: React.FC = () => {
   };
 
   const openEnd = () => {
-    setNextTeamChoice("_auto");
+    // Verificar se é empate antes de abrir modal
+    const [leftTeam, rightTeam] = round.inPlay;
+    const leftScore = round.scores[leftTeam] ?? 0;
+    const rightScore = round.scores[rightTeam] ?? 0;
+    
+    if (leftScore === rightScore) {
+      // É empate! Mostrar animação
+      console.log('⚽ Empate detectado em openEnd! Iniciando animação...');
+      determineTieWinner(leftTeam, rightTeam);
+      return; // Não abrir modal de encerrar
+    }
+    
+    // Lógica para selecionar o próximo time automaticamente
+    const allTeams: TeamColor[] = ['Preto', 'Verde', 'Cinza', 'Vermelho'];
+    
+    // Se Cinza não está jogando, selecionar Cinza
+    if (leftTeam !== 'Cinza' && rightTeam !== 'Cinza') {
+      setNextTeamChoice('Cinza');
+    } else {
+      // Se Cinza está jogando, selecionar um dos times de fora
+      const availableTeams = allTeams.filter(team => team !== leftTeam && team !== rightTeam);
+      setNextTeamChoice(availableTeams[0] || 'Preto'); // Fallback para Preto se algo der errado
+    }
+    
     setEndOpen(true);
   };
 
   const confirmEnd = () => {
-    const choice = nextTeamChoice === "_auto" ? null : nextTeamChoice;
-    endRoundChooseNext(choice as TeamColor | null);
+    try {
+      // Se há um vencedor de empate salvo, usar ele
+      if (savedTieWinner) {
+        console.log('🏆 Usando vencedor de empate salvo:', savedTieWinner);
+        console.log('⚽ Próximo adversário escolhido:', nextTeamChoice);
+        
+        // Validar próximo adversário
+        const validTeams: TeamColor[] = ['Preto', 'Verde', 'Cinza', 'Vermelho'];
+        if (!validTeams.includes(nextTeamChoice as TeamColor)) {
+          console.error('❌ Próximo adversário inválido:', nextTeamChoice);
+          return;
+        }
+        
+        // Usar o vencedor do empate e o adversário escolhido pelo usuário
+        const { round, events } = useMatchStore.getState();
+        const [left, right] = round.inPlay;
+        const l = round.scores[left] ?? 0;
+        const r = round.scores[right] ?? 0;
+        
+        const historyItem = {
+          round: round.number, 
+          left, 
+          right, 
+          leftScore: l, 
+          rightScore: r, 
+          winner: savedTieWinner, 
+          ts: Date.now(),
+          goals: [...events]
+        };
+        
+        // O vencedor fica, o próximo adversário é o escolhido pelo usuário
+        const stay = savedTieWinner;
+        const next = nextTeamChoice as TeamColor;
+        
+        // Atualizar o estado
+        useMatchStore.setState({
+          history: [...useMatchStore.getState().history, historyItem],
+          round: {
+            number: round.number + 1,
+            inPlay: [stay, next],
+            scores: { Preto:0, Verde:0, Cinza:0, Vermelho:0 },
+            running: false,
+          },
+          events: [],
+          accumulatedSec: 0,
+          runningSince: null,
+        });
+        
+        console.log('✅ Rodada finalizada - Vencedor:', stay, 'Próximo:', next);
     setEndOpen(false);
+        setSavedTieWinner(null); // Limpar o vencedor salvo
+      } else {
+        // Não é empate, finalizar normalmente com o time selecionado
+        endRoundChooseNext(nextTeamChoice as TeamColor);
+        setEndOpen(false);
+      }
+    } catch (error) {
+      console.error('❌ Erro ao finalizar rodada:', error);
+      setEndOpen(false);
+    }
   };
 
   /* Funções de Substituição */
@@ -444,8 +685,14 @@ const Match: React.FC = () => {
     };
   };
 
+  /* Função para abrir modal de gols da rodada */
+  const openRoundGoalsModal = (historyItem: typeof historySafe[0]) => {
+    setSelectedRoundHistory(historyItem);
+    setRoundGoalsOpen(true);
+  };
+
   // esconder barra quando qualquer modal aberto
-  const anyModalOpen = goalOpen || confirmOpen || endOpen || substitutionOpen;
+  const anyModalOpen = goalOpen || confirmOpen || endOpen || substitutionOpen || roundGoalsOpen;
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-5 pb-[120px] sm:pb-5">
@@ -671,10 +918,10 @@ const Match: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Gols recentes */}
+      {/* Gols da partida */}
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
         <CardContent className="p-4 sm:p-5">
-          <h3 className="text-sm font-semibold mb-2">Gols recentes</h3>
+          <h3 className="text-sm font-semibold mb-2">Gols da partida</h3>
           {eventsSafe.length === 0 ? (
             <p className="text-sm text-zinc-500">Nenhum gol registrado ainda.</p>
           ) : (
@@ -754,32 +1001,90 @@ const Match: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Estatísticas */}
+      {/* Estatísticas dos Jogadores - Melhorada */}
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
         <CardContent className="p-4 sm:p-5">
-          <h3 className="text-sm font-semibold mb-2">Estatísticas dos jogadores</h3>
-          {eventsSafe.length === 0 ? (
-            <p className="text-sm text-zinc-500">Sem registros ainda.</p>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-maestros-green" />
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Estatísticas dos Jogadores</h3>
+            </div>
+            <div className="text-xs text-zinc-500 dark:text-zinc-400">
+              {eventsSafe.length} {eventsSafe.length === 1 ? 'gol' : 'gols'} nesta partida
+            </div>
+          </div>
+          
+          {stats.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-12 h-12 mx-auto mb-3 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center">
+                <Trophy className="w-6 h-6 text-zinc-400" />
+              </div>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Nenhum gol registrado ainda</p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">Os gols aparecerão aqui conforme forem marcados</p>
+            </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-zinc-500">
-                  <tr>
-                    <th className="text-left py-1">Jogador</th>
-                    <th className="text-right py-1">G</th>
-                    <th className="text-right py-1">A</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.map((row) => (
-                    <tr key={row.name} className="border-t">
-                      <td className="py-1">{row.name}</td>
-                      <td className="py-1 text-right">{row.g}</td>
-                      <td className="py-1 text-right">{row.a}</td>
-                    </tr>
+            <div className="space-y-3">
+              {/* Top 3 Jogadores */}
+              {stats.slice(0, 3).map((player, index) => (
+                <div key={player.name} className="flex items-center justify-between p-3 bg-gradient-to-r from-zinc-50 to-zinc-100 dark:from-zinc-800/50 dark:to-zinc-700/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                      index === 0 ? 'bg-yellow-500' : 
+                      index === 1 ? 'bg-gray-400' : 
+                      'bg-amber-600'
+                    }`}>
+                      {index + 1}
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm text-zinc-900 dark:text-zinc-100">{player.name}</div>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                        {player.g + player.a} participações • {player.g}G {player.a}A
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{player.g}</div>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400">Gols</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{player.a}</div>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400">Assist.</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {/* Demais Jogadores */}
+              {stats.length > 3 && (
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">Outros jogadores</div>
+                  {stats.slice(3).map((player) => (
+                    <div key={player.name} className="flex items-center justify-between p-2 bg-zinc-50 dark:bg-zinc-800/30 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center">
+                          <User className="w-3 h-3 text-zinc-500" />
+                        </div>
+                        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{player.name}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">{player.g}G</span>
+                        <span className="text-blue-600 dark:text-blue-400 font-medium">{player.a}A</span>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Informação sobre as estatísticas persistentes */}
+          {stats.length > 0 && (
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300">
+                <Trophy className="w-3 h-3" />
+                <span>As estatísticas são persistentes e só zeram na próxima partida agendada ou ao usar "Reset Total"</span>
+              </div>
             </div>
           )}
         </CardContent>
@@ -814,39 +1119,154 @@ const Match: React.FC = () => {
       {/* Histórico de Partidas */}
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800">
         <CardContent className="p-5 sm:p-7">
-          <h3 className="text-base sm:text-lg font-semibold mb-3">Histórico de Partidas</h3>
+          <h3 className="text-base sm:text-lg font-semibold mb-4">Histórico de Partidas</h3>
+          
+          {/* Estatísticas Resumo */}
+          {filteredHistory.length > 0 && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-zinc-50 to-zinc-100 dark:from-zinc-800/30 dark:to-zinc-700/30 rounded-lg border border-zinc-200/50 dark:border-zinc-700/50">
+              <h4 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">Estatísticas do Período</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {(['Preto', 'Verde', 'Cinza', 'Vermelho'] as TeamColor[]).map(team => {
+                  const teamStats = filteredHistory.reduce((acc, h) => {
+                    const isParticipant = h.left === team || h.right === team;
+                    if (!isParticipant) return acc;
+                    
+                    const isWinner = h.winner === team;
+                    const isDraw = h.winner === 'Empate';
+                    
+                    return {
+                      games: acc.games + 1,
+                      wins: acc.wins + (isWinner ? 1 : 0),
+                      draws: acc.draws + (isDraw ? 1 : 0),
+                      losses: acc.losses + (!isWinner && !isDraw ? 1 : 0),
+                      goalsFor: acc.goalsFor + (h.left === team ? h.leftScore : h.rightScore),
+                      goalsAgainst: acc.goalsAgainst + (h.left === team ? h.rightScore : h.leftScore)
+                    };
+                  }, { games: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 });
+
+                  if (teamStats.games === 0) return null;
+
+                  const winRate = Math.round((teamStats.wins / teamStats.games) * 100);
+
+                  return (
+                    <div key={team} className="text-center">
+                      <div className="flex items-center justify-center gap-1 mb-2">
+                        <TeamBadge color={team} />
+                        <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">{team}</span>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                          {teamStats.games} {teamStats.games === 1 ? 'jogo' : 'jogos'}
+                        </div>
+                        <div className="flex items-center justify-center gap-2 text-xs">
+                          <span className="text-emerald-600 dark:text-emerald-400 font-medium">{teamStats.wins}V</span>
+                          <span className="text-amber-600 dark:text-amber-400 font-medium">{teamStats.draws}E</span>
+                          <span className="text-red-600 dark:text-red-400 font-medium">{teamStats.losses}D</span>
+                        </div>
+                        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                          {teamStats.goalsFor}-{teamStats.goalsAgainst} gols
+                        </div>
+                        <div className={`text-xs font-medium ${winRate >= 60 ? 'text-emerald-600 dark:text-emerald-400' : winRate >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {winRate}% vitórias
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }).filter(Boolean)}
+              </div>
+            </div>
+          )}
           {historySafe.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 mx-auto mb-4 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center">
+                <Trophy className="w-8 h-8 text-zinc-400" />
+              </div>
             <p className="text-sm text-zinc-500">Sem registros ainda.</p>
+              <p className="text-xs text-zinc-400 mt-1">As partidas aparecerão aqui após serem finalizadas</p>
+            </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-[0.95rem]">
-                <thead className="text-zinc-500">
-                  <tr>
-                    <th className="text-left py-2">Rodada</th>
-                    <th className="text-left py-2">Duelo</th>
-                    <th className="text-right py-2">Placar</th>
-                    <th className="text-right py-2">Vencedor</th>
-                    <th className="text-right py-2">Data</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredHistory.map((h) => (
-                    <tr key={h.round + "-" + h.ts} className="border-t">
-                      <td className="py-2">#{h.round}</td>
-                      <td className="py-2">
-                        {h.left} vs {h.right}
-                      </td>
-                      <td className="py-2 text-right">
-                        {h.leftScore} - {h.rightScore}
-                      </td>
-                      <td className="py-2 text-right">{h.winner}</td>
-                      <td className="py-2 text-right">
-                        {new Date(h.ts).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-3">
+              {filteredHistory.map((h) => {
+                const isWinner = (team: TeamColor) => h.winner === team;
+                const isEmpate = h.winner === 'Empate';
+                const matchDate = new Date(h.ts);
+                
+                return (
+                  <button 
+                    key={h.round + "-" + h.ts} 
+                    onClick={() => openRoundGoalsModal(h)}
+                    className="w-full bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4 border border-zinc-200/50 dark:border-zinc-700/50 hover:shadow-md hover:bg-zinc-100 dark:hover:bg-zinc-700/50 hover:border-maestros-green/30 transition-all duration-200 cursor-pointer group text-left"
+                    title="Clique para ver os gols da partida"
+                  >
+                    {/* Header da partida */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="bg-maestros-green/10 text-maestros-green px-2 py-1 rounded-lg text-xs font-medium">
+                          Rodada #{h.round}
+                        </div>
+                        {isEmpate && (
+                          <div className="bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-lg text-xs font-medium">
+                            Empate
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right relative">
+                        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                          {matchDate.toLocaleDateString('pt-BR')}
+                        </div>
+                        <div className="text-xs text-zinc-400 dark:text-zinc-500">
+                          {matchDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        
+                        {/* Indicador de clique */}
+                        <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="w-2 h-2 bg-maestros-green rounded-full animate-pulse"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Confronto */}
+                    <div className="flex items-center justify-between">
+                      {/* Time Esquerda */}
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="flex items-center gap-2">
+                          <TeamBadge color={h.left} />
+                          <span className={`font-medium text-sm ${isWinner(h.left) ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-600 dark:text-zinc-300'}`}>
+                            {h.left}
+                          </span>
+                          {isWinner(h.left) && (
+                            <Trophy className="w-4 h-4 text-emerald-500" />
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Placar */}
+                      <div className="flex items-center gap-2 px-4 py-2">
+                        <div className={`text-xl font-bold transition-colors ${isWinner(h.left) ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-600 dark:text-zinc-400'} group-hover:text-maestros-green`}>
+                          {h.leftScore}
+                        </div>
+                        <div className="text-zinc-400 dark:text-zinc-500 font-medium group-hover:text-maestros-green transition-colors">×</div>
+                        <div className={`text-xl font-bold transition-colors ${isWinner(h.right) ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-600 dark:text-zinc-400'} group-hover:text-maestros-green`}>
+                          {h.rightScore}
+                        </div>
+                      </div>
+
+                      {/* Time Direita */}
+                      <div className="flex items-center gap-3 flex-1 justify-end">
+                        <div className="flex items-center gap-2">
+                          {isWinner(h.right) && (
+                            <Trophy className="w-4 h-4 text-emerald-500" />
+                          )}
+                          <span className={`font-medium text-sm ${isWinner(h.right) ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-600 dark:text-zinc-300'}`}>
+                            {h.right}
+                          </span>
+                          <TeamBadge color={h.right} />
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -959,6 +1379,192 @@ const Match: React.FC = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Exportar PDF - Apenas para Owner */}
+      {user?.role === 'owner' && (
+        <Card className="rounded-2xl border border-emerald-200 shadow-sm dark:border-emerald-800 mb-3">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-emerald-600" />
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Exportar Relatório</h3>
+              </div>
+              <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                PDF completo
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-800/30 rounded-lg">
+                  <Trophy className="w-4 h-4 text-yellow-500" />
+                  <span className="text-zinc-700 dark:text-zinc-300">
+                    {stats.length} jogadores
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-800/30 rounded-lg">
+                  <Calendar className="w-4 h-4 text-blue-500" />
+                  <span className="text-zinc-700 dark:text-zinc-300">
+                    {historySafe.length} partidas
+                  </span>
+                </div>
+              </div>
+              
+              <Button 
+                onClick={async () => {
+                  try {
+                    // Importação dinâmica do jsPDF
+                    const { default: jsPDF } = await import('jspdf');
+                    const doc = new jsPDF();
+                    const pageWidth = doc.internal.pageSize.getWidth();
+                    const pageHeight = doc.internal.pageSize.getHeight();
+                    let yPosition = 20;
+
+                    // Cabeçalho
+                    doc.setFontSize(20);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('MAESTROS FC - RELATÓRIO DE PARTIDA', pageWidth / 2, yPosition, { align: 'center' });
+                    yPosition += 10;
+
+                    doc.setFontSize(12);
+                    doc.setFont('helvetica', 'normal');
+                    const currentDate = new Date().toLocaleDateString('pt-BR');
+                    doc.text(`Data: ${currentDate}`, pageWidth / 2, yPosition, { align: 'center' });
+                    yPosition += 20;
+
+                    // Estatísticas dos Jogadores
+                    doc.setFontSize(16);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('ESTATÍSTICAS DOS JOGADORES', 20, yPosition);
+                    yPosition += 15;
+
+                    if (stats.length > 0) {
+                      // Cabeçalho da tabela
+                      doc.setFontSize(10);
+                      doc.setFont('helvetica', 'bold');
+                      doc.text('Posição', 20, yPosition);
+                      doc.text('Jogador', 40, yPosition);
+                      doc.text('Gols', 120, yPosition);
+                      doc.text('Assistências', 140, yPosition);
+                      doc.text('Total', 170, yPosition);
+                      yPosition += 8;
+
+                      // Linha separadora
+                      doc.line(20, yPosition, 190, yPosition);
+                      yPosition += 5;
+
+                      // Dados dos jogadores
+                      doc.setFont('helvetica', 'normal');
+                      stats.forEach((player, index) => {
+                        if (yPosition > pageHeight - 30) {
+                          doc.addPage();
+                          yPosition = 20;
+                        }
+
+                        const safeName = player?.name || 'Jogador Desconhecido';
+                        const safeGoals = player?.g || 0;
+                        const safeAssists = player?.a || 0;
+                        const total = safeGoals + safeAssists;
+                        
+                        doc.text(`${index + 1}º`, 20, yPosition);
+                        doc.text(safeName, 40, yPosition);
+                        doc.text(safeGoals.toString(), 120, yPosition);
+                        doc.text(safeAssists.toString(), 140, yPosition);
+                        doc.text(total.toString(), 170, yPosition);
+                        yPosition += 8;
+                      });
+                    } else {
+                      doc.setFontSize(10);
+                      doc.setFont('helvetica', 'italic');
+                      doc.text('Nenhuma estatística registrada', 20, yPosition);
+                      yPosition += 10;
+                    }
+
+                    yPosition += 10;
+
+                    // Histórico de Partidas
+                    doc.setFontSize(16);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('HISTÓRICO DE PARTIDAS', 20, yPosition);
+                    yPosition += 15;
+
+                    if (historySafe.length > 0) {
+                      doc.setFontSize(10);
+                      doc.setFont('helvetica', 'bold');
+                      doc.text('Rodada', 20, yPosition);
+                      doc.text('Partida', 40, yPosition);
+                      doc.text('Placar', 120, yPosition);
+                      doc.text('Vencedor', 140, yPosition);
+                      doc.text('Data/Hora', 170, yPosition);
+                      yPosition += 8;
+
+                      // Linha separadora
+                      doc.line(20, yPosition, 190, yPosition);
+                      yPosition += 5;
+
+                      doc.setFont('helvetica', 'normal');
+                      historySafe.forEach((match) => {
+                        if (yPosition > pageHeight - 30) {
+                          doc.addPage();
+                          yPosition = 20;
+                        }
+
+                        const safeTs = match?.ts || Date.now();
+                        const safeRound = match?.round || 0;
+                        const safeLeft = match?.left || 'Time A';
+                        const safeRight = match?.right || 'Time B';
+                        const safeLeftScore = match?.leftScore || 0;
+                        const safeRightScore = match?.rightScore || 0;
+                        const safeWinner = match?.winner || 'Empate';
+                        
+                        const matchDate = new Date(safeTs).toLocaleString('pt-BR');
+                        const score = `${safeLeftScore} x ${safeRightScore}`;
+                        const matchTeams = `${safeLeft} vs ${safeRight}`;
+                        
+                        doc.text(`#${safeRound}`, 20, yPosition);
+                        doc.text(matchTeams, 40, yPosition);
+                        doc.text(score, 120, yPosition);
+                        doc.text(safeWinner, 140, yPosition);
+                        doc.text(matchDate, 170, yPosition);
+                        yPosition += 8;
+                      });
+                    } else {
+                      doc.setFontSize(10);
+                      doc.setFont('helvetica', 'italic');
+                      doc.text('Nenhuma partida registrada', 20, yPosition);
+                    }
+
+                    // Rodapé
+                    const footerY = pageHeight - 20;
+                    doc.setFontSize(8);
+                    doc.setFont('helvetica', 'italic');
+                    doc.text('Relatório gerado automaticamente pelo sistema Maestros FC', pageWidth / 2, footerY, { align: 'center' });
+
+                    // Salvar o PDF
+                    const fileName = `maestros-fc-relatorio-${currentDate.replace(/\//g, '-')}.pdf`;
+                    doc.save(fileName);
+                  } catch (error) {
+                    console.error('❌ Erro ao gerar PDF:', error);
+                    alert('Erro ao gerar PDF: ' + (error as Error).message);
+                  }
+                }}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Exportar PDF
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <TestControls
+        clearEvents={clearEvents}
+        clearHistory={clearHistory}
+        clearAll={clearAll}
+        resetToInitialState={resetToInitialState}
+        canControlMatch={canControlMatch()}
+      />
+
       {/* Modal de confirmação de exclusão */}
       <Dialog
         open={confirmOpen}
@@ -1027,13 +1633,12 @@ const Match: React.FC = () => {
             <Label>Próximo time a entrar</Label>
             <Select
               value={nextTeamChoice}
-              onValueChange={(v) => setNextTeamChoice(v as TeamColor | "_auto")}
+              onValueChange={(v) => setNextTeamChoice(v as TeamColor)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o próximo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="_auto">Automático</SelectItem>
                 {candidatos.map((t) => (
                   <SelectItem key={t} value={t}>
                     {t}
@@ -1048,6 +1653,94 @@ const Match: React.FC = () => {
               Cancelar
             </Button>
             <Button onClick={confirmEnd}>Confirmar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Animação de Empate */}
+      <Dialog open={tieAnimationOpen} onOpenChange={handleTieModalClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-500" />
+              {isAnimating ? 'Determinando Vencedor...' : 'Empate! Vencedor Sorteado'}
+            </DialogTitle>
+            <DialogDescription>
+              {isAnimating 
+                ? 'As cores dos times estão competindo para determinar o vencedor!'
+                : 'O vencedor foi determinado por sorteio justo!'
+              }
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Animação das cores dos times */}
+            <div className="flex justify-center items-center space-x-4">
+              {round.inPlay.map((team, index) => {
+                const isWinner = !isAnimating && tieWinner === team;
+                const teamColors = {
+                  'Preto': 'bg-zinc-800',
+                  'Verde': 'bg-green-500', 
+                  'Cinza': 'bg-gray-500',
+                  'Vermelho': 'bg-red-500'
+                };
+                
+                return (
+                  <div
+                    key={team}
+                    className={`
+                      w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg
+                      ${teamColors[team]}
+                      ${isAnimating ? 'animate-pulse animate-bounce' : ''}
+                      ${isWinner ? 'ring-4 ring-yellow-400 scale-110' : ''}
+                      transition-all duration-500
+                    `}
+                  >
+                    {isAnimating ? (
+                      <ZapIcon className="w-8 h-8 animate-spin" />
+                    ) : isWinner ? (
+                      <Trophy className="w-8 h-8 text-yellow-400" />
+                    ) : (
+                      <span className="text-xs">{team.charAt(0)}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Placar do empate */}
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-600">
+                {round.scores[round.inPlay[0]]} - {round.scores[round.inPlay[1]]}
+              </div>
+              <div className="text-sm text-gray-500">Empate!</div>
+            </div>
+
+            {/* Resultado da animação */}
+            {!isAnimating && tieWinner && (
+              <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-lg p-4">
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-amber-800 mb-2">
+                    🏆 Vencedor: {tieWinner}
+                  </div>
+                  <div className="text-sm text-amber-600">
+                    O time {tieWinner} continuará na próxima rodada!
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            {!isAnimating && (
+              <Button 
+                onClick={confirmTieWinner}
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                <Trophy className="w-4 h-4 mr-2" />
+                Continuar com {tieWinner}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1140,9 +1833,171 @@ const Match: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal Gols da Rodada */}
+      <Dialog open={roundGoalsOpen} onOpenChange={setRoundGoalsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-maestros-green" />
+              Gols da Rodada #{selectedRoundHistory?.round}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedRoundHistory && (
+                <>
+                  <span className="font-medium">{selectedRoundHistory.left}</span> vs <span className="font-medium">{selectedRoundHistory.right}</span>
+                  <span className="ml-2 text-sm">
+                    ({selectedRoundHistory.leftScore}-{selectedRoundHistory.rightScore})
+                  </span>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {selectedRoundHistory?.goals && selectedRoundHistory.goals.length > 0 ? (
+              <div className="space-y-3">
+                {selectedRoundHistory.goals
+                  .slice()
+                  .sort((a, b) => a.ts - b.ts) // Ordenar por tempo
+                  .map((goal, index) => (
+                    <div 
+                      key={goal.id} 
+                      className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200/50 dark:border-zinc-700/50"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-200 dark:bg-zinc-700 px-2 py-1 rounded">
+                          {index + 1}º
+                        </span>
+                        <TeamBadge color={goal.team} />
+                      </div>
+                      
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm text-zinc-900 dark:text-zinc-100">
+                            {goal.author}
+                          </span>
+                          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                            ({goal.team})
+                          </span>
+                        </div>
+                        {goal.assist && (
+                          <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                            Assistência: <span className="font-medium">{goal.assist}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="text-right">
+                        <div className="text-xs text-zinc-400 dark:text-zinc-500">
+                          {new Date(goal.ts).toLocaleTimeString('pt-BR', { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            second: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 mx-auto mb-4 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center">
+                  <Trophy className="w-8 h-8 text-zinc-400" />
+                </div>
+                <p className="text-sm text-zinc-500">Nenhum gol foi marcado nesta rodada</p>
+                <p className="text-xs text-zinc-400 mt-1">A partida terminou 0-0</p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setRoundGoalsOpen(false)}
+              className="w-full"
+            >
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
 export default Match;
 export { Match };
+
+/* Controles de Teste (apenas para desenvolvimento) */
+function TestControls({ clearEvents, clearHistory, clearAll, resetToInitialState, canControlMatch }) {
+  if (!canControlMatch) return null;
+
+  return (
+    <Card className="rounded-2xl border border-amber-200 bg-amber-50 shadow-sm dark:border-amber-800 dark:bg-amber-950/30 mt-6">
+      <CardContent className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <AlertTriangle className="w-4 h-4 text-amber-600" />
+          <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+            Controles de Teste
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <Button
+            onClick={clearEvents}
+            variant="outline"
+            size="sm"
+            className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/50"
+          >
+            <RotateCcw className="w-3 h-3 mr-1" />
+            Limpar Gols
+          </Button>
+
+          <Button
+            onClick={clearHistory}
+            variant="outline"
+            size="sm"
+            className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/50"
+          >
+            <History className="w-3 h-3 mr-1" />
+            Limpar Histórico
+          </Button>
+
+          <Button
+            onClick={clearAll}
+            variant="outline"
+            size="sm"
+            className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/50"
+          >
+            <Database className="w-3 h-3 mr-1" />
+            Limpar Tudo
+          </Button>
+
+          <Button
+            onClick={() => {
+              // Zerar tudo da página
+              resetToInitialState();
+              // Limpar estatísticas persistentes FORÇADAMENTE
+              const { resetStats } = usePlayerStatsStore.getState();
+              // Forçar reset das estatísticas com data atual
+              const currentDate = new Date().toISOString().split('T')[0];
+              resetStats(currentDate);
+              alert('Página resetada completamente! Estatísticas zeradas!');
+            }}
+            variant="outline"
+            size="sm"
+            className="border-red-300 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/50"
+          >
+            <Trash2 className="w-3 h-3 mr-1" />
+            Reset Total
+          </Button>
+        </div>
+
+        <p className="text-xs text-amber-600 dark:text-amber-500 mt-2">
+          ⚠️ Estes botões são para facilitar testes durante o desenvolvimento
+        </p>
+      </CardContent>
+    </Card>
+  );
+}

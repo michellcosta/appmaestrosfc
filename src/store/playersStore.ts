@@ -21,7 +21,7 @@ interface PlayersStore {
   // Ações para gerenciar jogadores
   setCurrentMatch: (matchId: string) => void
   loadPlayersFromTeamDraw: (matchId: string) => Promise<void>
-  drawTeams: (matchId: string, playersPerTeam?: 6 | 7) => Promise<void>
+  drawTeams: (matchId: string, playersPerTeam?: 5 | 6) => Promise<void>
   
   // Gerenciamento de times
   getPlayersByTeam: (teamColor: TeamColor) => PlayerWithTeam[]
@@ -131,7 +131,7 @@ export const usePlayersStore = create<PlayersStore>()(
       },
 
       // Sortear times
-      drawTeams: async (matchId: string, playersPerTeam: 6 | 7 = 6) => {
+      drawTeams: async (matchId: string, playersPerTeam: 5 | 6 = 5) => {
         set({ loading: true, error: null })
         
         try {

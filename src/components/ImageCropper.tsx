@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { RotateCw, ZoomIn, ZoomOut, Move } from 'lucide-react';
@@ -27,14 +27,11 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const size = 300; // Tamanho do canvas
+    const size = 300;
     canvas.width = size;
     canvas.height = size;
 
-    // Limpar canvas
     ctx.clearRect(0, 0, size, size);
-
-    // Salvar estado do contexto
     ctx.save();
 
     // Criar máscara circular
@@ -42,16 +39,13 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
     ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
     ctx.clip();
 
-    // Calcular dimensões da imagem
     const centerX = size / 2;
     const centerY = size / 2;
 
-    // Aplicar transformações
     ctx.translate(centerX + position.x, centerY + position.y);
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.scale(scale, scale);
 
-    // Desenhar imagem centralizada
     const imgWidth = image.naturalWidth;
     const imgHeight = image.naturalHeight;
     const aspectRatio = imgWidth / imgHeight;
@@ -66,19 +60,18 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
     }
 
     ctx.drawImage(image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
-
-    // Restaurar estado do contexto
     ctx.restore();
   }, [scale, rotation, position, imageLoaded]);
 
   const handleImageLoad = () => {
     setImageLoaded(true);
-    drawCanvas();
   };
 
-  React.useEffect(() => {
-    drawCanvas();
-  }, [drawCanvas]);
+  useEffect(() => {
+    if (imageLoaded) {
+      drawCanvas();
+    }
+  }, [drawCanvas, imageLoaded]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -103,7 +96,6 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
     setIsDragging(false);
   };
 
-  // Controles de toque para mobile
   const handleTouchStart = (e: React.TouchEvent) => {
     e.preventDefault();
     const touch = e.touches[0];
@@ -129,7 +121,6 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
     setIsDragging(false);
   };
 
-  // Zoom com scroll do mouse
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
@@ -145,31 +136,34 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
     setRotation((prev) => (prev + 90) % 360);
   };
 
-  const handleCrop = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    // Criar canvas final com tamanho otimizado (512x512 para boa qualidade)
-    const finalCanvas = document.createElement('canvas');
-    const finalCtx = finalCanvas.getContext('2d');
-    if (!finalCtx) return;
-
-    const finalSize = 512;
-    finalCanvas.width = finalSize;
-    finalCanvas.height = finalSize;
-
-    // Redimensionar a imagem do canvas atual para o tamanho final
-    finalCtx.drawImage(canvas, 0, 0, finalSize, finalSize);
-
-    // Converter para base64 com qualidade otimizada
-    const croppedImage = finalCanvas.toDataURL('image/jpeg', 0.9);
-    onCropComplete(croppedImage);
-  };
-
   const resetTransforms = () => {
     setScale(1);
     setRotation(0);
     setPosition({ x: 0, y: 0 });
+  };
+
+  const handleCrop = () => {
+    try {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const finalCanvas = document.createElement('canvas');
+      const finalCtx = finalCanvas.getContext('2d');
+      if (!finalCtx) return;
+
+      const finalSize = 512;
+      finalCanvas.width = finalSize;
+      finalCanvas.height = finalSize;
+
+      finalCtx.drawImage(canvas, 0, 0, finalSize, finalSize);
+
+      const croppedImage = finalCanvas.toDataURL('image/jpeg', 0.9);
+      console.log('📸 Imagem recortada:', croppedImage.substring(0, 50) + '...');
+      onCropComplete(croppedImage);
+    } catch (error) {
+      console.error('❌ Erro no crop:', error);
+      alert('Erro ao processar a imagem');
+    }
   };
 
   return (
@@ -261,7 +255,7 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
         <Button variant="outline" onClick={onCancel} className="flex-1">
           Cancelar
         </Button>
-        <Button onClick={handleCrop} className="flex-1">
+        <Button onClick={handleCrop} className="flex-1 bg-green-600 hover:bg-green-700">
           Aplicar Recorte
         </Button>
       </div>

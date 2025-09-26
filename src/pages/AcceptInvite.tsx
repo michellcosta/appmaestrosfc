@@ -1,181 +1,136 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { 
-  UserPlus, 
+  Mail, 
   CheckCircle, 
-  XCircle, 
-  Clock, 
-  Star,
+  AlertCircle, 
+  Crown, 
+  Shield, 
+  Star, 
   Zap,
-  Shield,
-  Mail,
-  User
+  Users,
+  Calendar,
+  MapPin
 } from 'lucide-react';
-
-type Invite = {
-  id: string;
-  type: 'mensalista' | 'diarista';
-  email: string;
-  token: string;
-  createdBy: string;
-  createdAt: string;
-  expiresAt: string;
-  used: boolean;
-  usedAt?: string;
-  usedBy?: string;
-};
 
 export default function AcceptInvite() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const token = searchParams.get('token');
-  
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [invite, setInvite] = useState<Invite | null>(null);
-  const [userData, setUserData] = useState({
-    name: '',
-    email: '',
-    phone: ''
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  
+  // Estados do formulário
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [selectedRole, setSelectedRole] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
+
+  // Dados do grupo (simulados)
+  const [groupInfo] = useState({
+    name: 'Maestros FC',
+    location: 'São Gonçalo - RJ',
+    founded: '2024',
+    members: 25,
+    nextMatch: '2025-01-27 às 19:30'
   });
 
   useEffect(() => {
-    if (token) {
-      // Buscar convite pelo token
-      const invites = JSON.parse(localStorage.getItem('invites') || '[]');
-      const foundInvite = invites.find((inv: Invite) => inv.token === token);
-      
-      if (foundInvite) {
-        setInvite(foundInvite);
-        setUserData({ ...userData, email: foundInvite.email });
-      } else {
-        setMessage('Convite não encontrado ou inválido!');
-      }
+    // Verificar se há código de convite na URL
+    const code = searchParams.get('code');
+    const role = searchParams.get('role');
+    
+    if (code) {
+      setInviteCode(code);
     }
-  }, [token]);
+    
+    if (role) {
+      setSelectedRole(role);
+    }
+  }, [searchParams]);
 
-  const validateInvite = (invite: Invite) => {
-    const now = new Date();
-    const expires = new Date(invite.expiresAt);
-    
-    if (invite.used) {
-      return { valid: false, message: 'Este convite já foi usado!' };
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'admin': return <Shield className="w-4 h-4 text-blue-500" />;
+      case 'aux': return <Zap className="w-4 h-4 text-green-500" />;
+      case 'mensalista': return <Star className="w-4 h-4 text-purple-500" />;
+      case 'diarista': return <Zap className="w-4 h-4 text-orange-500" />;
+      default: return <Users className="w-4 h-4 text-gray-500" />;
     }
-    
-    if (now > expires) {
-      return { valid: false, message: 'Este convite expirou!' };
-    }
-    
-    return { valid: true, message: '' };
   };
 
-  const acceptInvite = async () => {
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'admin': return 'Admin';
+      case 'aux': return 'Auxiliar';
+      case 'mensalista': return 'Mensalista';
+      case 'diarista': return 'Diarista';
+      default: return role;
+    }
+  };
+
+  const getRoleDescription = (role: string) => {
+    switch (role) {
+      case 'admin': return 'Acesso completo ao sistema, pode gerenciar jogadores e partidas';
+      case 'aux': return 'Ajuda na organização, pode criar partidas e gerenciar alguns aspectos';
+      case 'mensalista': return 'Paga mensalidade fixa, acesso completo às funcionalidades';
+      case 'diarista': return 'Paga por partida, acesso limitado às funcionalidades';
+      default: return '';
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!name || !email || !selectedRole) {
+      setError('Por favor, preencha todos os campos obrigatórios');
+      return;
+    }
+
     setLoading(true);
-    setMessage('');
+    setError(null);
 
     try {
-      if (!invite) {
-        setMessage('Convite não encontrado!');
-        return;
-      }
-
-      if (!userData.name || !userData.email) {
-        setMessage('Preencha todos os campos obrigatórios!');
-        return;
-      }
-
-      const validation = validateInvite(invite);
-      if (!validation.valid) {
-        setMessage(validation.message);
-        return;
-      }
-
-      // Marcar convite como usado
-      const invites = JSON.parse(localStorage.getItem('invites') || '[]');
-      const updatedInvites = invites.map((inv: Invite) => 
-        inv.token === token 
-          ? { ...inv, used: true, usedAt: new Date().toISOString(), usedBy: userData.name }
-          : inv
-      );
-      localStorage.setItem('invites', JSON.stringify(updatedInvites));
-
-      // Criar usuário
-      const newUser = {
-        id: `user-${Date.now()}`,
-        email: userData.email,
-        name: userData.name,
-        phone: userData.phone,
-        role: invite.type,
-        status: invite.type === 'mensalista' ? 'active' : 'pending',
-        createdAt: new Date().toISOString(),
-        inviteId: invite.id
-      };
-
-      // Salvar usuário
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      users.push(newUser);
-      localStorage.setItem('users', JSON.stringify(users));
-
-      // Fazer login automático
-      localStorage.setItem('offline_user', JSON.stringify(newUser));
-
-      setMessage(`Cadastro realizado com sucesso! Você é um ${invite.type === 'mensalista' ? 'Mensalista' : 'Diarista'}.`);
+      // Simular processamento do convite
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Simular sucesso
+      setSuccess(true);
       
       // Redirecionar após 3 segundos
       setTimeout(() => {
         navigate('/');
       }, 3000);
-
+      
     } catch (error) {
-      setMessage(`Erro: ${error}`);
+      setError('Erro ao processar convite. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (!token) {
+  if (success) {
     return (
-      <div className='p-4 sm:p-6'>
-        <Card>
-          <CardContent className='p-6 text-center space-y-4'>
-            <XCircle className='w-12 h-12 mx-auto text-red-500' />
-            <h2 className='text-lg font-semibold'>Convite Inválido</h2>
-            <p className='text-sm text-zinc-500'>Token de convite não encontrado.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!invite) {
-    return (
-      <div className='p-4 sm:p-6'>
-        <Card>
-          <CardContent className='p-6 text-center space-y-4'>
-            <Clock className='w-12 h-12 mx-auto text-blue-500' />
-            <h2 className='text-lg font-semibold'>Carregando...</h2>
-            <p className='text-sm text-zinc-500'>Verificando convite...</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const validation = validateInvite(invite);
-
-  if (!validation.valid) {
-    return (
-      <div className='p-4 sm:p-6'>
-        <Card>
-          <CardContent className='p-6 text-center space-y-4'>
-            <XCircle className='w-12 h-12 mx-auto text-red-500' />
-            <h2 className='text-lg font-semibold'>Convite Inválido</h2>
-            <p className='text-sm text-zinc-500'>{validation.message}</p>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            <CheckCircle className="w-16 h-16 mx-auto text-green-500 mb-4" />
+            <h2 className="text-2xl font-bold text-green-600 mb-2">Convite Aceito!</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Bem-vindo ao {groupInfo.name}! Você foi adicionado com sucesso ao grupo.
+            </p>
+            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+              <p className="text-sm text-green-700 dark:text-green-300">
+                Você será redirecionado para a página inicial em alguns segundos...
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -183,108 +138,188 @@ export default function AcceptInvite() {
   }
 
   return (
-    <div className='p-4 sm:p-6 space-y-6 pb-20'>
-      <div>
-        <h1 className='text-2xl font-bold flex items-center gap-2'>
-          <UserPlus className='w-6 h-6 text-blue-600' />
-          Aceitar Convite
-        </h1>
-        <p className='text-sm text-zinc-500'>Complete seu cadastro para entrar no grupo</p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className='flex items-center gap-2'>
-            <Mail className='w-5 h-5' />
-            Convite Recebido
-          </CardTitle>
-        </CardHeader>
-        <CardContent className='space-y-4'>
-          <div className='p-4 bg-blue-50 rounded-lg'>
-            <div className='flex items-center gap-3'>
-              {invite.type === 'mensalista' ? 
-                <Star className='w-6 h-6 text-purple-600' /> : 
-                <Zap className='w-6 h-6 text-orange-600' />
-              }
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full space-y-6">
+        {/* Informações do Grupo */}
+        <Card className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Crown className="w-8 h-8" />
               <div>
-                <p className='font-semibold'>
-                  Convite para {invite.type === 'mensalista' ? 'Mensalista' : 'Diarista'}
-                </p>
-                <p className='text-sm text-zinc-600'>
-                  Enviado por {invite.createdBy}
-                </p>
-                <p className='text-sm text-zinc-500'>
-                  Expira em {new Date(invite.expiresAt).toLocaleDateString('pt-BR')}
-                </p>
+                <h1 className="text-2xl font-bold">{groupInfo.name}</h1>
+                <p className="text-blue-100">Grupo de Futebol</p>
               </div>
             </div>
-          </div>
-
-          <div className='space-y-4'>
-            <div className='space-y-2'>
-              <Label htmlFor="name">Nome Completo *</Label>
-              <Input
-                id="name"
-                value={userData.name}
-                onChange={(e) => setUserData({ ...userData, name: e.target.value })}
-                placeholder="Seu nome completo"
-              />
-            </div>
-
-            <div className='space-y-2'>
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={userData.email}
-                onChange={(e) => setUserData({ ...userData, email: e.target.value })}
-                placeholder="seu@email.com"
-                disabled
-              />
-              <p className='text-xs text-zinc-500'>Email definido pelo convite</p>
-            </div>
-
-            <div className='space-y-2'>
-              <Label htmlFor="phone">Telefone</Label>
-              <Input
-                id="phone"
-                value={userData.phone}
-                onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
-                placeholder="(11) 99999-9999"
-              />
-            </div>
-          </div>
-
-          <div className='p-3 bg-yellow-50 border border-yellow-200 rounded-lg'>
-            <div className='flex items-center gap-2'>
-              <Shield className='w-4 h-4 text-yellow-600' />
-              <span className='text-sm text-yellow-800'>Importante:</span>
-            </div>
-            <ul className='text-xs text-yellow-700 mt-1 space-y-1'>
-              <li>• Mensalistas: acesso completo ao app</li>
-              <li>• Diaristas: aguardam aprovação para acessar</li>
-              <li>• Diaristas aprovados: acesso limitado (Jogos, Financeiro, Perfil)</li>
-            </ul>
-          </div>
-
-          <Button 
-            onClick={acceptInvite} 
-            disabled={loading}
-            className='w-full'
-          >
-            {loading ? 'Processando...' : 'Aceitar Convite'}
-          </Button>
-
-          {message && (
-            <div className='p-3 bg-green-50 border border-green-200 rounded-lg'>
-              <div className='flex items-center gap-2'>
-                <CheckCircle className='w-4 h-4 text-green-600' />
-                <span className='text-sm text-green-800'>{message}</span>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                <span>{groupInfo.location}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                <span>{groupInfo.members} membros</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>Próxima: {groupInfo.nextMatch}</span>
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        {/* Formulário de Aceitação */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5 text-blue-500" />
+              Aceitar Convite
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Código do Convite (se houver) */}
+              {inviteCode && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-blue-500" />
+                    <span className="text-sm text-blue-700 dark:text-blue-300">
+                      Convite válido: <code className="font-mono">{inviteCode}</code>
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Nome */}
+              <div>
+                <Label htmlFor="name">Nome Completo *</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Seu nome completo"
+                  required
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
+                  required
+                />
+              </div>
+
+              {/* Telefone */}
+              <div>
+                <Label htmlFor="phone">Telefone (WhatsApp)</Label>
+                <Input
+                  id="phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="(21) 99999-9999"
+                />
+              </div>
+
+              {/* Cargo */}
+              <div>
+                <Label htmlFor="role">Cargo no Grupo *</Label>
+                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione seu cargo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-blue-500" />
+                        <div>
+                          <div className="font-medium">Admin</div>
+                          <div className="text-xs text-gray-500">Acesso completo</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="aux">
+                      <div className="flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-green-500" />
+                        <div>
+                          <div className="font-medium">Auxiliar</div>
+                          <div className="text-xs text-gray-500">Ajuda na organização</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="mensalista">
+                      <div className="flex items-center gap-2">
+                        <Star className="w-4 h-4 text-purple-500" />
+                        <div>
+                          <div className="font-medium">Mensalista</div>
+                          <div className="text-xs text-gray-500">Paga mensalidade</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="diarista">
+                      <div className="flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-orange-500" />
+                        <div>
+                          <div className="font-medium">Diarista</div>
+                          <div className="text-xs text-gray-500">Paga por partida</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                {selectedRole && (
+                  <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      {getRoleIcon(selectedRole)}
+                      <div>
+                        <div className="font-medium text-sm">{getRoleLabel(selectedRole)}</div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                          {getRoleDescription(selectedRole)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Erro */}
+              {error && (
+                <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-500" />
+                    <span className="text-sm text-red-700 dark:text-red-300">{error}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Botões */}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate('/')}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={loading || !name || !email || !selectedRole}
+                  className="flex-1"
+                >
+                  {loading ? 'Processando...' : 'Aceitar Convite'}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

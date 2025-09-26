@@ -4,10 +4,8 @@ import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { DollarSign, CreditCard, TrendingUp, CheckCircle, Clock, XCircle, Crown, Shield, Star, Zap, User, Wallet } from 'lucide-react';
-import PaymentButton from '@/components/PaymentButton';
-import DigitalWalletComponent from '@/components/WalletWithdrawal';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { DollarSign, CreditCard, TrendingUp, CheckCircle, Clock, XCircle, Crown, Shield, Star, Zap, User, Calendar, Copy, QrCode } from 'lucide-react';
 import { useAuth } from '@/auth/OfflineAuthProvider';
 import { useDigitalWalletOffline } from '@/hooks/useDigitalWalletOffline';
 
@@ -20,26 +18,37 @@ type Charge = {
   created_at: string;
 };
 
+type MonthlyPayment = {
+  id: string;
+  month: string;
+  year: number;
+  amount: number;
+  status: 'pendente'|'pago'|'vencido';
+  due_date: string;
+  paid_at?: string;
+};
+
+// Configurações de valores
+const PAYMENT_CONFIG = {
+  mensalista: 50.00, // R$ 50,00 por mês
+  diarista: 15.00,   // R$ 15,00 por partida
+};
+
 export default function FinancePage() {
   const [rows, setRows] = useState<Charge[]>([]);
   const [loading, setLoading] = useState(true);
+  const [monthlyPayments, setMonthlyPayments] = useState<MonthlyPayment[]>([]);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [pixModalOpen, setPixModalOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<MonthlyPayment | null>(null);
+  const [pixCode, setPixCode] = useState('');
   const { user } = useAuth();
   const navigate = useNavigate();
 
   // Hook da carteira digital (versão offline)
   const {
     wallet,
-    transactions,
-    paymentOptions,
-    withdrawalRequests,
-    loading: walletLoading,
-    error: walletError,
-    depositMoney,
-    withdrawMoney,
-    transferMoney,
     formatCurrency,
-    isOfflineMode,
-    debugInfo
   } = useDigitalWalletOffline(user?.id || '', user?.group_id);
 
   const getRoleIcon = (role?: string) => {
@@ -50,6 +59,98 @@ export default function FinancePage() {
       case 'mensalista': return <Star className='w-4 h-4 text-role-mensalista' />;
       case 'diarista': return <Zap className='w-4 h-4 text-role-diarista' />;
       default: return <User className='w-4 h-4 text-role-default' />;
+    }
+  };
+
+  // Função para determinar se o usuário é mensalista ou diarista
+  const getUserPaymentType = () => {
+    if (!user?.role) return 'diarista';
+    return user.role === 'diarista' ? 'diarista' : 'mensalista';
+  };
+
+  // Função para gerar pagamentos mensais (apenas relevantes)
+  const generateMonthlyPayments = () => {
+    const currentDate = new Date();
+    const payments: MonthlyPayment[] = [];
+    
+    // Gerar apenas: mês anterior, atual e próximo
+    for (let i = -1; i <= 1; i++) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
+      const monthName = date.toLocaleDateString('pt-BR', { month: 'long' });
+      const year = date.getFullYear();
+      const dueDate = new Date(year, date.getMonth(), 5); // Vencimento dia 5
+      
+      const paymentType = getUserPaymentType();
+      const amount = PAYMENT_CONFIG[paymentType];
+      
+      // Status baseado na data
+      let status: 'pendente'|'pago'|'vencido' = 'pendente';
+      if (i === -1) {
+        // Mês anterior: pode estar pago ou vencido
+        status = Math.random() > 0.3 ? 'pago' : 'vencido';
+      } else if (i === 0) {
+        // Mês atual: pendente (a vencer)
+        status = 'pendente';
+      } else {
+        // Próximo mês: sempre pendente
+        status = 'pendente';
+      }
+      
+      payments.push({
+        id: `${year}-${date.getMonth() + 1}`,
+        month: monthName.charAt(0).toUpperCase() + monthName.slice(1),
+        year,
+        amount,
+        status,
+        due_date: dueDate.toISOString(),
+        paid_at: status === 'pago' ? new Date(dueDate.getTime() - Math.random() * 5 * 24 * 60 * 60 * 1000).toISOString() : undefined
+      });
+    }
+    
+    return payments.sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+  };
+
+  // Função para abrir modal PIX
+  const openPixModal = (payment: MonthlyPayment) => {
+    setSelectedPayment(payment);
+    // Gerar código PIX simulado
+    const pixCode = `00020101021126580014br.gov.bcb.pix2536maestrosfc.com.br/pay/${payment.id}5204000053039865802BR5925MAESTROS FC PELADAS6009SAO PAULO62070503***6304${Math.random().toString().substr(2, 4)}`;
+    setPixCode(pixCode);
+    setPixModalOpen(true);
+  };
+
+  // Função para copiar código PIX
+  const copyPixCode = () => {
+    navigator.clipboard.writeText(pixCode);
+    alert('Código PIX copiado!');
+  };
+
+  // Função para confirmar pagamento PIX
+  const confirmPixPayment = async () => {
+    if (!selectedPayment) return;
+    
+    setPaymentLoading(true);
+    
+    try {
+      // Simular confirmação de pagamento PIX
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Atualizar o status do pagamento
+      setMonthlyPayments(prev => 
+        prev.map(p => 
+          p.id === selectedPayment.id 
+            ? { ...p, status: 'pago' as const, paid_at: new Date().toISOString() }
+            : p
+        )
+      );
+      
+      alert(`Mensalidade de ${selectedPayment.month}/${selectedPayment.year} paga com sucesso via PIX!`);
+      setPixModalOpen(false);
+      setSelectedPayment(null);
+    } catch (error) {
+      alert('Erro ao processar pagamento. Tente novamente.');
+    } finally {
+      setPaymentLoading(false);
     }
   };
 
@@ -65,31 +166,21 @@ export default function FinancePage() {
     })();
   }, []);
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'pago': return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case 'pendente': return <Clock className="w-4 h-4 text-yellow-600" />;
-      case 'cancelado': return <XCircle className="w-4 h-4 text-red-600" />;
-      default: return <Clock className="w-4 h-4" />;
+  // Carregar pagamentos mensais
+  useEffect(() => {
+    if (user) {
+      const payments = generateMonthlyPayments();
+      setMonthlyPayments(payments);
     }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pago': return 'bg-success text-success-foreground';
-      case 'pendente': return 'bg-warning text-warning-foreground';
-      case 'cancelado': return 'bg-destructive text-destructive-foreground';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
-    }
-  };
+  }, [user]);
 
   return (
     <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 space-y-4 pb-20">
-      <header className="bg-white border-b border-gray-200 shadow-sm rounded-lg mb-4">
+      <header className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 shadow-sm rounded-lg mb-4">
         <div className="flex items-center justify-between p-4">
           <div>
-            <h1 className="text-lg font-bold text-gray-900">Financeiro</h1>
-            <p className="text-sm text-gray-600">Controle de pagamentos e carteira digital</p>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Financeiro</h1>
+            <p className="text-sm text-gray-600 dark:text-zinc-400">Controle de pagamentos e mensalidades</p>
           </div>
           
           <div className="flex items-center space-x-2">
@@ -121,233 +212,202 @@ export default function FinancePage() {
         </div>
       </header>
 
-      <Tabs defaultValue="wallet" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="wallet" className="flex items-center gap-2">
-            <Wallet className="w-4 h-4" />
-            Carteira Digital
-          </TabsTrigger>
-          <TabsTrigger value="charges" className="flex items-center gap-2">
-            <CreditCard className="w-4 h-4" />
-            Cobranças
-          </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4" />
-            Histórico
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="wallet" className="space-y-4">
-          {/* Debug da carteira digital */}
-          <Card className="bg-green-50 border-green-200">
-            <CardContent className="p-4">
-              <h4 className="font-semibold text-green-800 mb-2">🔍 Debug da Carteira Digital (OFFLINE)</h4>
-              <div className="text-sm space-y-1">
-                <p><strong>Modo:</strong> {isOfflineMode ? '🟢 OFFLINE' : '🔴 ONLINE'}</p>
-                <p><strong>Usuário ID:</strong> {user?.id || 'Não encontrado'}</p>
-                <p><strong>Grupo ID:</strong> {user?.group_id || 'Não encontrado'}</p>
-                <p><strong>Loading:</strong> {walletLoading ? 'Sim' : 'Não'}</p>
-                <p><strong>Erro:</strong> {walletError || 'Nenhum'}</p>
-                <p><strong>Carteira:</strong> {wallet ? 'Carregada' : 'Não carregada'}</p>
-                <p><strong>Transações:</strong> {transactions.length}</p>
-                {wallet && (
-                  <div className="mt-2 p-2 bg-white rounded border">
-                    <p><strong>Saldo:</strong> {formatCurrency(wallet.balance)}</p>
-                    <p><strong>ID da Carteira:</strong> {wallet.id}</p>
-                    <p><strong>Ativa:</strong> {wallet.is_active ? 'Sim' : 'Não'}</p>
-                    <p><strong>Última Atualização:</strong> {new Date(wallet.updated_at).toLocaleString()}</p>
-                  </div>
-                )}
-                <div className="flex gap-2 mt-3">
-                  <Button
-                    onClick={async () => {
-                      try {
-                        console.log('🧪 Testando depósito...');
-                        const result = await depositMoney(25.50, 'PIX');
-                        alert(`Teste de depósito: ${result.success ? 'SUCESSO - R$ 25,50 adicionados!' : 'ERRO - ' + result.error}`);
-                      } catch (err) {
-                        console.error('❌ Erro no teste:', err);
-                        alert('Erro no teste: ' + err.message);
-                      }
-                    }}
-                    className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1"
-                  >
-                    💰 Testar Depósito (+R$ 25,50)
-                  </Button>
-                  <Button
-                    onClick={async () => {
-                      try {
-                        console.log('🧪 Testando saque...');
-                        const result = await withdrawMoney(10.00, 'teste@email.com');
-                        alert(`Teste de saque: ${result.success ? 'SUCESSO - R$ 10,00 sacados!' : 'ERRO - ' + result.error}`);
-                      } catch (err) {
-                        console.error('❌ Erro no teste:', err);
-                        alert('Erro no teste: ' + err.message);
-                      }
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1"
-                  >
-                    💸 Testar Saque (-R$ 10,00)
-                  </Button>
-                </div>
+      {/* Conteúdo principal - Mensalidades */}
+      <div className="space-y-4">
+        {/* Informações do plano */}
+        <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-purple-800 flex items-center gap-2">
+                  {getRoleIcon(user?.role)}
+                  Plano {getUserPaymentType() === 'diarista' ? 'Diarista' : 'Mensalista'}
+                </h3>
+                <p className="text-sm text-purple-600">
+                  {getUserPaymentType() === 'diarista' 
+                    ? `R$ ${PAYMENT_CONFIG.diarista.toFixed(2)} por partida`
+                    : `R$ ${PAYMENT_CONFIG.mensalista.toFixed(2)} por mês`
+                  }
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          {walletLoading ? (
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ) : wallet ? (
-            <DigitalWalletComponent
-              wallet={wallet}
-              paymentOptions={paymentOptions}
-              withdrawalRequests={withdrawalRequests}
-              onProcessPayment={depositMoney}
-              onRequestWithdrawal={withdrawMoney}
-              onAddMoney={depositMoney}
-              formatCurrency={formatCurrency}
-            />
-          ) : (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <p className="text-gray-600">Erro ao carregar carteira digital</p>
-                {walletError && <p className="text-red-600 text-sm mt-2">{walletError}</p>}
-              </CardContent>
-            </Card>
-          )}
+        {/* Lista de mensalidades */}
+        <Card>
+          <CardContent className="p-0">
+            <div className="p-4 border-b">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                {getUserPaymentType() === 'diarista' ? 'Pagamentos por Partida' : 'Mensalidades'}
+              </h3>
+              <p className="text-sm text-gray-600">
+                {getUserPaymentType() === 'diarista' 
+                  ? 'Histórico de pagamentos por partida jogada'
+                  : 'Mensalidades que vão vencer, vencidas e pagas'
+                }
+              </p>
+            </div>
 
-          {/* Transações Recentes */}
-          {transactions.length > 0 && (
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-4">Transações Recentes</h3>
-                <div className="space-y-3">
-                  {transactions.slice(0, 5).map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="divide-y">
+              {monthlyPayments.map((payment) => (
+                <div key={payment.id} className="p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${
-                          transaction.type === 'deposit' ? 'bg-green-500' :
-                          transaction.type === 'payment' ? 'bg-red-500' :
-                          transaction.type === 'withdrawal' ? 'bg-orange-500' :
-                          'bg-blue-500'
+                        <div className={`w-3 h-3 rounded-full ${
+                          payment.status === 'pago' ? 'bg-green-500' :
+                          payment.status === 'vencido' ? 'bg-red-500' : 'bg-yellow-500'
                         }`} />
                         <div>
-                          <p className="font-medium text-sm">{transaction.description}</p>
-                          <p className="text-xs text-gray-600">
-                            {new Date(transaction.created_at).toLocaleDateString('pt-BR')}
-                          </p>
+                          <div className="font-medium">
+                            {getUserPaymentType() === 'diarista' ? `Partida - ${payment.month}` : `${payment.month} ${payment.year}`}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            Vencimento: {new Date(payment.due_date).toLocaleDateString('pt-BR')}
+                            {payment.paid_at && (
+                              <span className="ml-2 text-green-600">
+                                • Pago em {new Date(payment.paid_at).toLocaleDateString('pt-BR')}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <p className={`font-bold ${
-                          transaction.type === 'deposit' || transaction.type === 'transfer_in' ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {transaction.type === 'deposit' || transaction.type === 'transfer_in' ? '+' : '-'}
-                          {formatCurrency(transaction.amount_brl)}
-                        </p>
-                        <Badge variant="outline" className="text-xs">
-                          {transaction.status === 'completed' ? 'Concluído' : 
-                           transaction.status === 'pending' ? 'Pendente' : 
-                           transaction.status === 'failed' ? 'Falhou' : 
-                           'Cancelado'}
+                        <div className="font-semibold">
+                          {formatCurrency ? formatCurrency(payment.amount) : `R$ ${payment.amount.toFixed(2)}`}
+                        </div>
+                        <Badge 
+                          variant={
+                            payment.status === 'pago' ? 'default' :
+                            payment.status === 'vencido' ? 'destructive' : 'secondary'
+                          }
+                          className="text-xs"
+                        >
+                          {payment.status === 'pago' ? 'Pago' :
+                           payment.status === 'vencido' ? 'Vencido' : 'Pendente'}
                         </Badge>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
 
-        <TabsContent value="charges" className="space-y-4">
-          {/* Existing charges content */}
-          <Card>
-            <CardContent className="p-4">
-              <h3 className="text-lg font-semibold mb-4">Mensalidades</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    <div>
-                      <p className="font-medium">Mensalidade Setembro 2024</p>
-                      <p className="text-sm text-zinc-500">Pago em 15/09/2024</p>
+                      {payment.status === 'pendente' && (
+                        <Button
+                          size="sm"
+                          onClick={() => openPixModal(payment)}
+                          disabled={paymentLoading}
+                          className="bg-purple-600 hover:bg-purple-700"
+                        >
+                          {paymentLoading ? 'Processando...' : 'Pagar'}
+                        </Button>
+                      )}
+
+                      {payment.status === 'vencido' && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => openPixModal(payment)}
+                          disabled={paymentLoading}
+                        >
+                          {paymentLoading ? 'Processando...' : 'Quitar'}
+                        </Button>
+                      )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold">R$ 50,00</p>
-                    <Badge className="bg-success text-success-foreground">Pago</Badge>
-                  </div>
                 </div>
-                
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <Clock className="w-4 h-4 text-yellow-600" />
-                    <div>
-                      <p className="font-medium">Mensalidade Outubro 2024</p>
-                      <p className="text-sm text-zinc-500">Vence em 15/10/2024</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold">R$ 50,00</p>
-                    <Badge className="bg-warning text-warning-foreground">Pendente</Badge>
-                  </div>
-                </div>
+              ))}
+            </div>
+
+            {monthlyPayments.length === 0 && (
+              <div className="p-8 text-center text-gray-500">
+                <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>Nenhum pagamento encontrado</p>
               </div>
-              
-              <div className="mt-4">
-                <PaymentButton type="mensalista" amount={50} period="2024-10" />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="daily" className="space-y-4">
-          <Card>
-            <CardContent className="p-4">
-              <h3 className="text-lg font-semibold mb-4">Diárias</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle className="w-4 h-4 text-maestros-green" />
-                    <div>
-                      <p className="font-medium">Jogo - 14/09/2024</p>
-                      <p className="text-sm text-zinc-500">Pago em 14/09/2024</p>
-                    </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Modal PIX */}
+      <Dialog open={pixModalOpen} onOpenChange={setPixModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="w-5 h-5 text-purple-600" />
+              Pagamento via PIX
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedPayment && (
+            <div className="space-y-4">
+              {/* Informações do pagamento */}
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <div className="text-center">
+                  <h3 className="font-semibold text-purple-800">
+                    {getUserPaymentType() === 'diarista' ? `Partida - ${selectedPayment.month}` : `${selectedPayment.month} ${selectedPayment.year}`}
+                  </h3>
+                  <div className="text-2xl font-bold text-purple-600 mt-1">
+                    {formatCurrency ? formatCurrency(selectedPayment.amount) : `R$ ${selectedPayment.amount.toFixed(2)}`}
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold">R$ 15,00</p>
-                    <Badge className="bg-success text-success-foreground">Pago</Badge>
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <Clock className="w-4 h-4 text-warning" />
-                    <div>
-                      <p className="font-medium">Jogo - 21/09/2024</p>
-                      <p className="text-sm text-zinc-500">Pendente</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold">R$ 15,00</p>
-                    <Badge className="bg-warning text-warning-foreground">Pendente</Badge>
+                  <div className="text-sm text-purple-600 mt-1">
+                    Vencimento: {new Date(selectedPayment.due_date).toLocaleDateString('pt-BR')}
                   </div>
                 </div>
               </div>
-              
-              <div className="mt-4">
-                <PaymentButton type="diarista" amount={15} matchId="match-21-09" />
+
+              {/* Código PIX */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium">Código PIX Copia e Cola:</label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={copyPixCode}
+                    className="h-8 px-2"
+                  >
+                    <Copy className="w-3 h-3 mr-1" />
+                    Copiar
+                  </Button>
+                </div>
+                <div className="bg-gray-50 p-3 rounded border text-xs font-mono break-all">
+                  {pixCode}
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+
+              {/* Instruções */}
+              <div className="bg-blue-50 p-3 rounded text-sm">
+                <h4 className="font-medium text-blue-800 mb-2">Como pagar:</h4>
+                <ol className="text-blue-700 space-y-1 list-decimal list-inside">
+                  <li>Copie o código PIX acima</li>
+                  <li>Abra o app do seu banco</li>
+                  <li>Escolha "PIX Copia e Cola"</li>
+                  <li>Cole o código e confirme o pagamento</li>
+                  <li>Clique em "Confirmar Pagamento" abaixo</li>
+                </ol>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setPixModalOpen(false)}
+              disabled={paymentLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmPixPayment}
+              disabled={paymentLoading}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {paymentLoading ? 'Confirmando...' : 'Confirmar Pagamento'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

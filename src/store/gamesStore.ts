@@ -26,7 +26,7 @@ export const useGamesStore = create<GamesStore>()(
   persist(
     (set, get) => ({
       matches: [
-        // Dados iniciais mockados - atualizados
+        // Dados iniciais mockados
         {
           id: 1,
           date: '2025-01-25',

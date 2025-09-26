@@ -6,7 +6,6 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,10 +39,12 @@ import {
   Palette,
   Zap,
   Camera,
-  Upload
+  Upload,
+  UserPlus
 } from 'lucide-react';
 import ThemeSelector from '@/components/ThemeSelector';
 import ImageCropper from '@/components/ImageCropper';
+import { SimpleInviteModal } from '@/components/SimpleInviteModal';
 import { isMainOwner, PROTECTION_MESSAGES } from '@/utils/ownerProtection';
 
 export default function PerfilPage() {
@@ -55,11 +56,17 @@ export default function PerfilPage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string>('');
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
+  const [showInviteForm, setShowInviteForm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    console.log('📁 Arquivo selecionado:', file.name, file.size);
 
     // Validar tipo de arquivo
     if (!file.type.startsWith('image/')) {
@@ -77,9 +84,14 @@ export default function PerfilPage() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = e.target?.result as string;
+      console.log('🎨 Imagem convertida:', base64.substring(0, 50) + '...');
       setSelectedImage(base64);
       setShowCropper(true);
       setShowAvatarDialog(false);
+    };
+    reader.onerror = () => {
+      console.error('❌ Erro ao ler arquivo');
+      alert('Erro ao ler arquivo. Tente novamente.');
     };
     reader.readAsDataURL(file);
 
@@ -94,247 +106,56 @@ export default function PerfilPage() {
     setShowCropper(false);
 
     try {
+      console.log('📸 Iniciando upload do avatar...');
       await updateAvatar(croppedImage);
-      setShowAvatarDialog(false);
-      setUploadingAvatar(false);
+      console.log('✅ Avatar atualizado com sucesso!');
     } catch (error) {
-      console.error('Erro ao fazer upload da foto:', error);
-      alert('Erro ao fazer upload da foto. Tente novamente.');
+      console.error('❌ Erro ao atualizar avatar:', error);
+      alert('Erro ao atualizar avatar');
+    } finally {
       setUploadingAvatar(false);
-      setShowAvatarDialog(true);
-    }
-  };
-
-  const handleCropCancel = () => {
-    setShowCropper(false);
-    setSelectedImage('');
-    setShowAvatarDialog(true);
-  };
-
-  const handleRemoveAvatar = async () => {
-    try {
-      await updateAvatar('');
+      setSelectedImage('');
       setShowAvatarDialog(false);
-    } catch (error) {
-      console.error('Erro ao remover foto:', error);
-      alert('Erro ao remover foto. Tente novamente.');
     }
   };
 
-  const getAvatarUrl = () => {
-    if (user?.custom_avatar) {
-      return user.custom_avatar;
-    }
-    if (user?.avatar_url) {
-      return user.avatar_url;
-    }
-    return null;
-  };
-
-  const getRoleIcon = (role?: string) => {
-    switch (role) {
-      case 'owner': return <Crown className='w-4 h-4 text-role-owner' />;
-      case 'admin': return <Shield className='w-4 h-4 text-role-admin' />;
-      case 'aux': return <Zap className='w-4 h-4 text-role-aux' />;
-      case 'mensalista': return <Star className='w-4 h-4 text-role-mensalista' />;
-      case 'diarista': return <Zap className='w-4 h-4 text-role-diarista' />;
-      default: return <User className='w-4 h-4 text-role-default' />;
-    }
-  };
-
-  // Dados mockados para o dashboard do owner
-  const [dashboardData] = useState({
-    financialStatus: {
-      totalThisMonth: 2400,
-      paid: 1800,
-      pending: 600,
-      playersCount: 24
-    },
-    players: [
-      { id: 1, name: 'João Silva', role: 'admin', status: 'active', lastPayment: '2024-01-15' },
-      { id: 2, name: 'Maria Santos', role: 'mensalista', status: 'active', lastPayment: '2024-01-10' },
-      { id: 3, name: 'Pedro Costa', role: 'diarista', status: 'pending', lastPayment: null },
-      { id: 4, name: 'Ana Oliveira', role: 'aux', status: 'active', lastPayment: '2024-01-12' }
-    ],
-    recentPayments: [
-      { id: 1, player: 'João Silva', amount: 100, status: 'paid', date: '2024-01-15' },
-      { id: 2, player: 'Maria Santos', amount: 100, status: 'paid', date: '2024-01-10' },
-      { id: 3, player: 'Pedro Costa', amount: 50, status: 'pending', date: '2024-01-18' }
-    ]
-  });
-
-  // Estados para modais
-  const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [selectedMatch, setSelectedMatch] = useState<any>(null);
-  const [editForm, setEditForm] = useState({
-    location: '',
-    date: '',
-    time: '',
-    maxPlayers: 22
-  });
-  const [createForm, setCreateForm] = useState({
-    location: '',
-    date: '',
-    time: '',
-    maxPlayers: 22
-  });
-
-  // Handlers para os botões
-  const handleViewMatch = (match) => {
-    setSelectedMatch(match);
-    setViewModalOpen(true);
-  };
-
-  const handleEditMatch = (match) => {
-    setSelectedMatch(match);
-    // Pré-preencher com dados da partida editada
-    setEditForm({
-      location: match.location,
-      date: match.date,
-      time: match.time,
-      maxPlayers: match.maxPlayers
-    });
-    setEditModalOpen(true);
-  };
-
-  const handleDeleteMatch = (match) => {
-    setSelectedMatch(match);
-    setDeleteModalOpen(true);
-  };
-
-  const handleCreateMatch = () => {
-    // Nova Partida - usar data atual
-    const today = new Date();
-    const currentDate = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
-    const currentTime = today.toTimeString().slice(0, 5); // Formato HH:MM
-    
-    setCreateForm({
-      location: '',
-      date: currentDate,
-      time: currentTime,
-      maxPlayers: 22
-    });
-    setCreateModalOpen(true);
-  };
-
-  const handleRepeatMatch = () => {
-    // Repetir Partida - pegar última partida + 7 dias
-    if (matches.length > 0) {
-      const lastMatch = matches[matches.length - 1];
-      const lastMatchDate = new Date(lastMatch.date);
-      lastMatchDate.setDate(lastMatchDate.getDate() + 7);
-      
-      const newDate = lastMatchDate.toISOString().split('T')[0]; // Formato YYYY-MM-DD
-      
-      setCreateForm({
-        location: lastMatch.location,
-        date: newDate,
-        time: lastMatch.time,
-        maxPlayers: lastMatch.maxPlayers
-      });
-      setCreateModalOpen(true);
-    } else {
-      alert('Não há partidas anteriores para repetir.');
-    }
-  };
-
-  const handleSaveCreate = () => {
-    if (!createForm.date || !createForm.time || !createForm.location) {
-      alert('Por favor, preencha todos os campos obrigatórios.');
+  const handleSignOut = async () => {
+    if (user?.id && isMainOwner(user.id)) {
+      alert(PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER);
       return;
     }
 
-    // Adicionar nova partida ao store global
-    addMatch({
-      date: createForm.date,
-      time: createForm.time,
-      location: createForm.location,
-      maxPlayers: createForm.maxPlayers
-    });
-
-    alert('Partida criada com sucesso!');
-    setCreateModalOpen(false);
-    setCreateForm({
-      location: '',
-      date: '',
-      time: '',
-      maxPlayers: 22
-    });
-  };
-
-  const confirmDeleteMatch = () => {
-    if (selectedMatch) {
-      deleteMatch(selectedMatch.id);
-      console.log('Excluindo partida:', selectedMatch.id);
-      alert('Partida excluída com sucesso!');
-      setDeleteModalOpen(false);
-      setSelectedMatch(null);
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      alert('Erro ao fazer logout');
     }
   };
 
-  const handleSaveEdit = () => {
-    if (selectedMatch) {
-      updateMatch(selectedMatch.id, {
-        location: editForm.location,
-        date: editForm.date,
-        time: editForm.time,
-        maxPlayers: editForm.maxPlayers
-      });
-      console.log('Salvando edição:', editForm);
-      alert('Partida editada com sucesso!');
-      setEditModalOpen(false);
-      setSelectedMatch(null);
-    }
-  };
-
+  // Loading state
   if (loading) {
     return (
-      <div className='p-4 sm:p-6'>
-        <h1 className='text-lg font-bold text-gray-900'>Perfil</h1>
-        <p className='text-sm text-gray-600'>Carregando...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
+  // Not logged in
   if (!user) {
     return (
-      <div className='p-4 sm:p-6 space-y-4'>
-        <h1 className='text-lg font-bold text-gray-900 dark:text-zinc-100'>Perfil</h1>
-        <Card className="dark:bg-zinc-800 dark:border-zinc-700">
-          <CardContent className='p-6 text-center space-y-4'>
-            <User className='w-12 h-12 mx-auto text-zinc-400' />
-            <div>
-              <h3 className='text-lg font-semibold dark:text-zinc-100'>Faça login para continuar</h3>
-              <p className='text-sm text-zinc-500 dark:text-zinc-400'>Entre com sua conta Google para acessar todas as funcionalidades</p>
-            </div>
-            <div className='space-y-2'>
-              <Button 
-                onClick={async () => {
-                  try {
-                    await signInWithGoogle();
-                  } catch (error) {
-                    console.error('Erro no login:', error);
-                    alert('Erro ao fazer login. Verifique se o Google OAuth está configurado.');
-                  }
-                }} 
-                className='w-full flex items-center justify-center'
-              >
-                <Mail className='w-4 h-4 mr-2' />
-                Entrar com Google
-              </Button>
-              
-              <Button 
-                onClick={() => navigate('/offline-auth')} 
-                variant="outline"
-                className='w-full flex items-center justify-center'
-              >
-                <User className='w-4 h-4 mr-2' />
-                Login de Teste (Owner)
-              </Button>
-            </div>
+      <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 space-y-4 pb-20">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <h2 className="text-xl font-semibold mb-4">Acesso Restrito</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Você precisa estar logado para acessar seu perfil.
+            </p>
+            <Button onClick={() => navigate('/simple-auth')}>
+              Fazer Login
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -342,272 +163,183 @@ export default function PerfilPage() {
   }
 
   return (
-    <div className='p-4 sm:p-6 space-y-4 pb-20'>
+    <div className="mx-auto w-full max-w-4xl p-4 sm:p-6 space-y-4 pb-20">
+      {/* Header */}
       <header className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 shadow-sm rounded-lg mb-4">
         <div className="flex items-center justify-between p-4">
           <div>
-            <h1 className='text-lg font-bold text-gray-900 dark:text-zinc-100'>Perfil</h1>
-            <p className='text-sm text-gray-600 dark:text-zinc-400'>Dados do jogador, posição e estrelas</p>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Perfil</h1>
+            <p className="text-sm text-gray-600 dark:text-zinc-400">
+              Informações do seu perfil e configurações
+            </p>
           </div>
           
-          <div className="flex items-center space-x-2">
-            {user?.role === 'owner' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/owner-dashboard')}
-                className="p-2 hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:text-purple-700 dark:hover:text-purple-400 transition-colors"
-                title="Acesso rápido ao Dashboard do Owner"
-              >
-                <Crown className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              </Button>
-            )}
-            {user?.role && user.role !== 'owner' && (
-              <div className="flex items-center space-x-1 text-sm text-maestros-green dark:text-green-400">
-                {getRoleIcon(user.role)}
-                <span className="hidden sm:inline font-medium">
-                  {user.role === 'admin' ? 'Admin' : 
-                   user.role === 'aux' ? 'Auxiliar' : 
-                   user.role === 'mensalista' ? 'Mensalista' : 
-                   user.role === 'diarista' ? 'Diarista' : 
-                   'Usuário'}
-                </span>
-              </div>
-            )}
-          </div>
+          {/* Crown button for owners */}
+          {user.role === 'owner' && (
+            <button
+              onClick={() => navigate('/owner-dashboard')}
+              className="p-2 hover:bg-purple-100 hover:text-purple-700 transition-colors rounded-lg"
+              title="Acesso rápido ao Dashboard do Owner"
+            >
+              <Crown className="w-4 h-4 text-purple-600" />
+            </button>
+          )}
         </div>
       </header>
-      
-      {/* Informações do Usuário */}
-      <Card className="dark:bg-zinc-800 dark:border-zinc-700">
-        <CardContent className='p-6 space-y-6'>
-          {/* Foto do Perfil Centralizada */}
-          <div className='flex flex-col items-center space-y-4'>
-            <div className='relative'>
-              <div className='w-24 h-24 bg-zinc-100 dark:bg-zinc-700 rounded-full flex items-center justify-center overflow-hidden'>
-                {getAvatarUrl() ? (
+
+      {/* User Info Card */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row items-center gap-6">
+            <div className="flex flex-col items-center gap-2">
+              <div className="relative">
+                {user?.custom_avatar || user?.avatar ? (
                   <img 
-                    src={getAvatarUrl()!} 
-                    alt="Foto de perfil" 
-                    className='w-full h-full object-cover'
+                    src={user.custom_avatar || user.avatar} 
+                    alt="Avatar" 
+                    className="w-20 h-20 rounded-full object-cover"
                   />
                 ) : (
-                  <User className='w-12 h-12 text-zinc-600 dark:text-zinc-400' />
+                  <div className="w-20 h-20 bg-zinc-200 dark:bg-zinc-700 rounded-full flex items-center justify-center">
+                    <User className="w-10 h-10 text-zinc-500" />
+                  </div>
                 )}
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                className='absolute -bottom-2 -right-2 w-6 h-6 rounded-full p-0 bg-white dark:bg-zinc-800 border border-white dark:border-zinc-600 shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-700'
+              
+              <button
                 onClick={() => setShowAvatarDialog(true)}
+                className="w-fit px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md flex items-center justify-center hover:bg-blue-700 transition-colors"
               >
-                <Edit className='w-2.5 h-2.5' />
-              </Button>
+                <Camera className="w-3 h-3 mr-1" />
+                Alterar Foto
+              </button>
             </div>
             
-            {/* Informações do Usuário Centralizadas */}
-            <div className='text-center'>
+            <div className="flex-1 text-center sm:text-left">
               <h2 className='text-xl font-semibold dark:text-zinc-100'>{user.name || 'Usuário'}</h2>
               <p className='text-sm text-zinc-500 dark:text-zinc-400 mt-1'>{user.email || 'E-mail não disponível'}</p>
               {user.role && (
                 <Badge 
                   variant="secondary" 
-                  className={`mt-3 ${
-                    user.role === 'owner' 
-                      ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800' 
+                  className={
+                    user.role === 'owner'
+                      ? 'mt-3 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800'
                       : user.role === 'admin'
-                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800'
-                      : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800'
-                  }`}
+                      ? 'mt-3 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+                      : 'mt-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800'
+                  }
                 >
                   <Shield className='w-3 h-3 mr-1' />
                   {user.role === 'owner' ? '👑 Dono' : 
                    user.role === 'admin' ? '🛡️ Admin' : 
+                   user.role === 'aux' ? '⚡ Auxiliar' :
                    user.role === 'mensalista' ? '⭐ Mensalista' : 
-                   user.role === 'diarista' ? '💫 Diarista' : 
-                   user.role}
+                   user.role === 'diarista' ? '🔹 Diarista' : '👤 Usuário'}
                 </Badge>
+              )}
+              
+              {/* Acessar Dashboard Completo button - moved from header */}
+              {user.role === 'owner' && (
+                <Button
+                  onClick={() => navigate('/owner-dashboard')}
+                  variant="ghost"
+                  className="mt-4 bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  <Crown className="w-4 h-4 mr-2" />
+                  Acessar Dashboard Completo
+                </Button>
               )}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Abas de Navegação */}
-      <Tabs defaultValue="stats" className="w-full">
-        <TabsList className="w-full bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 h-12 p-1 rounded-xl flex items-center justify-center">
-          <TabsTrigger 
-            value="stats" 
-            className="flex-1 flex items-center justify-center h-full rounded-lg data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-zinc-600 dark:data-[state=active]:text-white text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-          >
-            <BarChart3 className="w-5 h-5" />
-          </TabsTrigger>
-          <TabsTrigger 
-            value="achievements" 
-            className="flex-1 flex items-center justify-center h-full rounded-lg data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-zinc-600 dark:data-[state=active]:text-white text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-          >
-            <Award className="w-5 h-5" />
-          </TabsTrigger>
-          <TabsTrigger 
-            value="settings" 
-            className="flex-1 flex items-center justify-center h-full rounded-lg data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-zinc-600 dark:data-[state=active]:text-white text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-          >
-            <Settings className="w-5 h-5" />
-          </TabsTrigger>
-        </TabsList>
+      {/* Statistics Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <Trophy className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
+            <div className="text-2xl font-bold">0</div>
+            <div className="text-sm text-zinc-500">Vitórias</div>
+          </CardContent>
+        </Card>
         
-        <TabsContent value="stats" className="space-y-4">
-          <Card>
-            <CardContent className='p-6'>
-              <h3 className='text-lg font-semibold mb-4'>Estatísticas do Jogador</h3>
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='text-center p-4 bg-emerald-50 rounded-lg'>
-                  <Trophy className='w-6 h-6 text-emerald-600 mx-auto mb-2' />
-                  <div className='text-2xl font-bold text-emerald-600'>12</div>
-                  <div className='text-sm text-zinc-500'>Gols</div>
-                </div>
-                <div className='text-center p-4 bg-blue-50 rounded-lg'>
-                  <Target className='w-6 h-6 text-blue-600 mx-auto mb-2' />
-                  <div className='text-2xl font-bold text-blue-600'>8</div>
-                  <div className='text-sm text-zinc-500'>Assistências</div>
-                </div>
-                <div className='text-center p-4 bg-purple-50 rounded-lg'>
-                  <Calendar className='w-6 h-6 text-purple-600 mx-auto mb-2' />
-                  <div className='text-2xl font-bold text-purple-600'>24</div>
-                  <div className='text-sm text-zinc-500'>Partidas</div>
-                </div>
-                <div className='text-center p-4 bg-orange-50 rounded-lg'>
-                  <Star className='w-6 h-6 text-orange-600 mx-auto mb-2' />
-                  <div className='text-2xl font-bold text-orange-600'>4.8</div>
-                  <div className='text-sm text-zinc-500'>Avaliação</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <Target className="w-8 h-8 text-green-500 mx-auto mb-2" />
+            <div className="text-2xl font-bold">0</div>
+            <div className="text-sm text-zinc-500">Gols</div>
+          </CardContent>
+        </Card>
         
-        <TabsContent value="achievements" className="space-y-4">
-          <Card>
-            <CardContent className='p-6'>
-              <h3 className='text-lg font-semibold mb-4'>Conquistas</h3>
-              <div className='space-y-3'>
-                <div className='flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg'>
-                  <Trophy className='w-5 h-5 text-yellow-600' />
-                  <div>
-                    <p className='font-medium'>Artilheiro do Mês</p>
-                    <p className='text-sm text-zinc-500'>Setembro 2024</p>
-                  </div>
-                </div>
-                <div className='flex items-center space-x-3 p-3 bg-green-50 rounded-lg'>
-                  <Star className='w-5 h-5 text-green-600' />
-                  <div>
-                    <p className='font-medium dark:text-zinc-100'>Jogador Mais Votado</p>
-                    <p className='text-sm text-zinc-500 dark:text-zinc-400'>Agosto 2024</p>
-                  </div>
-                </div>
-                <div className='flex items-center space-x-3 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg'>
-                  <Calendar className='w-5 h-5 text-blue-600 dark:text-blue-400' />
-                  <div>
-                    <p className='font-medium dark:text-zinc-100'>Presença Perfeita</p>
-                    <p className='text-sm text-zinc-500 dark:text-zinc-400'>Últimos 3 meses</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Dashboard do Owner */}
+        <Card>
+          <CardContent className="p-4 text-center">
+            <TrendingUp className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+            <div className="text-2xl font-bold">0</div>
+            <div className="text-sm text-zinc-500">Assistências</div>
+          </CardContent>
+        </Card>
+      </div>
 
-        
-        <TabsContent value="settings" className="space-y-4">
-           {/* Funcionalidades especiais para Owner */}
-           {(user.role === 'owner' || !user.role) && (
-             <>
-               {/* Botão de Acesso ao Dashboard Completo */}
-               <Button 
-                 variant="default" 
-                 className='w-full bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 text-white mb-4 flex items-center justify-center'
-                 onClick={() => navigate('/owner-dashboard')}
-               >
-                 <Crown className='w-4 h-4 mr-2' />
-                 Acessar Dashboard Completo
-               </Button>
-               
+      {/* Recent Matches Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <Target className="w-5 h-5" />
+              Partidas Recentes
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-zinc-500">
+            <Target className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p>Nenhuma partida registrada ainda</p>
+          </div>
+        </CardContent>
+      </Card>
 
+      {/* Settings Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Configurações</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <ThemeSelector />
+        </CardContent>
+      </Card>
 
-             </>
-           )}
+      {/* Admin/Aux tools moved to be above logout button */}
+      {(user.role === 'admin' || user.role === 'aux') && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Ferramentas de Administração</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <Button 
+                onClick={() => setShowInviteModal(true)}
+                className="w-full justify-start"
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Criar Convites
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-           {/* Configurações de Aparência */}
-           <Card className="dark:bg-zinc-800 dark:border-zinc-700">
-             <CardContent className='p-6'>
-               <h3 className='text-lg font-semibold mb-4 flex items-center dark:text-zinc-100'>
-                 <Palette className='w-5 h-5 mr-2 text-blue-600 dark:text-blue-400' />
-                 Aparência
-               </h3>
-               <div className='space-y-4'>
-                 <div className='flex justify-between items-center'>
-                   <div>
-                     <span className='text-sm font-medium dark:text-zinc-100'>Tema</span>
-                     <p className='text-xs text-zinc-500 dark:text-zinc-400'>Escolha entre claro, escuro ou automático</p>
-                   </div>
-                   <ThemeSelector />
-                 </div>
-               </div>
-             </CardContent>
-           </Card>
-
-           {/* Configurações da Conta */}
-           <Card className="dark:bg-zinc-800 dark:border-zinc-700">
-             <CardContent className='p-6'>
-               <h3 className='text-lg font-semibold mb-4 dark:text-zinc-100'>Configurações da Conta</h3>
-               <div className='space-y-3'>
-                 <div className='flex justify-between items-center'>
-                   <span className='text-sm text-zinc-500 dark:text-zinc-400'>ID do Usuário:</span>
-                   <span className='text-sm font-mono dark:text-zinc-100'>{user.id}</span>
-                 </div>
-                 <div className='flex justify-between items-center'>
-                   <span className='text-sm text-zinc-500 dark:text-zinc-400'>E-mail:</span>
-                   <span className='text-sm dark:text-zinc-100'>{user.email || 'Não informado'}</span>
-                 </div>
-                 <div className='flex justify-between items-center'>
-                   <span className='text-sm text-zinc-500 dark:text-zinc-400'>Nome:</span>
-                   <span className='text-sm dark:text-zinc-100'>{user.name || 'Não informado'}</span>
-                 </div>
-                 <div className='flex justify-between items-center'>
-                   <span className='text-sm text-zinc-500 dark:text-zinc-400'>Tipo de Acesso:</span>
-                   <Badge variant="outline" className="dark:border-zinc-600 dark:text-zinc-300">{user.role || 'Não definido'}</Badge>
-                 </div>
-               </div>
-             </CardContent>
-           </Card>
-
-
-         </TabsContent>
-      </Tabs>
-
-      <div className='pt-4'>
-        <Button 
-          onClick={async () => {
-            // Verificar se é o owner principal
-            if (user?.id && isMainOwner(user.id)) {
-              alert(PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER);
-              return;
-            }
-            
-            try {
-              await signOut();
-              alert('Logout realizado com sucesso!');
-              navigate('/');
-            } catch (error) {
-              console.error('Erro ao fazer logout:', error);
-              alert('Erro ao fazer logout');
-            }
-          }} 
+      {/* Logout Section */}
+      <div>
+        <Button
+          variant="destructive"
+          onClick={handleSignOut}
           disabled={user?.id ? isMainOwner(user.id) : false}
-          variant="destructive" 
-          className={`w-full flex items-center justify-center ${user?.id && isMainOwner(user.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={
+            user?.id && isMainOwner(user.id)
+              ? 'w-full flex items-center justify-center opacity-50 cursor-not-allowed'
+              : 'w-full flex items-center justify-center'
+          }
           title={user?.id && isMainOwner(user.id) ? PROTECTION_MESSAGES.CANNOT_LOGOUT_MAIN_OWNER : 'Sair da conta'}
         >
           <LogOut className='w-4 h-4 mr-2' />
@@ -615,272 +347,55 @@ export default function PerfilPage() {
         </Button>
       </div>
 
-      {/* Modal de Visualizar */}
-      <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
-        <DialogContent className="max-w-md dark:bg-zinc-800 dark:border-zinc-700">
-          <DialogHeader>
-            <DialogTitle className="dark:text-zinc-100">Detalhes do Jogo</DialogTitle>
-          </DialogHeader>
-          {selectedMatch && (
-            <div className="space-y-4">
-              <div>
-                <Label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Local</Label>
-                <p className="text-sm dark:text-zinc-100">{selectedMatch.location}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Data e Hora</Label>
-                <p className="text-sm dark:text-zinc-100">{selectedMatch.date} às {selectedMatch.time}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Status</Label>
-                <Badge variant={selectedMatch.status === 'Aberto' ? 'default' : 'secondary'} className="dark:border-zinc-600">
-                  {selectedMatch.status}
-                </Badge>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Jogadores Confirmados</Label>
-                <p className="text-sm dark:text-zinc-100">{selectedMatch.confirmedPlayers}</p>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setViewModalOpen(false)} className="dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700">
-              Fechar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de Editar */}
-      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-        <DialogContent className="max-w-md dark:bg-zinc-800 dark:border-zinc-700">
-          <DialogHeader>
-            <DialogTitle className="dark:text-zinc-100">Editar Jogo</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-location">Local</Label>
-              <Input
-                id="edit-location"
-                value={editForm.location}
-                onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
-                placeholder="Digite o local do jogo"
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-date">Data</Label>
-              <Input
-                id="edit-date"
-                type="date"
-                value={editForm.date}
-                onChange={(e) => setEditForm(prev => ({ ...prev, date: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-time">Hora</Label>
-              <Input
-                id="edit-time"
-                type="time"
-                value={editForm.time}
-                onChange={(e) => setEditForm(prev => ({ ...prev, time: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-maxPlayers">Número de Vagas</Label>
-              <Input
-                id="edit-maxPlayers"
-                type="number"
-                min="10"
-                max="30"
-                value={editForm.maxPlayers}
-                onChange={(e) => setEditForm(prev => ({ ...prev, maxPlayers: parseInt(e.target.value) || 22 }))}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSaveEdit}>
-              Salvar Alterações
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de Excluir */}
-      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        <DialogContent className="max-w-md dark:bg-zinc-800 dark:border-zinc-700">
-          <DialogHeader>
-            <DialogTitle className="dark:text-zinc-100">Confirmar Exclusão</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Tem certeza que deseja excluir este jogo? Esta ação não pode ser desfeita.
-            </p>
-            {selectedMatch && (
-              <div className="mt-4 p-3 bg-zinc-50 dark:bg-zinc-700 rounded-lg">
-                <p className="text-sm font-medium dark:text-zinc-100">{selectedMatch.location}</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">{selectedMatch.date} às {selectedMatch.time}</p>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={confirmDeleteMatch}>
-              Excluir Jogo
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de Criar Partida */}
-      <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-        <DialogContent className="max-w-md dark:bg-zinc-800 dark:border-zinc-700">
-          <DialogHeader>
-            <DialogTitle className="dark:text-zinc-100">Criar Nova Partida</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="create-location">Local</Label>
-              <Input
-                id="create-location"
-                value={createForm.location}
-                onChange={(e) => setCreateForm(prev => ({ ...prev, location: e.target.value }))}
-                placeholder="Digite o local do jogo"
-              />
-            </div>
-            <div>
-              <Label htmlFor="create-date">Data</Label>
-              <Input
-                id="create-date"
-                type="date"
-                value={createForm.date}
-                onChange={(e) => setCreateForm(prev => ({ ...prev, date: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="create-time">Hora</Label>
-              <Input
-                id="create-time"
-                type="time"
-                value={createForm.time}
-                onChange={(e) => setCreateForm(prev => ({ ...prev, time: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="create-maxPlayers">Número de Vagas</Label>
-              <Input
-                id="create-maxPlayers"
-                type="number"
-                min="10"
-                max="30"
-                value={createForm.maxPlayers}
-                onChange={(e) => setCreateForm(prev => ({ ...prev, maxPlayers: parseInt(e.target.value) || 22 }))}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSaveCreate}>
-              Criar Partida
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de Edição de Avatar */}
+      {/* Avatar Upload Dialog */}
       <Dialog open={showAvatarDialog} onOpenChange={setShowAvatarDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Foto de Perfil</DialogTitle>
+            <DialogTitle>Alterar Foto de Perfil</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex flex-col items-center space-y-4">
-              <div className='w-24 h-24 bg-zinc-100 rounded-full flex items-center justify-center overflow-hidden'>
-                {getAvatarUrl() ? (
-                  <img 
-                    src={getAvatarUrl()!} 
-                    alt="Foto de perfil atual" 
-                    className='w-full h-full object-cover'
-                  />
-                ) : (
-                  <User className='w-12 h-12 text-zinc-600' />
-                )}
-              </div>
-              
-              <div className="text-center space-y-2">
-                <p className="text-sm text-zinc-600">
-                  {user?.avatar_url && !user?.custom_avatar 
-                    ? 'Foto atual do Google' 
-                    : user?.custom_avatar 
-                    ? 'Foto personalizada' 
-                    : 'Nenhuma foto definida'
-                  }
-                </p>
-                <p className="text-xs text-zinc-500">
-                  Formatos aceitos: JPG, PNG, GIF (máx. 10MB)
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <Button 
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingAvatar}
-                className="w-full flex items-center justify-center"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                {uploadingAvatar ? 'Enviando...' : 'Escolher Nova Foto'}
-              </Button>
-              
-              {getAvatarUrl() && (
-                <Button 
-                  variant="outline" 
-                  onClick={handleRemoveAvatar}
-                  className="w-full flex items-center justify-center"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Remover Foto
-                </Button>
-              )}
-            </div>
-
+            <p className="text-sm text-zinc-500">
+              Selecione uma imagem para ser sua foto de perfil.
+            </p>
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
               onChange={handleAvatarUpload}
-              className="hidden"
+              className="w-full"
+              hidden
             />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAvatarDialog(false)}>
-              Fechar
+            <Button onClick={() => fileInputRef.current?.click()} className="w-full">
+              <Camera className="w-4 h-4 mr-2" />
+              Selecionar Imagem
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Recorte de Imagem */}
-      <Dialog open={showCropper} onOpenChange={setShowCropper}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Recortar Foto de Perfil</DialogTitle>
-          </DialogHeader>
-          {selectedImage && (
+      {/* Image Cropper */}
+      {showCropper && (
+        <Dialog open={showCropper} onOpenChange={setShowCropper}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Recortar Imagem</DialogTitle>
+            </DialogHeader>
             <ImageCropper
               imageSrc={selectedImage}
               onCropComplete={handleCropComplete}
-              onCancel={handleCropCancel}
+              onCancel={() => setShowCropper(false)}
             />
-          )}
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Simple Invite Modal for Admin/Aux */}
+      {showInviteModal && (
+        <SimpleInviteModal
+          isOpen={showInviteModal}
+          onClose={() => setShowInviteModal(false)}
+        />
+      )}
     </div>
   );
 }

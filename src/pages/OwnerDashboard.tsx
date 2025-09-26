@@ -39,9 +39,13 @@ import {
   Info,
   Repeat,
   Heart,
-  Coffee
+  Coffee,
+  Play,
+  Mail
 } from 'lucide-react';
 import { isMainOwner, PROTECTION_MESSAGES } from '@/utils/ownerProtection';
+import { CompleteInviteModal } from '@/components/CompleteInviteModal';
+import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
 
 export default function OwnerDashboard() {
   const { user, signOut } = useAuth();
@@ -84,6 +88,9 @@ export default function OwnerDashboard() {
   const [donationModalOpen, setDonationModalOpen] = useState(false);
   const [selectedDonationAmount, setSelectedDonationAmount] = useState(2);
   const [customAmount, setCustomAmount] = useState('');
+
+  // Estados para modal de convites
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
   // Dados mockados - depois integrar com Supabase
   const [dashboardData] = useState({
@@ -173,9 +180,14 @@ export default function OwnerDashboard() {
 
   // Funções para modal de criação
   const openCreateModal = () => {
+    // Definir data padrão para hoje
+    const today = new Date();
+    const todayDate = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    const currentTime = today.toTimeString().slice(0, 5); // Formato HH:MM
+    
     setCreateForm({
-      date: '',
-      time: '',
+      date: todayDate,
+      time: currentTime,
       location: '',
       maxPlayers: 22
     });
@@ -480,6 +492,10 @@ export default function OwnerDashboard() {
             <DollarSign className="w-4 h-4" />
             <span className="hidden sm:inline">Financeiro</span>
           </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex-1 flex items-center gap-1 sm:gap-2 dark:data-[state=active]:bg-zinc-700 dark:text-zinc-300 dark:data-[state=active]:text-zinc-100">
+            <BarChart3 className="w-4 h-4" />
+            <span className="hidden sm:inline">Analytics</span>
+          </TabsTrigger>
           <TabsTrigger value="settings" className="flex-1 flex items-center gap-1 sm:gap-2 dark:data-[state=active]:bg-zinc-700 dark:text-zinc-300 dark:data-[state=active]:text-zinc-100">
             <Settings className="w-4 h-4" />
             <span className="hidden sm:inline">Configurações</span>
@@ -529,9 +545,19 @@ export default function OwnerDashboard() {
                 </div>
               ))}
               <div className="space-y-2">
-                <Button className='w-full' variant="outline" onClick={handleRepeatMatch}>
+                <Button 
+                  className='w-full bg-maestros-green hover:bg-maestros-green/90 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200' 
+                  onClick={handleRepeatMatch}
+                >
                   <Repeat className='w-4 h-4 mr-2' />
                   Repetir Partida
+                </Button>
+                <Button 
+                  className='w-full bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200' 
+                  onClick={() => window.location.href = '/match'}
+                >
+                  <Play className='w-4 h-4 mr-2' />
+                  Ir para a Partida
                 </Button>
                 <Button className='w-full' variant="outline" onClick={openCreateModal}>
                   <Plus className='w-4 h-4 mr-2' />
@@ -845,6 +871,11 @@ export default function OwnerDashboard() {
           </Card>
         </TabsContent>
 
+        {/* Analytics Dashboard */}
+        <TabsContent value="analytics" className="space-y-4">
+          <AnalyticsDashboard />
+        </TabsContent>
+
         {/* Configurações Avançadas */}
         <TabsContent value="settings" className="space-y-4">
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -856,6 +887,14 @@ export default function OwnerDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className='space-y-3'>
+                     <Button 
+                       className='w-full' 
+                       variant="outline"
+                       onClick={() => setInviteModalOpen(true)}
+                     >
+                       <Mail className='w-4 h-4 mr-2' />
+                       Criar Convites/Gerenciar
+                     </Button>
                      <Button 
                        className='w-full' 
                        variant="outline"
@@ -871,14 +910,6 @@ export default function OwnerDashboard() {
                      >
                        <Shield className='w-4 h-4 mr-2' />
                        Configurar Acessos
-                     </Button>
-                     <Button
-                       className='w-full'
-                       variant="outline"
-                       onClick={() => window.location.href = '/create-invite'}
-                     >
-                       <UserCheck className='w-4 h-4 mr-2' />
-                       Criar Convites
                      </Button>
                      <Button 
                        className='w-full'
@@ -1426,6 +1457,12 @@ export default function OwnerDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal Completo de Convites */}
+      <CompleteInviteModal 
+        open={inviteModalOpen} 
+        onOpenChange={setInviteModalOpen} 
+      />
     </div>
   );
 }

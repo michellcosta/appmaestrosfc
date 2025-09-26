@@ -27,6 +27,7 @@ export type HistoryItem = {
   rightScore: number
   winner: TeamColor | 'Empate'
   ts: number
+  goals: GoalEvent[] // Adicionado: gols da partida
 }
 
 type MatchStore = {
@@ -56,6 +57,12 @@ type MatchStore = {
 
   endRoundChooseNext: (nextOpponent: TeamColor|null) => void
   recomputeScores: () => void
+  
+  // Funções de reset para testes
+  clearHistory: () => void
+  clearEvents: () => void
+  clearAll: () => void
+  resetToInitialState: () => void
 }
 
 const uuid = () =>
@@ -146,14 +153,15 @@ export const useMatchStore = create<MatchStore>()(
       },
 
       endRoundChooseNext: (nextOpponent) => {
-        const { round } = get()
+        const { round, events } = get()
         const [left, right] = round.inPlay
         const l = round.scores[left]  ?? 0
         const r = round.scores[right] ?? 0
         const winner: TeamColor | 'Empate' = l===r ? 'Empate' : (l>r ? left : right)
 
         const historyItem: HistoryItem = {
-          round: round.number, left, right, leftScore: l, rightScore: r, winner, ts: Date.now()
+          round: round.number, left, right, leftScore: l, rightScore: r, winner, ts: Date.now(),
+          goals: [...events] // Salva os gols da rodada
         }
 
         const stay: TeamColor = winner === 'Empate' ? left : winner as TeamColor
@@ -172,6 +180,8 @@ export const useMatchStore = create<MatchStore>()(
           // reseta cronômetro da rodada:
           accumulatedSec: 0,
           runningSince: null,
+          // reseta gols da partida:
+          events: [],
         })
       },
 
@@ -181,6 +191,38 @@ export const useMatchStore = create<MatchStore>()(
           base[e.team] = (base[e.team] ?? 0) + 1
         }
         set({ round: { ...get().round, scores: base } })
+      },
+
+      // Funções de reset para testes
+      clearHistory: () => {
+        set({ history: [] })
+      },
+
+      clearEvents: () => {
+        set({ 
+          events: [],
+          round: { ...get().round, scores: { Preto:0, Verde:0, Cinza:0, Vermelho:0 } }
+        })
+      },
+
+      clearAll: () => {
+        set({ 
+          events: [],
+          history: [],
+          round: { ...get().round, scores: { Preto:0, Verde:0, Cinza:0, Vermelho:0 } }
+        })
+      },
+
+      resetToInitialState: () => {
+        set({
+          round: initialRound,
+          runningSince: null,
+          accumulatedSec: 0,
+          now: Date.now(),
+          events: [],
+          history: [],
+          durationMin: 10,
+        })
       },
     }),
     {

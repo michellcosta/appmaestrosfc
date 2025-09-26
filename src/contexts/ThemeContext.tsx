@@ -17,14 +17,46 @@ const ThemeContext = createContext<ThemeContextType>({
 export const useTheme = () => useContext(ThemeContext);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('dark');
-  const [isDark, setIsDark] = useState(true);
+  // Inicializar diretamente do localStorage para evitar flash
+  const getInitialTheme = (): Theme => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme') as Theme;
+      return savedTheme || 'light';
+    }
+    return 'light';
+  };
 
+  const getInitialIsDark = (): boolean => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme') as Theme;
+      if (savedTheme === 'dark') return true;
+      if (savedTheme === 'light') return false;
+      if (savedTheme === 'auto') {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+    }
+    return false;
+  };
+
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const [isDark, setIsDark] = useState(getInitialIsDark);
+
+  // Aplicar tema inicial imediatamente
   useEffect(() => {
-    // Carregar tema salvo
-    const savedTheme = localStorage.getItem('theme') as Theme;
-    if (savedTheme) {
-      setTheme(savedTheme);
+    const root = document.documentElement;
+    const initialTheme = getInitialTheme();
+    
+    if (initialTheme === 'auto') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    } else if (initialTheme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
     }
   }, []);
 

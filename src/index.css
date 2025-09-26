@@ -4,7 +4,7 @@
 
 /* Custom CSS Variables for App Maestros FC */
 :root {
-  /* Primary Colors - Verde Maestros FC */
+  /* Primary Colors */
   --primary-50: #f0fdf4;
   --primary-100: #dcfce7;
   --primary-200: #bbf7d0;
@@ -16,19 +16,19 @@
   --primary-800: #166534;
   --primary-900: #14532d;
 
-  /* Secondary Colors - Escala de Cinza/Preto */
-  --secondary-50: #f8fafc;
-  --secondary-100: #f1f5f9;
-  --secondary-200: #e2e8f0;
-  --secondary-300: #cbd5e1;
-  --secondary-400: #94a3b8;
-  --secondary-500: #64748b;
-  --secondary-600: #475569;
-  --secondary-700: #334155;
-  --secondary-800: #1e293b;
-  --secondary-900: #0f172a;
+  /* Secondary Colors */
+  --secondary-50: #f9fafb;
+  --secondary-100: #f3f4f6;
+  --secondary-200: #e5e7eb;
+  --secondary-300: #d1d5db;
+  --secondary-400: #9ca3af;
+  --secondary-500: #6b7280;
+  --secondary-600: #4b5563;
+  --secondary-700: #374151;
+  --secondary-800: #1f2937;
+  --secondary-900: #111827;
 
-  /* Success Colors - Verde (mesmo que primary) */
+  /* Success Colors */
   --success-50: #f0fdf4;
   --success-100: #dcfce7;
   --success-200: #bbf7d0;
@@ -421,23 +421,23 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 8%;
     
-    /* Primary - Green */
-    --primary: 142 71% 45%;
+    /* Primary - Professional Dark Blue */
+    --primary: 222 84% 5%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 142 71% 35%;
-    --primary-glow: 142 71% 55%;
+    --primary-hover: 222 84% 8%;
+    --primary-glow: 222 84% 12%;
     
-    /* Secondary - Light Gray */
-    --secondary: 210 14% 96%;
-    --secondary-foreground: 215 25% 8%;
+    /* Secondary - Modern Gray */
+    --secondary: 215 16% 47%;
+    --secondary-foreground: 0 0% 100%;
     
-    /* Muted - Gray */
+    /* Muted - Light Gray */
     --muted: 210 14% 96%;
     --muted-foreground: 215 14% 44%;
     
-    /* Accent - Green Subtle */
-    --accent: 142 30% 95%;
-    --accent-foreground: 142 71% 35%;
+    /* Accent - Maestros Green (usado com moderação) */
+    --accent: 142 71% 45%;
+    --accent-foreground: 0 0% 100%;
     
     /* Destructive - Red */
     --destructive: 0 84% 60%;
@@ -461,13 +461,13 @@ All colors MUST be HSL.
     
     /* Team Colors */
     --team-black: 0 0% 10%;
-    --team-green: 142 71% 35%;
+    --team-green: 142 71% 45%;
     --team-gray: 215 14% 44%;
     --team-red: 0 84% 50%;
     
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-card: linear-gradient(180deg, hsl(var(--card)), hsl(var(--background)));
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    --gradient-card: linear-gradient(180deg, hsl(var(--card)), hsl(var(--muted)));
     --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(142 71% 55%));
     
     /* Shadows */
