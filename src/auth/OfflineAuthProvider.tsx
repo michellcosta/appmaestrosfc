@@ -82,12 +82,42 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user && mounted) {
+          // Extrair foto do perfil do Google com múltiplas tentativas
+          let googleAvatarUrl = null;
+          const userMetadata = session.user.user_metadata;
+          
+          // Tentar múltiplas fontes para a foto do Google com debug detalhado
+          console.log('🔍 Analisando metadados do Google:', {
+            userMetadata: userMetadata,
+            available_fields: Object.keys(userMetadata || {})
+          });
+
+          const possibleAvatarSources = [
+            userMetadata?.avatar_url,
+            userMetadata?.picture,
+            userMetadata?.photoURL,
+            session.user.identities?.find(id => id.provider === 'google')?.user_metadata?.avatar_url,
+            session.user.identities?.find(id => id.provider === 'google')?.user_metadata?.picture
+          ];
+
+          for (const [index, avatarSource] of possibleAvatarSources.entries()) {
+            if (avatarSource) {
+              googleAvatarUrl = avatarSource;
+              console.log(`📸 Avatar Google encontrado na fonte ${index + 1}:`, avatarSource);
+              break;
+            }
+          }
+          
+          if (!googleAvatarUrl) {
+            console.log('⚠️ Nenhuma foto encontrada nos metadados do Google');
+          }
+          
           const googleUser: AppUser = {
             id: session.user.id,
             email: session.user.email,
-            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
+            name: userMetadata?.full_name || userMetadata?.name || session.user.email?.split('@')[0],
             role: 'owner',
-            avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
+            avatar_url: googleAvatarUrl,
             custom_avatar: null,
             group_id: `group_${session.user.id.slice(-8)}`
           };
@@ -120,13 +150,45 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
             if (!mounted) return;
 
             if (event === 'SIGNED_IN' && session?.user) {
+              // Extrair foto do perfil do Google com múltiplas tentativas (versão do listener)
+              let googleAvatarUrl = null;
+              const userMetadata = session.user.user_metadata;
+              
+              // Tentar múltiplas fontes para a foto do Google (listener version)
+              console.log('🔍 Analisando metadados do Google (listener):', {
+                userMetadata: userMetadata,
+                available_fields: Object.keys(userMetadata || {}),
+                user_identities: session.user.identities
+              });
+
+              const possibleAvatarSources = [
+                userMetadata?.avatar_url,
+                userMetadata?.picture,
+                userMetadata?.photoURL,
+                session.user.identities?.find(id => id.provider === 'google')?.user_metadata?.avatar_url,
+                session.user.identities?.find(id => id.provider === 'google')?.user_metadata?.picture
+              ];
+
+              for (const [index, avatarSource] of possibleAvatarSources.entries()) {
+                if (avatarSource) {
+                  googleAvatarUrl = avatarSource;
+                  console.log(`📸 Avatar Google encontrado (listener) na fonte ${index + 1}:`, avatarSource);
+                  break;
+                }
+              }
+              
+              if (!googleAvatarUrl) {
+                console.log('⚠️ Nenhuma foto encontrada nos metadados do Google (listener)');
+              }
+              
               const googleUser: AppUser = {
                 id: session.user.id,
                 email: session.user.email,
-                name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
+                name: userMetadata?.full_name || userMetadata?.name || session.user.email?.split('@')[0],
                 role: 'owner',
-                avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
-                custom_avatar: null
+                avatar_url: googleAvatarUrl,
+                custom_avatar: null,
+                group_id: `group_${session.user.id.slice(-8)}`
               };
               
               localStorage.setItem('offline_user', JSON.stringify(googleUser));

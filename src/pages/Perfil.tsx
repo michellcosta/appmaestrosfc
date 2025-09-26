@@ -84,6 +84,18 @@ export default function PerfilPage() {
       loading: statsLoading
     });
   }, [playerStats, statsLoading]);
+
+  // Debug: Log do avatar do usuário para verificar captura do Google
+  useEffect(() => {
+    if (user) {
+      console.log(`📸 Avatar do usuário carregado:`, {
+        custom_avatar: user.custom_avatar,
+        avatar_url: user.avatar_url,
+        avatar: user.avatar,
+        google_image_detected: !!(user.avatar_url || user.avatar)
+      });
+    }
+  }, [user]);
   
   // Sistema em tempo real para achievements
   const { subscribePlayerUpdates, unsubscribePlayerUpdates, isRealtime } = useAchievementsStore();
@@ -335,9 +347,9 @@ export default function PerfilPage() {
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <div className="flex flex-col items-center gap-2">
               <div className="relative">
-                {user?.custom_avatar || user?.avatar ? (
+                {user?.custom_avatar || user?.avatar_url || user?.avatar ? (
                   <img 
-                    src={user.custom_avatar || user.avatar} 
+                    src={user.custom_avatar || user.avatar_url || user.avatar} 
                     alt="Avatar" 
                     className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover shadow-lg"
                   />
@@ -514,16 +526,23 @@ export default function PerfilPage() {
         </Card>
       </div>
 
-      {/* Debug info - só em desenvolvimento */}
-      {process.env.NODE_ENV === 'development' && statsError && (
-        <Card className="border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20">
-          <CardContent className="p-3">
-            <p className="text-sm text-red-600 dark:text-red-400">
-              ⚠️ Erro ao carregar estatísticas: {statsError}
-            </p>
-          </CardContent>
-        </Card>
-      )}
+             {/* Debug info - só em desenvolvimento */}
+             {process.env.NODE_ENV === 'development' && (statsError || user?.avatar_url) && (
+               <Card className="border-yellow-200 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20">
+                 <CardContent className="p-3">
+                   {statsError && (
+                     <p className="text-sm text-red-600 dark:text-red-400">
+                       ⚠️ Erro ao carregar estatísticas: {statsError}
+                     </p>
+                   )}
+                   {user?.avatar_url && (
+                     <p className="text-sm text-green-600 dark:text-green-400">
+                       📸 Avatar Google capturado: {user.avatar_url}
+                     </p>
+                   )}
+                 </CardContent>
+               </Card>
+             )}
 
       {/* Status de atualização em tempo real */}
       {isRealtime && !statsLoading && (
