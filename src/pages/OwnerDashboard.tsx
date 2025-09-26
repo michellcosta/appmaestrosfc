@@ -514,6 +514,50 @@ export default function OwnerDashboard() {
     }
   }, [offlinePlayers.length]);
 
+  // Função para excluir TODOS os jogadores
+  const clearAllPlayers = () => {
+    if (confirm('⚠️ ATENÇÃO: Isso irá EXCLUIR TODOS os jogadores permanentemente!\n\nDeseja continuar?')) {
+      try {
+        // Limpar todos os possíveis locais de armazenamento
+        const possibleStorageKeys = [
+          'offline_players',
+          'local_players', 
+          'players-store',
+          'nexus-play-players',
+          'app_players',
+          'maestrosfc_player_stats',
+          'players-store' // Store do Zustand para jogadores ativos de partida
+        ];
+        
+        // Remove objetos específicos mas não limpa tudo do localStorage
+        for (const key of possibleStorageKeys) {
+          localStorage.removeItem(key);
+        }
+        
+        // Limpar store do Zustand para representações de time
+        try {
+          // Reset simples do store está invocando state direto
+          localStorage.removeItem('players-store'); // Zustand persistence
+          console.log('♾️ Stored Zustand players removed');
+        } catch (resetError) {
+          console.warn('⚠️ Não consegui limpar o store Zustand, mas segui');
+        }
+        
+        // Limpar o estado atual
+        setOfflinePlayers([]);
+        setShowOfflineSyncNotice(false);
+        
+        // Confirmar exclusão
+        alert('✅ Todos os jogadores foram excluídos com sucesso!');
+        
+        console.log('🧹 Todas as fontes de jogadores limpas');
+      } catch (error) {
+        console.error('❌ Erro ao limpar jogadores:', error);
+        alert('⚠️ Erro ao excluir alguns dados. Verifique se não há recarregamento em andamento.');
+      }
+    }
+  };
+
   // Função para formatar data no formato dd-mm-aaaa
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -1012,6 +1056,16 @@ export default function OwnerDashboard() {
                     <Settings className='w-4 h-4 mr-2' />
                     Filtros
                   </Button>
+                  {offlinePlayers.length > 0 && (
+                    <Button 
+                      variant="destructive" 
+                      onClick={() => clearAllPlayers()}
+                      className="w-full sm:w-auto"
+                    >
+                      <Trash2 className='w-4 h-4 mr-2' />
+                      Excluir Todos
+                    </Button>
+                  )}
                 </div>
               </CardTitle>
             </CardHeader>
