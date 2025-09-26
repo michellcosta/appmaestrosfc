@@ -55,33 +55,63 @@ export function usePlayerStats(userId: string) {
           // supabase.from('goal_events').select('*').eq('author_id', userId),
         ]);
 
-        // Dados reais da base de dados
+        // *** COMECE COM DADOS ZERADOS E BUSCA SOMENTE INFORMAÇÕES REAIS ***
         const realMatches = teamDrawData?.length || 0;
-        const realGoals = 15; // TODO: Substituir por real query goal_events
-        const realAssists = 8; // TODO: Substituir por real query assist_events
         
-        console.log(`📊 Estatísticas encontradas: ${realMatches} partidas, ${realGoals} gols, ${realAssists} assistências`);
+        // Inicialização padrão ZERADA
+        let realGoals = 0;
+        let realAssists = 0; 
+        let victories = 0;
+        let draws = 0; 
+        let defeats = 0;
         
-        const victories = Math.floor(realMatches * 0.6);
-        const draws = Math.floor(realMatches * 0.15);
-        const defeats = Math.floor(realMatches * 0.25);
+        // Verificar se há dados persistentes para este player from caches
+        const playerId = userId.toString();
+        console.log(`📋 Estatísticas iniciando ZERADAS para jogador ${playerId}`);
         
-        const newStats = {
-          totalGoals: realGoals,
-          totalAssists: realAssists, 
-          totalMatches: realMatches,
-          consecutiveMatches: 5, // TODO: calcular partidas consecutivas do banco
-          totalPayments: 10, // TODO: buscar pagamentos reais
-          victories,
-          draws,
-          defeats,
-          averageGoals: realMatches > 0 ? Number((realGoals / realMatches).toFixed(2)) : 0,
-          participation: realMatches > 0 ? 85 : 0,
-          totalTimePlayed: realMatches * 90,
-        };
-        
-        console.log('✅ Estatísticas atualizadas com dados reais:', newStats);
-        setStats(newStats);
+        try {
+          // 1) Buscar dados do localStorage de obstáster addresses and stats locais
+          const localStoreKey = 'maestrosfc_player_stats';
+          const localPlayerStatsCache = localStorage.getItem(localStoreKey);
+          
+          if (localPlayerStatsCache) {
+            const cachedPlayerData = JSON.parse(localPlayerStatsCache);
+            // Pegar somente os dados salvos previamente na localStorage structure    
+            realGoals = parseInt(cachedPlayerData.totalGoals || '0');
+            realAssists = parseInt(cachedPlayerData.totalAssists || '0');  
+            victories = parseInt(cachedPlayerData.victories || '0');
+            draws = parseInt(cachedPlayerData.draws || '0'); 
+            defeats = parseInt(cachedPlayerData.defeats || '0');
+          }
+          
+          // TODO: Add-Goal Logic from stored match events deve ficar aquí para valores crescentes quando são gols adicionados (Enhancement)
+          // Como sou nivel offline, buscar manual stats dos MatchEs via preview pattern reads, players-store.
+          
+        } catch (parseError) {
+          console.warn(`⚠️ Falha parse localPlayerData: ${parseError}, continuando zeradado`);
+          // Fallback zero-initialized behavior     
+        }
+          
+          const averageGoals = realMatches > 0 ? Number((realGoals / realMatches).toFixed(2)) : 0;
+          const realParticipation = realMatches > 0 ? (Math.min(95, realMatches * 5)) : 0;  
+          const totalTimePlayed = realMatches * 90; 
+          
+          const newStats = {
+            totalGoals: realGoals,           // ⚽ Gols cumulativos from all partidas
+            totalAssists: realAssists,       // 🎯 Assistências cumulativas       
+            totalMatches: realMatches,
+            consecutiveMatches: 0,           // em time futuro: track de misses near-ups
+            totalPayments: 0,   
+            victories: victories,            // ☑️ W/L/D iniciadas em ZERO, sem preenchimento falsa *********************************
+            draws: draws,
+            defeats: defeats,
+            averageGoals,
+            participation: realParticipation,
+            totalTimePlayed,
+          };
+          
+          console.log(`✅ Estatísticas Carregadas: golos=${realGoals}, assists=${realAssists}, victs=${victories}, math=${realMatches}`);
+          setStats(newStats);
 
       } catch (err) {
         console.error('❌ Erro ao buscar estatísticas do jogador:', err);
