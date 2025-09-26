@@ -261,11 +261,18 @@ export default function PerfilPage() {
     }
 
     try {
+      console.log('🔍 Iniciando logout do usuário...');
+      
+      // Realizar logout completo
       await signOut();
+      
+      // Redirecionar para home (será exibido login)
       navigate('/');
+      
+      console.log('✅ Logout e redirecionamento completos');
     } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-      alert('Erro ao fazer logout');
+      console.error('❌ Erro ao fazer logout:', error);
+      alert('Erro ao fazer logout. Tente novamente.');
     }
   };
 
@@ -407,7 +414,6 @@ export default function PerfilPage() {
                       <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{shirtSize}</p>
                     )}
                   </div>
-                </div>
                 </div>
               </div>
 

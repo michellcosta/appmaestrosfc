@@ -226,9 +226,22 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
 
   const signOut = async () => {
     try {
+      console.log('🔍 Realizando logout...');
+      
+      // Importar supabase dinamicamente para realizar logout completo
+      try {
+        const { supabase } = await import('@/lib/supabase');
+        await supabase.auth.signOut();
+        console.log('✅ Supabase auth logout realizado');
+      } catch (supabaseError) {
+        console.log('⚠️ Supabase logout falhou (continuando com logout local)');
+      }
+      
+      // Limpar dados locais
       localStorage.removeItem('offline_user');
       setUser(null);
-      console.log('✅ Logout realizado');
+      
+      console.log('✅ Logout completo realizado');
     } catch (error) {
       console.error('❌ Erro no logout:', error);
       throw error;
