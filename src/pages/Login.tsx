@@ -20,6 +20,25 @@ export default function Login() {
     }
   }, [user, navigate]);
 
+  // Verificar se há dados duplicados no localStorage e limpar
+  useEffect(() => {
+    // Limpar dados de teste automáticos se houver
+    const offlineUser = localStorage.getItem('offline_user');
+    if (offlineUser) {
+      try {
+        const userData = JSON.parse(offlineUser);
+        if (userData.email === 'owner@maestros.com' && userData.name === 'Owner Teste') {
+          console.log('🧹 Limpando usuário de teste automático');
+          localStorage.removeItem('offline_user');
+          localStorage.removeItem('user_data');
+          localStorage.removeItem('player_data');
+        }
+      } catch (error) {
+        console.error('❌ Erro ao verificar dados de user:', error);
+      }
+    }
+  }, []);
+
   const handleGoogleLogin = async () => {
     setLoading(true);
     setMessage('🔄 Conectando com o Google...');
