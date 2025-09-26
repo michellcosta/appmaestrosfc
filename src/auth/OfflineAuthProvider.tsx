@@ -193,10 +193,22 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
       // Importar supabase dinamicamente
       const { supabase } = await import('@/lib/supabase');
       
+      // Detectar se estamos em desenvolvimento ou produção
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      
+      // Usar a porta atual da aplicação (Vite porta 8080 no config ou 5173 default)
+      const currentPort = window.location.port || (isLocalhost ? '8080' : null);
+      const redirectUrl = isLocalhost 
+        ? `http://localhost:${currentPort || '8080'}/`
+        : `${window.location.origin}/`;
+      
+      
+      console.log('🌐 Redirect URL será:', redirectUrl);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: redirectUrl,
         }
       });
 

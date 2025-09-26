@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Crown, CheckCircle, AlertCircle, ArrowLeft, Shield } from 'lucide-react';
+import { Crown, CheckCircle, AlertCircle, ArrowLeft, Shield, Settings } from 'lucide-react';
 import { useAuth } from '@/auth/OfflineAuthProvider';
 import { Link } from 'react-router-dom';
 import { canCreateOwner, getMainOwnerId, PROTECTION_MESSAGES } from '@/utils/ownerProtection';
@@ -32,14 +32,32 @@ export default function CreateOwnerWithGoogle() {
       setIsCreating(true);
       setError(null);
       
+      console.log('🔍 Iniciando Google OAuth...');
+      
       await signInWithGoogle();
+      
+      console.log('✅ Google OAuth concluído');
       
       // O FixedAuthProvider já cria automaticamente um usuário com role 'owner'
       // quando alguém faz login com Google pela primeira vez
       
     } catch (error: any) {
-      console.error('Erro ao criar owner com Google:', error);
-      setError(error.message || 'Erro ao fazer login com Google');
+      console.error('❌ Erro ao criar owner com Google:', error);
+      
+      // Mensagens de erro mais específicas
+      let errorMessage = 'Erro desconhecido ao fazer login com Google';
+      
+      if (error.message?.includes('popup_closed')) {
+        errorMessage = 'Janela do Google foi fechada. Tente novamente.';
+      } else if (error.message?.includes('access_denied')) {
+        errorMessage = 'Acesso negado pelo Google. Verifique as configurações.';
+      } else if (error.message?.includes('goog_oauth')) {
+        errorMessage = 'Erro de configuração OAuth. Verifique configurações Supabase.';
+      } else {
+        errorMessage = error.message || 'Erro ao conectar com Google';
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsCreating(false);
     }
@@ -190,6 +208,23 @@ export default function CreateOwnerWithGoogle() {
               <li>3. O sistema criará automaticamente uma conta owner</li>
               <li>4. Você terá acesso completo ao sistema</li>
             </ol>
+          </div>
+
+          {/* Configuração status debug */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <h4 className="font-semibold text-yellow-800 mb-2 flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Status da Configuração
+            </h4>
+            <div className="text-xs text-yellow-700 space-y-1">
+              <p><strong>❓ Se o botão não estiver funcionando:</strong></p>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>Verifique se o Supabase está configurado com Google OAuth</li>
+                <li>Confirme se o Vercel tem as variáveis corretas carregadas</li>
+                <li>Certifique-se que o redirect URL está no Google Console</li>
+                <li>Abra o Console do navegador para ver logs de erro</li>
+              </ul>
+            </div>
           </div>
 
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">

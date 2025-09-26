@@ -10,8 +10,10 @@ import type { IncomingMessage, ServerResponse } from "http";
 export default defineConfig(({ mode }) => ({
   base: '/',
   server: {
-    host: "::",
+    host: "::", // IPv6 - permite acesso externo
     port: 8080,
+    open: true, // Abre automaticamente o navegador
+    strictPort: false, // Permite tentar outras portas se 8080 não estiver disponível
   },
   plugins: [
     react(), 

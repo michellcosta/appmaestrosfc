@@ -66,6 +66,7 @@ export function SimpleInviteModal({ open, onOpenChange }: SimpleInviteModalProps
 
   const handleCopyLink = async (invite: SimpleInvite) => {
     console.log('🔗 Copiando link:', invite.link);
+    console.log('🔍 Debug - Link que será copiado:', invite.link);
     const success = await copyToClipboard(invite.link);
     console.log('📋 Resultado da cópia do link:', success);
     if (success) {
@@ -91,6 +92,8 @@ export function SimpleInviteModal({ open, onOpenChange }: SimpleInviteModalProps
   const handleCopyAll = async (invite: SimpleInvite) => {
     const fullText = `${invite.message}\n\n🔗 Link: ${invite.link}`;
     console.log('📱 Copiando mensagem completa para WhatsApp...');
+    console.log('🔍 DEBUG - Full text que será copiado:', fullText);
+    console.log('🔍 DEBUG - Link específico:', invite.link);
     const success = await copyToClipboard(fullText);
     console.log('📋 Resultado da cópia completa:', success);
     if (success) {

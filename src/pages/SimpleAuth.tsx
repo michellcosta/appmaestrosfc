@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Mail } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function SimpleAuth() {
@@ -58,6 +59,31 @@ export default function SimpleAuth() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setMessage('Iniciando login com Google...');
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        }
+      });
+      
+      if (error) {
+        setMessage(`Erro no Google: ${error.message}`);
+      } else {
+        setMessage('Redirecionando para Google...');
+        console.log('🔄 Google OAuth iniciado:', data);
+      }
+    } catch (error) {
+      setMessage(`Erro: ${error}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className='p-4 sm:p-6 space-y-4'>
       <Card>
@@ -104,6 +130,27 @@ export default function SimpleAuth() {
               {loading ? 'Criando...' : 'Criar Conta'}
             </Button>
           </div>
+
+          <div className='relative my-6'>
+            <div className='absolute inset-0 flex items-center'>
+              <div className='w-full border-t border-gray-300 dark:border-gray-600'></div>
+            </div>
+            <div className='relative flex justify-center text-sm'>
+              <span className='px-2 bg-white dark:bg-zinc-800 text-gray-500 dark:text-gray-400'>
+                ou
+              </span>
+            </div>
+          </div>
+
+          <Button 
+            onClick={handleGoogleLogin} 
+            disabled={loading}
+            className='w-full bg-red-500 hover:bg-red-600 text-white border-red-500'
+            variant='outline'
+          >
+            <Mail className='w-4 h-4 mr-2' />
+            Entrar com Google
+          </Button>
           
           {message && (
             <div className='p-3 bg-blue-50 border border-blue-200 rounded-lg'>

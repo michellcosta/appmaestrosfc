@@ -86,7 +86,15 @@ Olá! Você foi convidado para participar do nosso grupo de futebol como ${typeT
     
     try {
       const code = generateCode();
-      const link = `${window.location.origin}/join?code=${code}&type=${type}`;
+      // Ensure we're generating proper community URLs regardless of environment  
+      const isLocalDev = window.location.host.includes('localhost') || 
+                         window.location.host.includes('192.168') ||
+                         window.location.port.includes('808');
+      
+      const baseUrl = isLocalDev 
+        ? 'https://maestrosfc.com.br'  // Use produção URL for proper invite links
+        : window.location.origin;
+      const link = `${baseUrl}/join?code=${code}&type=${type}`;
       const message = generateMessage(type, link);
       
       console.log('Dados do convite:', { code, link, message });

@@ -92,6 +92,18 @@ export default function OwnerDashboard() {
   // Estados para modal de convites
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
+  // Estados para configurações PIX
+  const [pixPayment, setPixPayment] = useState({
+    key: '',
+    accountName: '',
+    description: ''
+  });
+  const [pixDonation, setPixDonation] = useState({
+    key: '',
+    accountName: '',
+    description: ''
+  });
+
   // Dados mockados - depois integrar com Supabase
   const [dashboardData] = useState({
     financialStatus: {
@@ -323,6 +335,42 @@ export default function OwnerDashboard() {
     closeDonationModal();
   };
 
+  // Funções para gerenciar configurações PIX
+  const savePixPaymentConfig = () => {
+    if (!pixPayment.key.trim()) {
+      alert('Por favor, preencha a chave PIX para pagamentos.');
+      return;
+    }
+    
+    // Aqui salvaria no localStorage ou banco de dados
+    localStorage.setItem('pix_payment_config', JSON.stringify(pixPayment));
+    alert('✅ Configuração PIX Pagamentos salva com sucesso!');
+  };
+
+  const savePixDonationConfig = () => {
+    if (!pixDonation.key.trim()) {
+      alert('Por favor, preencha a chave PIX para doações.');
+      return;
+    }
+    
+    // Aqui salvaria no localStorage ou banco de dados
+    localStorage.setItem('pix_donation_config', JSON.stringify(pixDonation));
+    alert('✅ Configuração PIX Doações salva com sucesso!');
+  };
+
+  // Load dados das configurações PIX ao carregar página
+  useEffect(() => {
+    const savedPayment = localStorage.getItem('pix_payment_config');
+    const savedDonation = localStorage.getItem('pix_donation_config');
+    
+    if (savedPayment) {
+      setPixPayment(JSON.parse(savedPayment));
+    }
+    if (savedDonation) {
+      setPixDonation(JSON.parse(savedDonation));
+    }
+  }, []);
+
   if (!user || user.role !== 'owner') {
     return (
       <div className='p-4 sm:p-6'>
@@ -496,6 +544,10 @@ export default function OwnerDashboard() {
             <BarChart3 className="w-4 h-4" />
             <span className="hidden sm:inline">Analytics</span>
           </TabsTrigger>
+          <TabsTrigger value="pix" className="flex-1 flex items-center gap-1 sm:gap-2 dark:data-[state=active]:bg-zinc-700 dark:text-zinc-300 dark:data-[state=active]:text-zinc-100">
+            <CreditCard className="w-4 h-4" />
+            <span className="hidden sm:inline">PIX</span>
+          </TabsTrigger>
           <TabsTrigger value="settings" className="flex-1 flex items-center gap-1 sm:gap-2 dark:data-[state=active]:bg-zinc-700 dark:text-zinc-300 dark:data-[state=active]:text-zinc-100">
             <Settings className="w-4 h-4" />
             <span className="hidden sm:inline">Configurações</span>
@@ -504,68 +556,6 @@ export default function OwnerDashboard() {
 
         {/* Visão Geral */}
         <TabsContent value="overview" className="space-y-4">
-          {/* Próximos Jogos */}
-          <Card>
-            <CardHeader>
-              <CardTitle className='flex items-center gap-2'>
-                <Calendar className='w-5 h-5' />
-                Próximos Jogos
-              </CardTitle>
-            </CardHeader>
-            <CardContent className='space-y-3'>
-              {matches.map((match) => (
-                <div key={match.id} className='p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 space-y-3'>
-                  <div className='flex items-start justify-between'>
-                    <div className='flex-1 min-w-0'>
-                      <p className='font-medium text-zinc-900 dark:text-zinc-100 truncate'>{match.location}</p>
-                      <p className='text-sm text-zinc-600 dark:text-zinc-400'>{formatDate(match.date)} às {match.time}</p>
-                      <p className='text-sm text-zinc-600 dark:text-zinc-400'>
-                        {match.confirmedPlayers}/{match.maxPlayers} confirmados
-                      </p>
-                    </div>
-                    <div className='flex items-center gap-1 ml-2 flex-shrink-0'>
-                      <Button size="sm" variant="outline" className='h-8 w-8 p-0' onClick={() => openViewModal(match)}>
-                        <Eye className='w-4 h-4' />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className='flex items-center justify-between'>
-                    <Badge variant={match.status === 'open' ? 'default' : 'secondary'}>
-                      {match.status === 'open' ? 'Aberto' : 'Fechado'}
-                    </Badge>
-                    <div className='flex items-center gap-1'>
-                      <Button size="sm" variant="outline" className='h-8 w-8 p-0' onClick={() => openEditModal(match)}>
-                        <Edit className='w-4 h-4' />
-                      </Button>
-                      <Button size="sm" variant="outline" className='h-8 w-8 p-0' onClick={() => openDeleteModal(match)}>
-                        <Trash2 className='w-4 h-4' />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              <div className="space-y-2">
-                <Button 
-                  className='w-full bg-maestros-green hover:bg-maestros-green/90 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200' 
-                  onClick={handleRepeatMatch}
-                >
-                  <Repeat className='w-4 h-4 mr-2' />
-                  Repetir Partida
-                </Button>
-                <Button 
-                  className='w-full bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200' 
-                  onClick={() => window.location.href = '/match'}
-                >
-                  <Play className='w-4 h-4 mr-2' />
-                  Ir para a Partida
-                </Button>
-                <Button className='w-full' variant="outline" onClick={openCreateModal}>
-                  <Plus className='w-4 h-4 mr-2' />
-                  Nova Partida
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Situação Financeira */}
           <Card className="dark:bg-zinc-800 dark:border-zinc-700">
@@ -874,6 +864,158 @@ export default function OwnerDashboard() {
         {/* Analytics Dashboard */}
         <TabsContent value="analytics" className="space-y-4">
           <AnalyticsDashboard />
+        </TabsContent>
+
+        {/* Configurações PIX */}
+        <TabsContent value="pix" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* PIX Pagamentos */}
+            <Card className="border-blue-200">
+              <CardHeader className="bg-blue-50 dark:bg-blue-900/20">
+                <CardTitle className="flex items-center gap-2 text-blue-800 dark:text-blue-300">
+                  <DollarSign className="w-5 h-5" />
+                  PIX Pagamentos
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="payment-pix-key">Chave PIX</Label>
+                    <Input
+                      id="payment-pix-key"
+                      value={pixPayment.key}
+                      onChange={(e) => setPixPayment({...pixPayment, key: e.target.value})}
+                      placeholder="exemplo@email.com ou 11999999999"
+                      className="mt-1 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="payment-account-name">Nome da Conta</Label>
+                    <Input
+                      id="payment-account-name"
+                      value={pixPayment.accountName}
+                      onChange={(e) => setPixPayment({...pixPayment, accountName: e.target.value})}
+                      placeholder="Conta João - Pagamentos"
+                      className="mt-1 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="payment-description">Descrição</Label>
+                    <Input
+                      id="payment-description"
+                      value={pixPayment.description}
+                      onChange={(e) => setPixPayment({...pixPayment, description: e.target.value})}
+                      placeholder="Para receber mensalidades e diárias"
+                      className="mt-1 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+                    />
+                  </div>
+                  <Button 
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    onClick={savePixPaymentConfig}
+                  >
+                    Salvar Configuração
+                  </Button>
+                </div>
+                <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    ✅ Esta conta receberá <strong>mensalidades</strong> e <strong>diárias</strong> dos membros.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* PIX Doações */}
+            <Card className="border-green-200">
+              <CardHeader className="bg-green-50 dark:bg-green-900/20">
+                <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-300">
+                  <Heart className="w-5 h-5" />
+                  PIX Doações
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="donation-pix-key">Chave PIX</Label>
+                    <Input
+                      id="donation-pix-key"
+                      value={pixDonation.key}
+                      onChange={(e) => setPixDonation({...pixDonation, key: e.target.value})}
+                      placeholder="exemplo@email.com ou 11999999999"
+                      className="mt-1 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="donation-account-name">Nome da Conta</Label>
+                    <Input
+                      id="donation-account-name"
+                      value={pixDonation.accountName}
+                      onChange={(e) => setPixDonation({...pixDonation, accountName: e.target.value})}
+                      placeholder="Conta Maria - Doações"
+                      className="mt-1 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="donation-description">Descrição</Label>
+                    <Input
+                      id="donation-description"
+                      value={pixDonation.description}
+                      onChange={(e) => setPixDonation({...pixDonation, description: e.target.value})}
+                      placeholder="Para receber doações dos apoiadores"
+                      className="mt-1 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+                    />
+                  </div>
+                  <Button 
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    onClick={savePixDonationConfig}
+                  >
+                    Salvar Configuração
+                  </Button>
+                </div>
+                <div className="mt-4 p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    ❤️ Esta conta receberá <strong>doações</strong> dos apoiadores.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Status das Contas */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5" />
+                Status das Configurações
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div>
+                    <h4 className="font-semibold text-blue-800">PIX Pagamentos</h4>
+                    <p className="text-sm text-blue-600">
+                      {pixPayment.key ? `Configurado: ***${pixPayment.key.slice(-4)}` : 'Não configurado'}
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className={pixPayment.key ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                    {pixPayment.key ? 'Ativo' : 'Inativo'}
+                  </Badge>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <div>
+                    <h4 className="font-semibold text-green-800">PIX Doações</h4>
+                    <p className="text-sm text-green-600">
+                      {pixDonation.key ? `Configurado: ***${pixDonation.key.slice(-4)}` : 'Não configurado'}
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className={pixDonation.key ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                    {pixDonation.key ? 'Ativo' : 'Inativo'}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Configurações Avançadas */}
