@@ -66,6 +66,11 @@ export default function PerfilPage() {
   const [showInviteForm, setShowInviteForm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Estados para informações do jogador
+  const [playerPosition, setPlayerPosition] = useState('Meia-Armador');
+  const [shirtSize, setShirtSize] = useState('G');
+  const [isEditingInfo, setIsEditingInfo] = useState(false);
+
   // Buscar estatísticas reais do usuário
   const { stats: playerStats, loading: statsLoading, error: statsError } = usePlayerStats(user?.id || '');
 
@@ -327,27 +332,92 @@ export default function PerfilPage() {
                   <img 
                     src={user.custom_avatar || user.avatar} 
                     alt="Avatar" 
-                    className="w-20 h-20 rounded-full object-cover"
+                    className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover shadow-lg"
                   />
                 ) : (
-                  <div className="w-20 h-20 bg-zinc-200 dark:bg-zinc-700 rounded-full flex items-center justify-center">
-                    <User className="w-10 h-10 text-zinc-500" />
+                  <div className="w-28 h-28 sm:w-32 sm:h-32 bg-zinc-200 dark:bg-zinc-700 rounded-full flex items-center justify-center shadow-lg">
+                    <User className="w-12 h-12 sm:w-14 sm:h-14 text-zinc-500" />
                   </div>
                 )}
               </div>
               
               <button
                 onClick={() => setShowAvatarDialog(true)}
-                className="w-fit px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md flex items-center justify-center hover:bg-blue-700 transition-colors"
+                className="w-fit px-4 py-2 text-sm bg-blue-600 text-white rounded-lg flex items-center justify-center hover:bg-blue-700 transition-colors shadow-md"
               >
-                <Camera className="w-3 h-3 mr-1" />
+                <Camera className="w-4 h-4 mr-2" />
                 Alterar Foto
               </button>
             </div>
             
-            <div className="flex-1 text-center sm:text-left">
-              <h2 className='text-xl font-semibold dark:text-zinc-100'>{user.name || 'Usuário'}</h2>
-              <p className='text-sm text-zinc-500 dark:text-zinc-400 mt-1'>{user.email || 'E-mail não disponível'}</p>
+            <div className="flex-1 text-center sm:text-left space-y-3">
+              <div>
+                <h2 className='text-2xl font-bold dark:text-zinc-100'>{user.name || 'Usuário'}</h2>
+                <p className='text-sm text-zinc-500 dark:text-zinc-400 mt-1'>{user.email || 'E-mail não disponível'}</p>
+              </div>
+
+              {/* Informações do jogador */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                {/* Posição do jogador */}
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                    <Target className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Posição</p>
+                    {isEditingInfo ? (
+                      <select 
+                        value={playerPosition}
+                        onChange={(e) => setPlayerPosition(e.target.value)}
+                        className="text-sm font-medium text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded px-2 py-1"
+                      >
+                        <option value="Goleiro">Goleiro</option>
+                        <option value="Zagueiro">Zagueiro</option>
+                        <option value="Meia-Armador">Meia-Armador</option>
+                        <option value="Atacante">Atacante</option>
+                      </select>
+                    ) : (
+                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{playerPosition}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tamanho da camisa */}
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                    <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Tamanho</p>
+                    {isEditingInfo ? (
+                      <select 
+                        value={shirtSize}
+                        onChange={(e) => setShirtSize(e.target.value)}
+                        className="text-sm font-medium text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded px-2 py-1"
+                      >
+                        <option value="G">G</option>
+                        <option value="GG">GG</option>
+                        <option value="GGG">GGG</option>
+                        <option value="GGGG">GGGG</option>
+                      </select>
+                    ) : (
+                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{shirtSize}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Botão editar info do jogador */}
+              <div className="flex justify-end mt-2">
+                <button
+                  onClick={() => setIsEditingInfo(!isEditingInfo)}
+                  className="flex items-center gap-1 px-3 py-1 text-xs bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors"
+                >
+                  {isEditingInfo ? 'Salvar' : 'Editar'}
+                  <Edit className="w-3 h-3" />
+                </button>
+              </div>
+              
               {user.role && (
                 <Badge 
                   variant="secondary" 
