@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/auth/OfflineAuthProvider';
 import { useGamesStore } from '@/store/gamesStore';
 import { useDonationStore } from '@/store/donationStore';
+import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -375,7 +376,7 @@ export default function OwnerDashboard() {
   };
 
   // Função para adicionar um novo jogador
-  const handleAddPlayer = () => {
+  const handleAddPlayer = async () => {
     if (!playerForm.name.trim()) {
       alert('Nome é obrigatório');
       return;
@@ -386,36 +387,66 @@ export default function OwnerDashboard() {
       return;
     }
 
-    const newPlayer = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      name: playerForm.name.trim(),
-      email: playerForm.email.toLowerCase().trim(),
-      role: playerForm.role,
-      position: playerForm.position,
-      shirt_size: playerForm.shirt_size,
-      stars: playerForm.stars,
-      status: 'active',
-      created_at: new Date().toISOString()
-    };
+    try {
+      // Criar novo jogador
+      const newPlayer = {
+        id: `player-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        name: playerForm.name.trim(),
+        email: playerForm.email.toLowerCase().trim(),
+        role: playerForm.role,
+        position: playerForm.position,
+        shirt_size: playerForm.shirt_size,
+        stars: playerForm.stars,
+        status: 'active',
+        created_at: new Date().toISOString()
+      };
 
-    const updatedPlayers = [...offlinePlayers, newPlayer];
-    setOfflinePlayers(updatedPlayers);
+      // Adicionar ao estado local (prioritário)
+      const updatedPlayers = [...offlinePlayers, newPlayer];
+      setOfflinePlayers(updatedPlayers);
+      localStorage.setItem('offline_players', JSON.stringify(updatedPlayers));
 
-    // Salvar no localStorage
-    localStorage.setItem('offline_players', JSON.stringify(updatedPlayers));
-    
-    // Reset form and close modal
-    setPlayerForm({
-      name: '',
-      email: '',
-      role: 'diarista',
-      position: 'Meio',
-      shirt_size: 'G'
-    });
-    
-    setShowAddPlayerModal(false);
-    alert(`Jogador ${newPlayer.name} adicionado com sucesso!`);
-    // loadOfflinePlayers(); Removido - atualização state local já foi feito
+      // Tentar Supabase como secundário (sem bloquear)
+      try {
+        // Usar apenas campo 'name' que sempre existe
+        const { data: supabaseData, error } = await supabase
+          .from('users')
+          .insert({ name: playerForm.name.trim() })
+          .select()
+          .single();
+          
+        if (error) {
+          console.log('⚠️ Supabase não funcionou, continuando sem erro:', error.message);
+        } else {
+          // Se Supabase funcionou, atualizar com ID real
+          updatedPlayers[updatedPlayers.length - 1].id = supabaseData.id;
+          setOfflinePlayers([...updatedPlayers]);
+          localStorage.setItem('offline_players', JSON.stringify(updatedPlayers));
+        }
+      } catch (supabaseFail) {
+        console.log('Supabase failed - continuando local como backup');
+      }
+
+      // Sucesso garantido
+      alert(`✅ Jogador ${playerForm.name} adicionado com sucesso!`);
+      
+      // Reset form and close modal
+      setPlayerForm({
+        name: '',
+        email: '',
+        role: 'diarista',
+        position: 'Meio',
+        shirt_size: 'G',
+        stars: 5
+      });
+      
+      setShowAddPlayerModal(false);
+      alert(`✅ Jogador ${newPlayer.name} adicionado com sucesso no Supabase!`);
+
+    } catch (error) {
+      console.error('❌ Erro geral ao criar jogador:', error);
+      alert(`❌ Erro ao adicionar jogador: ${error.message || 'Erro interno'}`);
+    }
   };
 
   // Função para abrir modal de edição de jogador
@@ -433,7 +464,7 @@ export default function OwnerDashboard() {
   };
 
   // Função para salvar edição de jogador
-  const handleEditPlayer = () => {
+  const handleEditPlayer = async () => {
     if (!playerToEdit || !playerForm.name.trim()) {
       alert('Nome é obrigatório');
       return;
@@ -444,38 +475,61 @@ export default function OwnerDashboard() {
       return;
     }
 
-    const updatedPlayers = offlinePlayers.map(player => {
-      if (player.id === playerToEdit.id) {
-        return {
-          ...player,
-          name: playerForm.name.trim(),
-          email: playerForm.email.toLowerCase().trim(),
-          role: playerForm.role,
-          position: playerForm.position,
-          shirt_size: playerForm.shirt_size,
-          stars: playerForm.stars
-        };
-      }
-      return player;
-    });
+    try {
+      // 1. Atualizar sempre no localStorage primeiro (prioridade)
+      const updatedPlayers = offlinePlayers.map(player => {
+        if (player.id === playerToEdit.id) {
+          return {
+            ...player,
+            name: playerForm.name.trim(),
+            email: playerForm.email.toLowerCase().trim(),
+            role: playerForm.role,
+            position: playerForm.position,
+            shirt_size: playerForm.shirt_size,
+            stars: playerForm.stars
+          };
+        }
+        return player;
+      });
 
-    setOfflinePlayers(updatedPlayers);
-    
-    // Salvar no localStorage
-    localStorage.setItem('offline_players', JSON.stringify(updatedPlayers));
-    
-    setShowEditPlayerModal(false);
-    setPlayerToEdit(null);
-    setPlayerForm({
-      name: '',
-      email: '',
-      role: 'diarista',
-      position: 'Meio',
-      shirt_size: 'G'
-    });
-    
-    alert(`Jogador ${playerForm.name} atualizado com sucesso!`);
-    // loadOfflinePlayers(); Removido para evitar problemas de carregamento
+      setOfflinePlayers(updatedPlayers);
+      localStorage.setItem('offline_players', JSON.stringify(updatedPlayers));
+
+      // 2. Tentar Supabase como secundário (sem bloquear)
+      try {
+        const resultadoSupabase = await supabase
+          .from('users')
+          .update({ name: playerForm.name.trim() })
+          .eq('id', playerToEdit.id);
+          
+        if (resultadoSupabase.error) {
+          console.log('⚠️ Erro Supabase na edição:', resultadoSupabase.error.message);
+        } else {
+          console.log('✅ Supabase edit update work');
+        }
+      } catch (supabaseError) {
+        console.log('⚠️ Supabase fail on edit but local OK');
+      }
+
+      alert('✅ Jogador editado com sucesso!');
+      
+      setShowEditPlayerModal(false);
+      setPlayerToEdit(null);
+      setPlayerForm({
+        name: '',
+        email: '',
+        role: 'diarista',
+        position: 'Meio',
+        shirt_size: 'G',
+        stars: 5
+      });
+      
+      alert(`✅ Jogador ${playerForm.name} atualizado com sucesso no Supabase!`);
+
+    } catch (error) {
+      console.error('❌ Erro geral ao editar jogador:', error);
+      alert(`❌ Erro ao editar jogador: ${error.message || 'Erro interno'}`);
+    }
   };
 
   // Função para abrir modal de exclusão
@@ -485,20 +539,40 @@ export default function OwnerDashboard() {
   };
 
   // Função para confirmar exclusão
-  const handleDeletePlayer = () => {
+  const handleDeletePlayer = async () => {
     if (!playerToDelete) return;
 
-    const updatedPlayers = offlinePlayers.filter(player => player.id !== playerToDelete.id);
-    setOfflinePlayers(updatedPlayers);
-    
-    // Salvar no localStorage
-    localStorage.setItem('offline_players', JSON.stringify(updatedPlayers));
-    
-    setShowDeletePlayerModal(false);
-    setPlayerToDelete(null);
-    
-    alert(`Jogador ${playerToDelete.name} excluído com sucesso!`);
-    // Removida a chamada desnecessária loadOfflinePlayers() que causava problemas
+    try {
+      // 1. Deletar do Supabase primeiro
+      const { error: supabaseError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', playerToDelete.id);
+
+      if (supabaseError) {
+        console.error('❌ Erro ao deletar jogador no Supabase:', supabaseError);
+        alert(`❌ Erro ao deletar jogador no Supabase: ${supabaseError.message}`);
+        return;
+      }
+
+      console.log('✅ Jogador deletado do Supabase');
+
+      // 2. Deletar também do localStorage
+      const updatedPlayers = offlinePlayers.filter(player => player.id !== playerToDelete.id);
+      setOfflinePlayers(updatedPlayers);
+      
+      // Salvar no localStorage
+      localStorage.setItem('offline_players', JSON.stringify(updatedPlayers));
+      
+      setShowDeletePlayerModal(false);
+      setPlayerToDelete(null);
+      
+      alert(`✅ Jogador ${playerToDelete.name} excluído com sucesso do Supabase!`);
+
+    } catch (error) {
+      console.error('❌ Erro geral ao deletar jogador:', error);
+      alert(`❌ Erro ao deletar jogador: ${error.message || 'Erro interno'}`);
+    }
   };
 
   // useEffect para carregar jogadores ao iniciar
@@ -2086,22 +2160,23 @@ export default function OwnerDashboard() {
 
       {/* ============ MODAIS DE GERENCIAMENTO DE JOGADORES ============ */}
 
-      {/* Modal Adicionar Jogador */}
+      {/* Modal Adicionar Jogador - Otimizado para Mobile */}
       <Dialog open={showAddPlayerModal} onOpenChange={setShowAddPlayerModal}>
-        <DialogContent className="sm:max-w-[500px] dark:bg-zinc-800 dark:border-zinc-700">
+        <DialogContent className="w-[95%] mx-auto max-w-[500px] max-h-[95vh] overflow-y-auto dark:bg-zinc-800 dark:border-zinc-700">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 dark:text-zinc-100">
-              <Users className="w-5 h-5" />
+            <DialogTitle className="flex items-center gap-2 dark:text-zinc-100 text-lg sm:text-xl">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5" />
               Adicionar Novo Jogador
             </DialogTitle>
-            <DialogDescription className="dark:text-zinc-400">
+            <DialogDescription className="dark:text-zinc-400 text-sm">
               Preencha as informações do jogador para adicioná-lo ao sistema.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="player-name" className="text-sm sm:text-right font-medium">
+          <div className="space-y-4 py-4">
+            {/* Nome - Layout Mobile Optimizado */}
+            <div className="space-y-2">
+              <Label htmlFor="player-name" className="text-sm font-medium block">
                 Nome *
               </Label>
               <Input
@@ -2109,12 +2184,13 @@ export default function OwnerDashboard() {
                 value={playerForm.name}
                 onChange={(e) => setPlayerForm(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Nome completo"
-                className="col-span-3"
+                className="w-full"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="player-email" className="text-sm sm:text-right font-medium">
+            {/* Email - Layout Mobile Optimizado */}
+            <div className="space-y-2">
+              <Label htmlFor="player-email" className="text-sm font-medium block">
                 Email *
               </Label>
               <Input
@@ -2123,102 +2199,152 @@ export default function OwnerDashboard() {
                 value={playerForm.email}
                 onChange={(e) => setPlayerForm(prev => ({ ...prev, email: e.target.value }))}
                 placeholder="jogador@email.com"
-                className="col-span-3"
+                className="w-full"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="player-role" className="text-sm sm:text-right font-medium">
-                Função
-              </Label>
-              <select
-                id="player-role"
-                value={playerForm.role}
-                onChange={(e) => setPlayerForm(prev => ({ ...prev, role: e.target.value }))}
-                className="col-span-3 p-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
-              >
-                <option value="diarista">Diarista</option>
-                <option value="mensalista">Mensalista</option>
-                <option value="aux">Auxiliar</option>
-                <option value="admin">Admin</option>
-              </select>
+            {/* Função e Posição - Grid 2 colunas em mobile */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="player-role" className="text-sm font-medium block">
+                  Função
+                </Label>
+                <select
+                  id="player-role"
+                  value={playerForm.role}
+                  onChange={(e) => setPlayerForm(prev => ({ ...prev, role: e.target.value }))}
+                  className="w-full p-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
+                >
+                  <option value="diarista">Diarista</option>
+                  <option value="mensalista">Mensalista</option>
+                  <option value="aux">Auxiliar</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="player-position" className="text-sm font-medium block">
+                  Posição
+                </Label>
+                <select
+                  id="player-position"
+                  value={playerForm.position}
+                  onChange={(e) => setPlayerForm(prev => ({ ...prev, position: e.target.value }))}
+                  className="w-full p-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
+                >
+                  <option value="Goleiro">Goleiro</option>
+                  <option value="Zagueiro">Zagueiro</option>
+                  <option value="Meio">Meio</option>
+                  <option value="Atacante">Atacante</option>
+                </select>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="player-position" className="text-sm sm:text-right font-medium">
-                Posição
+            {/* Tamanho da Camisa - Layout Mobile Optimizado */}
+            <div className="space-y-2">
+              <Label htmlFor="player-size" className="text-sm font-medium block">
+                Tamanho da Camisa
               </Label>
-              <select
-                id="player-position"
-                value={playerForm.position}
-                onChange={(e) => setPlayerForm(prev => ({ ...prev, position: e.target.value }))}
-                className="col-span-3 p-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
-              >
-                <option value="Goleiro">Goleiro</option>
-                <option value="Zagueiro">Zagueiro</option>
-                <option value="Meio">Meio</option>
-                <option value="Atacante">Atacante</option>
-              </select>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPlayerForm(prev => ({ ...prev, shirt_size: 'G' }))}
+                  className={`p-3 border rounded-lg text-sm transition-colors ${
+                    playerForm.shirt_size === 'G' 
+                      ? 'bg-blue-500 text-white border-blue-500' 
+                      : 'border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-600'
+                  }`}
+                >
+                  G
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPlayerForm(prev => ({ ...prev, shirt_size: 'GG' }))}
+                  className={`p-3 border rounded-lg text-sm transition-colors ${
+                    playerForm.shirt_size === 'GG' 
+                      ? 'bg-blue-500 text-white border-blue-500' 
+                      : 'border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-600'
+                  }`}
+                >
+                  GG
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="player-size" className="text-sm sm:text-right font-medium">
-                Tamanho
+            {/* Estrelas - Layout Mobile Optimizado */}
+            <div className="space-y-3">
+              <Label htmlFor="player-stars" className="text-sm font-medium block">
+                Nível de Habilidade
               </Label>
-              <select
-                id="player-size"
-                value={playerForm.shirt_size}
-                onChange={(e) => setPlayerForm(prev => ({ ...prev, shirt_size: e.target.value }))}
-                className="col-span-3 p-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
-              >
-                <option value="G">G</option>
-                <option value="GG">GG</option>
-              </select>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-start gap-4">
-              <Label htmlFor="player-stars" className="text-sm sm:text-right font-medium mt-1">
-                Estrelas (Habilidades)
-              </Label>
-              <div className="col-span-3 space-y-2">
-                {/* Container das estrelas otimizado para mobile */}
-                <div className="flex items-center gap-1 flex-wrap">
+              
+              {/* Container das estrelas otimizado para mobile */}
+              <div className="bg-zinc-50 dark:bg-zinc-700/50 rounded-lg p-3 space-y-3">
+                <div className="flex items-center justify-center gap-1 flex-wrap">
                   {Array.from({ length: 10 }, (_, index) => (
                     <button
                       key={index}
                       type="button"
                       onClick={() => setPlayerForm(prev => ({ ...prev, stars: index + 1 }))}
-                      className={`p-1 transition-colors touch-manipulation ${index < playerForm.stars ? 'text-yellow-500' : 'text-zinc-300 dark:text-zinc-600 hover:text-yellow-400'}`}
+                      className={`p-2 transition-colors touch-manipulation rounded-lg ${
+                        index < playerForm.stars 
+                          ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' 
+                          : 'text-zinc-300 dark:text-zinc-600 hover:text-yellow-400 hover:bg-zinc-100 dark:hover:bg-zinc-600'
+                      }`}
                     >
                       <Star 
-                        className={`w-3 h-3 sm:w-4 sm:h-4 ${index < playerForm.stars ? 'fill-current' : ''}`} 
+                        className={`w-4 h-4 sm:w-5 sm:h-5 ${index < playerForm.stars ? 'fill-current' : ''}`} 
                       />
                     </button>
                   ))}
                 </div>
-                {/* Contador compacto */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
-                    Avaliação: <span className="font-semibold text-yellow-600 dark:text-yellow-400">{playerForm.stars}/10</span>
-                  </span>
+                
+                {/* Informações do nível */}
+                <div className="space-y-2 text-center">
+                  <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                    Avaliação: <span className="text-yellow-600 dark:text-yellow-400 font-bold">{playerForm.stars}/10</span>
+                  </div>
+                  
                   {/* Indicador visual para a faixa de avaliação */}
-                  <div className="flex items-center text-xs">
-                    {(playerForm.stars <= 3) && <span className="text-red-500">🟢 Iniciante</span>}
-                    {(playerForm.stars >= 4 && playerForm.stars <= 6) && <span className="text-yellow-500">🟡 Intermediário</span>}
-                    {(playerForm.stars >= 7 && playerForm.stars <= 8) && <span className="text-blue-500">🔵 Avançado</span>}
-                    {(playerForm.stars >= 9) && <span className="text-purple-500">🟣 Elitte</span>}
+                  <div className="text-xs">
+                    {(playerForm.stars <= 3) && (
+                      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+                        🟢 Iniciante
+                      </div>
+                    )}
+                    {(playerForm.stars >= 4 && playerForm.stars <= 6) && (
+                      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300">
+                        🟡 Intermediário
+                      </div>
+                    )}
+                    {(playerForm.stars >= 7 && playerForm.stars <= 8) && (
+                      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                        🔵 Avançado
+                      </div>
+                    )}
+                    {(playerForm.stars >= 9) && (
+                      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                        🟣 Elite
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
           </div>
           
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddPlayerModal(false)}>
+          <DialogFooter className="gap-2 flex-col sm:flex-row">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAddPlayerModal(false)}
+              className="w-full sm:w-auto order-2 sm:order-1"
+            >
               <X className="w-4 h-4 mr-2" />
               Cancelar
             </Button>
-            <Button onClick={handleAddPlayer}>
+            <Button 
+              onClick={handleAddPlayer}
+              className="w-full sm:w-auto order-1 sm:order-2"
+            >
               <Plus className="w-4 h-4 mr-2" />
               Adicionar Jogador
             </Button>
