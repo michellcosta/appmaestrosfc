@@ -2,11 +2,13 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Trophy, DollarSign, BarChart3, MessageCircle, User, Crown } from 'lucide-react';
 import { useAuth } from '@/auth/OfflineAuthProvider';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function BottomNav() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { user } = useAuth();
+  const { isDark } = useTheme();
 
   // Sistema de navegação otimizado
 
@@ -42,7 +44,13 @@ export default function BottomNav() {
   const hasActiveItem = menuItems.some(item => pathname === item.href);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-green-500 shadow-xl">
+    <nav className={`
+      fixed bottom-0 left-0 right-0 z-50 backdrop-blur-md border-t shadow-xl transition-colors duration-300
+      ${isDark 
+        ? "bg-black/95 border-green-500" 
+        : "bg-white/95 border-green-500"
+      }
+    `}>
       <div className="max-w-4xl mx-auto px-3">
         <div className={`flex items-center py-3 ${hasActiveItem ? 'justify-center' : 'justify-around'}`}>
           {menuItems.map((item, index) => {
@@ -56,8 +64,10 @@ export default function BottomNav() {
                 className={`
                   group relative flex items-center transition-all duration-500 ease-out
                   ${active 
-                    ? "bg-green-500 text-white rounded-xl px-4 py-3 shadow-lg" 
-                    : "text-gray-600 hover:bg-gray-100 rounded-full p-3 mx-1"
+                    ? "bg-green-500 text-white rounded-xl px-4 py-3 shadow-lg"
+                    : isDark
+                      ? "text-gray-300 hover:bg-gray-800 rounded-full p-3 mx-1"
+                      : "text-gray-600 hover:bg-gray-100 rounded-full p-3 mx-1"
                   }
                   transform hover:scale-105 active:scale-95
                 `}
@@ -78,7 +88,9 @@ export default function BottomNav() {
                     transition-all duration-500 ease-out flex-shrink-0
                     ${active 
                       ? "w-6 h-6 text-white" 
-                      : "w-6 h-6 text-gray-600 group-hover:text-green-500"
+                      : isDark
+                        ? "w-6 h-6 text-gray-300 group-hover:text-green-400"
+                        : "w-6 h-6 text-gray-600 group-hover:text-green-500"
                     }
                   `} />
                   
