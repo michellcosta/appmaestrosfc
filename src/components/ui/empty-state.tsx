@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -80,6 +81,12 @@ export function EmptyState({
 // Predefined empty states
 export function EmptyGames() {
   const { canCreateGames } = usePermissions();
+  const navigate = useNavigate();
+
+  const handleCreateGame = () => {
+    // Navegar para o OwnerDashboard e abrir modal de criação
+    navigate('/owner-dashboard?action=create-game');
+  };
 
   return (
     <EmptyState
@@ -88,7 +95,7 @@ export function EmptyGames() {
       description="Não há jogos programados no momento. Crie um novo jogo para começar."
       action={canCreateGames() ? {
         label: "Criar Jogo",
-        onClick: () => window.location.href = '/create-game'
+        onClick: handleCreateGame
       } : undefined}
     />
   );

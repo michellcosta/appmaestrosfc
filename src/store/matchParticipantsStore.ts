@@ -285,66 +285,9 @@ export const useMatchParticipantsStore = create<MatchParticipantsStore>()(
       },
 
       loadExampleData: () => {
-        // Dados de exemplo para testes - criando pelo menos 4 participantes para permitir sorteio
-        set({
-          participants: [
-            {
-              id: '1-user1-123',
-              matchId: '1',
-              userId: 'user1',
-              userRole: 'mensalista',
-              status: 'confirmed',
-              confirmedAt: new Date(),
-              user: { id: 'user1', name: 'João Silva', role: 'mensalista' } as User
-            },
-            {
-              id: '1-user2-124',
-              matchId: '1',
-              userId: 'user2',
-              userRole: 'mensalista',
-              status: 'confirmed',
-              confirmedAt: new Date(),
-              user: { id: 'user2', name: 'Maria Santos', role: 'mensalista' } as User
-            },
-            {
-              id: '1-user3-125',
-              matchId: '1',
-              userId: 'user3',
-              userRole: 'mensalista',
-              status: 'confirmed',
-              confirmedAt: new Date(),
-              user: { id: 'user3', name: 'Pedro Costa', role: 'mensalista' } as User
-            },
-            {
-              id: '1-user4-126',
-              matchId: '1',
-              userId: 'user4',
-              userRole: 'mensalista',
-              status: 'confirmed',
-              confirmedAt: new Date(),
-              user: { id: 'user4', name: 'Ana Oliveira', role: 'mensalista' } as User
-            },
-            {
-              id: '1-user5-127',
-              matchId: '1',
-              userId: 'user5',
-              userRole: 'mensalista',
-              status: 'confirmed',
-              confirmedAt: new Date(),
-              user: { id: 'user5', name: 'Carlos Ferreira', role: 'mensalista' } as User
-            },
-            {
-              id: '1-user6-128',
-              matchId: '1',
-              userId: 'user6',
-              userRole: 'mensalista',
-              status: 'confirmed',
-              confirmedAt: new Date(),
-              user: { id: 'user6', name: 'Lucia Mendes', role: 'mensalista' } as User
-            }
-          ],
-          diaristRequests: []
-        })
+        // Função removida - sistema baseado apenas em dados reais
+        // Os dados mockados foram removidos para usar apenas jogadores reais cadastrados
+        console.log('loadExampleData foi chamada, mas dados mock foram removidos');
       }
     }),
     {

@@ -26,16 +26,8 @@ const InvitesApprovalsPage = React.lazy(() => import('@/pages/Admin/InvitesAppro
 const PerfilPage = React.lazy(() => import('@/pages/Perfil'));
 const RankingPage = React.lazy(() => import('@/pages/Ranking'));
 const OwnerDashboard = React.lazy(() => import('@/pages/OwnerDashboard'));
-const TestAuth = React.lazy(() => import('@/pages/TestAuth'));
-const SimpleLogin = React.lazy(() => import('@/pages/SimpleLogin'));
 const CreateOwner = React.lazy(() => import('@/pages/CreateOwner'));
 const CreateOwnerWithGoogle = React.lazy(() => import('@/pages/CreateOwnerWithGoogle'));
-const CheckTables = React.lazy(() => import('@/pages/CheckTables'));
-const DebugAuth = React.lazy(() => import('@/pages/DebugAuth'));
-const SimpleAuth = React.lazy(() => import('@/pages/SimpleAuth'));
-const OfflineAuth = React.lazy(() => import('@/pages/OfflineAuth'));
-const TestGoogleAuth = React.lazy(() => import('@/pages/TestGoogleAuth'));
-const TestGoogleOAuth = React.lazy(() => import('@/pages/TestGoogleOAuth'));
 import CreateInvite from '@/pages/CreateInvite';
 import AcceptInvite from '@/pages/AcceptInvite';
 import RestrictedAccess from '@/pages/RestrictedAccess';
@@ -47,8 +39,6 @@ import DiaristHome from '@/pages/DiaristHome';
 import AdminNotifications from '@/pages/AdminNotifications';
 import PaymentConflicts from '@/pages/PaymentConflicts';
 import DiaristRedirect from '@/components/DiaristRedirect';
-import TestPage from '@/pages/TestPage';
-import SimpleTest from '@/pages/SimpleTest';
 
 export default function AppRouterWithSimpleAuth() {
   const { isOpen, openDrawer, closeDrawer } = useMobileDrawer();
@@ -95,18 +85,8 @@ export default function AppRouterWithSimpleAuth() {
                 <Route path="/ranking" element={<RankingPage />} />
                 <Route path="/perfil" element={<PerfilPage />} />
                 <Route path="/owner-dashboard" element={<OwnerDashboard />} />
-                <Route path="/test-auth" element={<TestAuth />} />
-                <Route path="/simple-login" element={<SimpleLogin />} />
                 <Route path="/create-owner" element={<CreateOwner />} />
                 <Route path="/create-owner-google" element={<CreateOwnerWithGoogle />} />
-                <Route path="/check-tables" element={<CheckTables />} />
-                <Route path="/debug-auth" element={<DebugAuth />} />
-                <Route path="/simple-auth" element={<SimpleAuth />} />
-                <Route path="/offline-auth" element={<OfflineAuth />} />
-                <Route path="/test-page" element={<TestPage />} />
-                <Route path="/simple-test" element={<SimpleTest />} />
-                <Route path="/test-google-auth" element={<TestGoogleAuth />} />
-                <Route path="/test-google-oauth" element={<TestGoogleOAuth />} />
                 <Route path="/create-invite" element={<CreateInvite />} />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
                 <Route path="/restricted" element={<RestrictedAccess />} />

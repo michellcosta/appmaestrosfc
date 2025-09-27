@@ -68,3 +68,4 @@ if (fs.existsSync(manifestPath)) {
 }
 
 console.log('\n🎉 Configuração de ícones concluída!');
+

@@ -1,0 +1,39 @@
+# CONFIGURAÇÃO GOOGLE OAUTH - SUPABASE + VERCEL
+
+## PROBLEMA IDENTIFICADO:
+O botão "Criar Owner com Google" não está funcionando porque faltam configurações no Supabase e Vercel.
+
+## PASSO A PASSO PARA CORRIGIR:
+
+### 1️⃣ SUPABASE DASHBOARD:
+1. Acesse: https://supabase.com/dashboard/projects/autxxmhtadimwvprfsov
+2. Vá em: Authentication → Providers → Google  
+3. Configure:
+   - **Enable provider**: ✅ Ativado
+   - **Client ID**: (do Google Console)  
+   - **Client Secret**: (do Google Console)
+
+### 2️⃣ GOOGLE CLOUD CONSOLE:
+1. Acesse: https://console.cloud.google.com/apis/credentials
+2. Create OAuth 2.0 Client → Web Application
+3. Configure redirect URIs:
+   - `https://seu-app.vercel.app/auth/callback`  
+   - `https://autxxmhtadimwvprfsov.supabase.co/auth/v1/callback`
+
+### 3️⃣ VERCEL SETTINGS:
+Acesse Vercel Dashboard → Project Settings → Environment Variables:
+```
+VITE_SUPABASE_URL=https://autxxmhtadimwvprfsov.supabase.co
+VITE_SUPABASE_ANON_KEY=[](sua chave anon)
+```
+
+### 4️⃣ REDEPLOY:
+Após configurar:
+```bash
+Redeploy no Vercel automaticamente quando salvar as env vars
+```
+
+## DEBUG AÇÃO RÁPIDA:
+Abra Developer Tools → Console para ver erros específicos quando clicar no botão.
+
+

@@ -24,7 +24,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useMatchStore, GoalEvent, TeamColor } from "@/store/matchStore";
 import { usePlayersStore } from "@/store/playersStore";
-import { usePlayerStatsStore } from "@/store/playerStatsStore";
+// Removido: usePlayerStatsStore não é mais usado
 import { useGamesStore } from "@/store/gamesStore";
 import { useAuth } from '@/auth/OfflineAuthProvider';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -56,19 +56,14 @@ const TeamBadge: React.FC<{ color: TeamColor; className?: string }> = ({
 
 /* Permissões usando hook real */
 
-/* mock de jogadores por time */
-const defaultTeamPlayers: Record<TeamColor, string[]> = {
-  Preto: ["Michell", "Thiago"],
-  Verde: ["Sérgio Jr", "Oton"],
-  Cinza: ["Jorge", "Yuri"],
-  Vermelho: ["Maurício", "Gabriel"],
-};
+// Sistema de jogadores completamente baseado em dados reais
 
 const Match: React.FC = () => {
   const { 
     round,
     durationMin,
     events,
+    allEvents,
     history,
     setDuration,
     start,
@@ -78,6 +73,7 @@ const Match: React.FC = () => {
     editGoal,
     deleteGoal,
     endRoundChooseNext,
+    getAllEvents,
     clearHistory,
     clearEvents,
     clearAll,
@@ -93,15 +89,8 @@ const Match: React.FC = () => {
     substitutePlayer,
     addSubstitution,
     getPlayerByName,
-    loadExampleData
   } = usePlayersStore();
-  const { 
-    stats: persistentStats, 
-    addGoal: addPersistentGoal, 
-    addAssist: addPersistentAssist,
-    resetStats,
-    shouldResetStats
-  } = usePlayerStatsStore();
+  // Removido: estatísticas persistentes não são mais usadas
   const { getUpcomingMatches } = useGamesStore();
   const { canControlMatch } = usePermissions();
 
@@ -204,24 +193,14 @@ const Match: React.FC = () => {
         await loadPlayersFromTeamDraw('');
       } catch (error) {
         console.warn('Erro ao carregar dados do sorteio:', error);
-        // Continua usando dados mock em caso de erro
+        // Sistema continua sem dados mock
       }
     };
 
     loadTeamData();
   }, [loadPlayersFromTeamDraw]);
 
-  // Verificar se precisa resetar estatísticas quando chegar próxima partida
-  useEffect(() => {
-    const upcomingMatches = getUpcomingMatches();
-    if (upcomingMatches.length > 0) {
-      const nextMatchDate = upcomingMatches[0].date;
-      if (shouldResetStats(nextMatchDate)) {
-        console.log('🔄 Nova partida detectada! Resetando estatísticas dos jogadores...');
-        resetStats(nextMatchDate);
-      }
-    }
-  }, [getUpcomingMatches, shouldResetStats, resetStats]);
+  // Removido: verificação de reset de estatísticas persistentes não é mais necessária
 
   const [endOpen, setEndOpen] = useState(false);
   const [nextTeamChoice, setNextTeamChoice] = useState<TeamColor>("Preto");
@@ -342,10 +321,9 @@ const Match: React.FC = () => {
       return playerNames;
     }
     
-    // Fallback para jogadores mock se não houver dados reais
-    const mockPlayers = defaultTeamPlayers[team] ?? [];
-    console.log(`Usando jogadores mock para time ${team}:`, mockPlayers);
-    return mockPlayers;
+    // Sistema baseado apenas em jogadores reais
+    console.log(`Nenhum jogador encontrado para o time ${team}`);
+    return [];
   };
 
   const openGoal = (team: TeamColor) => {
@@ -445,12 +423,6 @@ const Match: React.FC = () => {
         editGoal(goalEditId, { author: goalAuthor, assist: assistVal ?? null });
       } else {
         addGoal({ team: goalTeam, author: goalAuthor, assist: assistVal ?? null });
-        
-        // Salvar estatísticas persistentes
-        addPersistentGoal(goalAuthor);
-        if (assistVal) {
-          addPersistentAssist(assistVal);
-        }
       }
       setGoalOpen(false);
       setGoalEditId(null);
@@ -481,13 +453,14 @@ const Match: React.FC = () => {
     (t) => t !== left && t !== right
   );
 
-  // estatísticas persistentes (acumulam gols de todas as partidas)
+  // estatísticas da partida atual (todos os gols da partida)
   const stats = useMemo(() => {
-    // Combinar estatísticas persistentes com gols da sessão atual
+    // Usar todos os gols da partida (allEvents) para estatísticas acumuladas
+    const allEventsSafe = Array.isArray(allEvents) ? allEvents : [];
     const sessionStats: Record<string, { g: number; a: number }> = {};
     
-    // Contar gols da sessão atual
-    for (const e of eventsSafe) {
+    // Contar gols de TODAS as rodadas da partida
+    for (const e of allEventsSafe) {
       if (e.author) {
         sessionStats[e.author] = sessionStats[e.author] || { g: 0, a: 0 };
         sessionStats[e.author].g += 1;
@@ -498,31 +471,11 @@ const Match: React.FC = () => {
       }
     }
 
-    // Combinar com estatísticas persistentes
-    const combinedStats: Record<string, { g: number; a: number }> = {};
-    
-    // Adicionar estatísticas persistentes
-    persistentStats.forEach(player => {
-      combinedStats[player.name] = {
-        g: player.goals,
-        a: player.assists
-      };
-    });
-
-    // Adicionar gols da sessão atual
-    Object.entries(sessionStats).forEach(([name, stats]) => {
-      if (combinedStats[name]) {
-        combinedStats[name].g += stats.g;
-        combinedStats[name].a += stats.a;
-      } else {
-        combinedStats[name] = stats;
-      }
-    });
-
-    return Object.entries(combinedStats)
+    // Retornar estatísticas acumuladas de toda a partida
+    return Object.entries(sessionStats)
       .map(([name, ga]) => ({ name, g: ga.g, a: ga.a }))
       .sort((a, b) => b.g - a.g || b.a - a.a || a.name.localeCompare(b.name));
-  }, [eventsSafe, persistentStats]);
+  }, [allEvents]);
 
   // filtro histórico
   const [historyFilter, setHistoryFilter] = useState<FilterRange>("week");
@@ -625,7 +578,8 @@ const Match: React.FC = () => {
             scores: { Preto:0, Verde:0, Cinza:0, Vermelho:0 },
             running: false,
           },
-          events: [],
+          events: [], // RESETAR lista de gols da rodada
+          allEvents: [...useMatchStore.getState().allEvents], // MANTER todos os gols para estatísticas
           accumulatedSec: 0,
           runningSince: null,
         });
@@ -1978,11 +1932,6 @@ function TestControls({ clearEvents, clearHistory, clearAll, resetToInitialState
             onClick={() => {
               // Zerar tudo da página
               resetToInitialState();
-              // Limpar estatísticas persistentes FORÇADAMENTE
-              const { resetStats } = usePlayerStatsStore.getState();
-              // Forçar reset das estatísticas com data atual
-              const currentDate = new Date().toISOString().split('T')[0];
-              resetStats(currentDate);
               alert('Página resetada completamente! Estatísticas zeradas!');
             }}
             variant="outline"

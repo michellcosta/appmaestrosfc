@@ -19,12 +19,18 @@ import {
   ArrowDown,
   Minus,
   Activity,
-  Target
+  Target,
+  Timer,
+  Shield,
+  Database,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/auth/OfflineAuthProvider';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useNavigate } from 'react-router-dom';
 import RestrictedAccess from './RestrictedAccess';
+import { usePlayersCache } from '@/hooks/usePlayersCache';
+// Função generateMockPlayerData removida - sistema baseado apenas em dados reais
 
 export default function RankingPage() {
   const { user } = useAuth();
@@ -42,265 +48,146 @@ export default function RankingPage() {
   const [sortBy, setSortBy] = useState('total');
   const [showOnlyTop, setShowOnlyTop] = useState(10);
 
-  // Função para cores de fundo baseadas na performance - design clean
-  const getBackgroundColor = (player: any) => {
-    const rating = calculatePlayerRating(player);
-    const avg = parseFloat(rating.average);
+  // Calcular média e avaliação do jogador - OTIMIZADO (movido para cima)
+  const calculatePlayerRating = React.useCallback((player: any) => {
+    // Validação de dados para evitar erros
+    const goals = Number.isInteger(player.goals) ? player.goals : 0;
+    const assists = Number.isInteger(player.assists) ? player.assists : 0;
+    const victories = Number.isInteger(player.victories) ? player.victories : 0;
+    const draws = Number.isInteger(player.draws) ? player.draws : 0;
+    const defeats = Number.isInteger(player.defeats) ? player.defeats : 0;
+    const games = Number.isInteger(player.games) && player.games > 0 ? player.games : 1;
     
-    if (avg >= 8) {
-      return 'bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-700';
-    } else if (avg >= 6) {
-      return 'bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-700';
-    } else if (avg >= 4) {
-      return 'bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-200 dark:border-yellow-700';
-    } else if (avg >= 2) {
-      return 'bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200 dark:border-orange-700';
-    } else {
-      return 'bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 border-gray-200 dark:border-gray-700';
-    }
-  };
-
-  // Efeito hover discreto e responsivo
-  const getHoverEffect = (index: number) => {
-    return 'hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200';
-  };
-
-  // Função para cores do texto seguindo a paleta
-  const getTextColor = (player: any) => {
-    const rating = calculatePlayerRating(player);
-    const avg = parseFloat(rating.average);
+    // Pontuação baseada em múltiplos fatores - OTIMIZADO
+    const totalScore = (goals * 3) + (assists * 2) + (victories * 5) + (draws * 1) + (defeats * -2);
     
-    if (avg >= 8) return 'text-green-700 dark:text-green-300';
-    else if (avg >= 6) return 'text-blue-700 dark:text-blue-300';
-    else if (avg >= 4) return 'text-yellow-700 dark:text-yellow-300';
-    else if (avg >= 2) return 'text-orange-700 dark:text-orange-300';
-    else return 'text-gray-700 dark:text-gray-300';
-  };
-
-  // Estados para jogadores reais do localStorage
-  const [offlinePlayers, setOfflinePlayers] = useState([]);
-  const [loadingPlayers, setLoadingPlayers] = useState(true);
-
-  // Carregar jogadores offline do localStorage
-  const loadOfflinePlayers = () => {
-    setLoadingPlayers(true);
-    try {
-      // Buscar jogadores salvos no localStorage
-      const playersData = [];
-      
-      // Lista para buscar JSON de jogadores em vários possíveis nomes de chave
-      const possibleStorageKeys = [
-        'offline_players',
-        'local_players', 
-        'players-store',
-        'nexus-play-players',
-        'app_players'
-      ];
-      
-      for (const key of possibleStorageKeys) {
-        const data = localStorage.getItem(key);
-        if (data) {
-          try {
-            const parsed = JSON.parse(data);
-            if (Array.isArray(parsed)) {
-              playersData.push(...parsed);
-            } else if (parsed.players && Array.isArray(parsed.players)) {
-              playersData.push(...parsed.players);
-            } else if (parsed.state && Array.isArray(parsed.state.players)) {
-              playersData.push(...parsed.state.players);
-            }
-          } catch (e) {
-            console.warn(`Erro ao parse dados da chave ${key}:`, e);
-          }
-        }
-      }
-      
-      // Filtrar jogadores válidos e gerar dados de ranking com estatísticas reais (mockadas para demonstração)
-      const playersWithStats = playersData
-        .filter(player => player && player.name)
-        .map((player, index) => {
-          // Gerar estatísticas mais realistas
-          const gamesPlayed = 4 + (index % 5); // 4-8 jogos por jogador
-          const goalsScored = Math.max(0, Math.floor(Math.random() * (gamesPlayed + 3)));
-          const assistsMade = Math.floor(goalsScored * 0.6) + Math.floor(Math.random() * 4);
-          const victoriesCount = Math.ceil(gamesPlayed * 0.55);
-          const drawsCount = Math.max(0, gamesPlayed - victoriesCount - Math.floor(Math.random() * 2));
-          const defeatsCount = gamesPlayed - victoriesCount - drawsCount;
-
-          return {
-            id: player.id || `player-${index}`,
-            name: player.name,
-            team: player.position || '',
-            goals: goalsScored,
-            assists: assistsMade,
-            games: gamesPlayed,
-            victories: victoriesCount,
-            draws: drawsCount,
-            defeats: defeatsCount,
-            medals: index === 0 ? 'Gold' : index === 1 ? 'Silver' : index === 2 ? 'Bronze' : '',
-            title: index === 0 ? 'TOP ARTILHEIRO' : 
-                    index === 1 ? 'VICE-LÍDER' : 
-                    index === 2 ? 'TERCEIRO LUGAR' : ''
-          };
-        })
-        .sort((a, b) => (b.goals * 2 + b.assists) - (a.goals * 2 + a.assists)) // Ordenar por pontuação
-        .map((player, newIndex) => ({ // Re-indexar após ordenação
-          ...player,
-          medals: newIndex === 0 ? 'Gold' : newIndex === 1 ? 'Silver' : newIndex === 2 ? 'Bronze' : '',
-          title: newIndex === 0 ? 'TOP ARTILHEIRO' : 
-                  newIndex === 1 ? 'VICE-LÍDER' : 
-                  newIndex === 2 ? 'TERCEIRO LUGAR' : ''
-        }));
-
-      setOfflinePlayers(playersWithStats);
-    } catch (error) {
-      console.error('Erro ao carregar jogadores offline:', error);
-    } finally {
-      setLoadingPlayers(false);
-    }
-  };
-
-  // useEffect para carregar dados ao iniciar
-  useEffect(() => {
-    loadOfflinePlayers();
+    // Média por jogo - OTIMIZADO
+    const averagePerGame = (totalScore / games).toFixed(1);
+    const avg = parseFloat(averagePerGame);
+    
+    // Avaliação baseada na média - OTIMIZADO com lookup table
+    const ratingMap = [
+      { min: 8, rating: 'EXCELENTE', color: 'text-green-600 dark:text-green-400', icon: '⭐' },
+      { min: 6, rating: 'MUITO BOM', color: 'text-blue-600 dark:text-blue-400', icon: '🔥' },
+      { min: 4, rating: 'BOM', color: 'text-yellow-600 dark:text-yellow-400', icon: '👍' },
+      { min: 2, rating: 'REGULAR', color: 'text-orange-600 dark:text-orange-400', icon: '🔄' },
+      { min: 0, rating: 'PRECISA MELHORAR', color: 'text-red-600 dark:text-red-400', icon: '📈' }
+    ];
+    
+    const ratingData = ratingMap.find(r => avg >= r.min) || ratingMap[ratingMap.length - 1];
+    
+    return {
+      average: averagePerGame,
+      rating: ratingData.rating,
+      ratingColor: ratingData.color,
+      ratingIcon: ratingData.icon
+    };
   }, []);
 
-  // Se tivermos jogadores reais, usar eles. Senão, usar dados mock como fallback
-  const playersData = offlinePlayers.length > 0 ? offlinePlayers : [
-    {
-      id: 1,
-      name: 'João Silva',
-      team: 'Verde',
-      goals: 5,
-      assists: 3,
-      games: 8,
-      victories: 6,
-      draws: 1,
-      defeats: 1,
-      medals: 'Gold',
-      title: 'TOP ARTILHEIRO'
-    },
-    {
-      id: 2,
-      name: 'Maria Santos',
-      team: 'Preto',
-      goals: 3,
-      assists: 4,
-      games: 6,
-      victories: 4,
-      draws: 2,
-      defeats: 0,
-      medals: 'Silver',
-      title: 'VICE-LÍDER'
-    },
-    {
-      id: 3,
-      name: 'Pedro Costa',
-      team: 'Azul',
-      goals: 2,
-      assists: 3,
-      games: 7,
-      victories: 3,
-      draws: 2,
-      defeats: 2,
-      medals: 'Bronze',
-      title: 'TERCEIRO LUGAR'
-    },
-    {
-      id: 4,
-      name: 'Ana Oliveira',
-      team: 'Vermelho',
-      goals: 4,
-      assists: 2,
-      games: 5,
-      victories: 2,
-      draws: 1,
-      defeats: 2,
-      medals: '',
-      title: ''
-    },
-    {
-      id: 5,
-      name: 'Carlos Ferreira',
-      team: 'Amarelo',
-      goals: 1,
-      assists: 5,
-      games: 9,
-      victories: 4,
-      draws: 3,
-      defeats: 2,
-      medals: '',
-      title: ''
-    }
-  ];
-
-  // Calcular estatísticas avançadas
-  const calculateAdvancedStats = (player: any) => {
-    const avgGoals = (player.goals / player.games * 100).toFixed(1);
-    const avgAssists = (player.assists / player.games * 100).toFixed(1);
-    const participation = ((player.goals + player.assists) / player.games * 100).toFixed(0);
+  // Calcular estatísticas avançadas - OTIMIZADO (movido para cima)
+  const calculateAdvancedStats = React.useCallback((player: any) => {
+    // Validação de dados para evitar erros
+    const goals = Number.isInteger(player.goals) ? player.goals : 0;
+    const assists = Number.isInteger(player.assists) ? player.assists : 0;
+    const games = Number.isInteger(player.games) && player.games > 0 ? player.games : 1;
+    
+    // Cálculos otimizados
+    const avgGoals = (goals / games * 100).toFixed(1);
+    const avgAssists = (assists / games * 100).toFixed(1);
+    const participation = ((goals + assists) / games * 100).toFixed(0);
     
     return {
       avgGoals: `${avgGoals}%`,
       avgAssists: `${avgAssists}%`,
       participationRate: `${participation}%`,
-      consistencyScore: player.games >= 6 ? 'Alto' : 'Médio',
-      trend: player.goals > player.assists ? '⚡ Goleiro' : '📝 Assistente',
-      recentForm: player.games >= 7 ? '🔥 Em Forma' : '🔄 Regular'
+      consistencyScore: games >= 6 ? 'Alto' : 'Médio',
+      trend: goals > assists ? '⚡ Goleiro' : '📝 Assistente',
+      recentForm: games >= 7 ? '🔥 Em Forma' : '🔄 Regular'
     };
-  };
+  }, []);
 
-  // Calcular média e avaliação do jogador
-  const calculatePlayerRating = (player: any) => {
-    // Pontuação baseada em múltiplos fatores
-    const goalScore = player.goals * 3; // Gols valem 3 pontos
-    const assistScore = player.assists * 2; // Assistências valem 2 pontos
-    const victoryScore = player.victories * 5; // Vitórias valem 5 pontos
-    const drawScore = player.draws * 1; // Empates valem 1 ponto
-    const defeatPenalty = player.defeats * -2; // Derrotas penalizam -2 pontos
+  // Função para cores de fundo baseadas na performance - OTIMIZADO
+  const getBackgroundColor = React.useCallback((player: any) => {
+    const rating = calculatePlayerRating(player);
+    const avg = parseFloat(rating.average);
     
-    // Pontuação total
-    const totalScore = goalScore + assistScore + victoryScore + drawScore + defeatPenalty;
+    // Lookup table para cores - mais eficiente
+    const colorMap = [
+      { min: 8, bg: 'bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-700' },
+      { min: 6, bg: 'bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-700' },
+      { min: 4, bg: 'bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-200 dark:border-yellow-700' },
+      { min: 2, bg: 'bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200 dark:border-orange-700' },
+      { min: 0, bg: 'bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 border-gray-200 dark:border-gray-700' }
+    ];
     
-    // Média por jogo
-    const averagePerGame = (totalScore / player.games).toFixed(1);
+    return colorMap.find(c => avg >= c.min)?.bg || colorMap[colorMap.length - 1].bg;
+  }, [calculatePlayerRating]);
+
+  // Efeito hover discreto e responsivo - OTIMIZADO
+  const getHoverEffect = React.useCallback((index: number) => {
+    return 'hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200';
+  }, []);
+
+  // Função para cores do texto seguindo a paleta - OTIMIZADO
+  const getTextColor = React.useCallback((player: any) => {
+    const rating = calculatePlayerRating(player);
+    const avg = parseFloat(rating.average);
     
-    // Avaliação baseada na média
-    let rating = '';
-    let ratingColor = '';
-    let ratingIcon = '';
+    // Lookup table para cores de texto - mais eficiente
+    const textColorMap = [
+      { min: 8, color: 'text-green-700 dark:text-green-300' },
+      { min: 6, color: 'text-blue-700 dark:text-blue-300' },
+      { min: 4, color: 'text-yellow-700 dark:text-yellow-300' },
+      { min: 2, color: 'text-orange-700 dark:text-orange-300' },
+      { min: 0, color: 'text-gray-700 dark:text-gray-300' }
+    ];
     
-    const avg = parseFloat(averagePerGame);
-    
-    if (avg >= 8) {
-      rating = 'EXCELENTE';
-      ratingColor = 'text-green-600 dark:text-green-400';
-      ratingIcon = '⭐';
-    } else if (avg >= 6) {
-      rating = 'MUITO BOM';
-      ratingColor = 'text-blue-600 dark:text-blue-400';
-      ratingIcon = '🔥';
-    } else if (avg >= 4) {
-      rating = 'BOM';
-      ratingColor = 'text-yellow-600 dark:text-yellow-400';
-      ratingIcon = '👍';
-    } else if (avg >= 2) {
-      rating = 'REGULAR';
-      ratingColor = 'text-orange-600 dark:text-orange-400';
-      ratingIcon = '🔄';
-    } else {
-      rating = 'PRECISA MELHORAR';
-      ratingColor = 'text-red-600 dark:text-red-400';
-      ratingIcon = '📈';
+    return textColorMap.find(c => avg >= c.min)?.color || textColorMap[textColorMap.length - 1].color;
+  }, [calculatePlayerRating]);
+
+  // Sistema de cache para jogadores - OTIMIZADO
+  const {
+    players: offlinePlayers,
+    loading: loadingPlayers,
+    error: playersError,
+    isCached,
+    cacheStats,
+    refresh: refreshPlayers,
+    syncWithStorage
+  } = usePlayersCache({
+    ttl: 5 * 60 * 1000, // 5 minutos de cache
+    maxSize: 100 // Máximo 100 jogadores em cache
+  });
+
+  // Sincronizar com localStorage quando necessário
+  useEffect(() => {
+    syncWithStorage();
+  }, [syncWithStorage]);
+
+  // Cache dos dados de jogadores com useMemo - OTIMIZADO com validação
+  const playersData = useMemo(() => {
+    if (offlinePlayers.length > 0) {
+      return offlinePlayers;
     }
     
-    return {
-      average: averagePerGame,
-      rating: rating,
-      ratingColor: ratingColor,
-      ratingIcon: ratingIcon
-    };
-  };
+    // Gerar dados mock válidos usando função de validação
+    // Sistema baseado apenas em jogadores reais - sem dados mock
+    const mockPlayers: any[] = [];
+    console.log('📊 Usando dados mock válidos para demonstração:', mockPlayers.length);
+    return mockPlayers;
+  }, [offlinePlayers]);
+
+  // Cache dos cálculos de performance - OTIMIZADO
+  const playersWithPerformance = useMemo(() => {
+    return playersData.map(player => ({
+      ...player,
+      performance: calculatePlayerRating(player),
+      advancedStats: calculateAdvancedStats(player),
+      backgroundColor: getBackgroundColor(player),
+      textColor: getTextColor(player)
+    }));
+  }, [playersData, calculatePlayerRating, calculateAdvancedStats, getBackgroundColor, getTextColor]);
+
 
   return (
     <div className="mx-auto w-full max-w-4xl p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 pb-16 sm:pb-20">
@@ -349,12 +236,56 @@ export default function RankingPage() {
             </div>
           )}
           
-          {/* Info sobre fonte dos dados */}
-          {!loadingPlayers && offlinePlayers.length > 0 && (
-            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                📱 <strong>Dados Reais:</strong> Ranking dos {offlinePlayers.length} jogador(es) cadastrados no sistema offline.
-              </p>
+          {/* Info sobre fonte dos dados e cache */}
+          {!loadingPlayers && (
+            <div className="mb-4 space-y-2">
+              {offlinePlayers.length > 0 && (
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    📱 <strong>Dados Reais:</strong> Ranking dos {offlinePlayers.length} jogador(es) cadastrados no sistema offline.
+                  </p>
+                </div>
+              )}
+              
+              {/* Indicadores de cache e validação */}
+              <div className="flex flex-wrap items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  {isCached ? (
+                    <Badge variant="secondary" className="text-xs">
+                      <Database className="w-3 h-3 mr-1" />
+                      Cache Ativo
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs">
+                      <Timer className="w-3 h-3 mr-1" />
+                      Sem Cache
+                    </Badge>
+                  )}
+                  
+                  {/* Indicador de dados validados */}
+                  <Badge variant="outline" className="text-xs text-green-600 dark:text-green-400">
+                    <Shield className="w-3 h-3 mr-1" />
+                    Dados Validados
+                  </Badge>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={refreshPlayers}
+                    disabled={loadingPlayers}
+                    className="h-6 px-2 text-xs"
+                  >
+                    <RefreshCw className={`w-3 h-3 mr-1 ${loadingPlayers ? 'animate-spin' : ''}`} />
+                    Atualizar
+                  </Button>
+                </div>
+                
+                {cacheStats && (
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
+                    Cache: {cacheStats.validItems}/{cacheStats.totalItems} itens
+                  </div>
+                )}
+              </div>
             </div>
           )}
           
@@ -366,9 +297,9 @@ export default function RankingPage() {
                 Ranking Geral
               </h3>
               
-              {/* Cards simples do ranking geral */}
+              {/* Cards simples do ranking geral - OTIMIZADO */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-                {playersData.slice(0, showOnlyTop).map((player, index) => {
+                {playersWithPerformance.slice(0, showOnlyTop).map((player, index) => {
                 const medalColor = index === 0 ? 'text-yellow-500' : 
                                   index === 1 ? 'text-gray-400' : 
                                   index === 2 ? 'text-orange-500' : 'text-zinc-400';
@@ -432,17 +363,16 @@ export default function RankingPage() {
               Ranking Individual
             </h3>
             
-            {/* Lista de jogadores otimizada para mobile */}
+            {/* Lista de jogadores otimizada para mobile - OTIMIZADO */}
             <div className="space-y-2 sm:space-y-3">
-              {playersData.slice(0, showOnlyTop).map((player, index) => {
-                const stats = calculateAdvancedStats(player);
-                const rating = calculatePlayerRating(player);
-                
-                // Determinar cores baseadas na performance - design clean
-                const bgColor = getBackgroundColor(player);
+              {playersWithPerformance.slice(0, showOnlyTop).map((player, index) => {
+                // Usar dados cacheados - mais eficiente
+                const stats = player.advancedStats;
+                const rating = player.performance;
+                const bgColor = player.backgroundColor;
                 const hoverEffect = getHoverEffect(index);
-                const textColor = getTextColor(player);
-                const performanceRating = calculatePlayerRating(player);
+                const textColor = player.textColor;
+                const performanceRating = player.performance;
                 
                 // Calcular estatísticas avançadas para detalhamento
                 const wins = parseFloat(player.victories.toString()) || 0;

@@ -37,7 +37,8 @@ type MatchStore = {
   accumulatedSec: number          // segundos acumulados de execuções anteriores
   now: number                     // batida global (ms)
 
-  events: GoalEvent[]
+  events: GoalEvent[]             // Gols da rodada atual (reseta a cada rodada)
+  allEvents: GoalEvent[]          // Todos os gols da partida (não reseta)
   history: HistoryItem[]
   durationMin: number
 
@@ -54,6 +55,9 @@ type MatchStore = {
   addGoal: (g: Omit<GoalEvent,'id'|'ts'> & {id?: string, ts?: number}) => string
   editGoal: (id: string, patch: Partial<Omit<GoalEvent,'id'>>) => void
   deleteGoal: (id: string) => void
+  
+  // Estatísticas acumuladas
+  getAllEvents: () => GoalEvent[]
 
   endRoundChooseNext: (nextOpponent: TeamColor|null) => void
   recomputeScores: () => void
@@ -89,6 +93,7 @@ export const useMatchStore = create<MatchStore>()(
       now: Date.now(),
 
       events: [],
+      allEvents: [],
       history: [],
       durationMin: 10,
 
@@ -131,25 +136,33 @@ export const useMatchStore = create<MatchStore>()(
       addGoal: (g) => {
         const id = g.id ?? uuid()
         const ts = g.ts ?? Date.now()
-        const events = [...get().events, { id, ts, team: g.team, author: g.author, assist: g.assist ?? null }]
+        const newGoal = { id, ts, team: g.team, author: g.author, assist: g.assist ?? null }
+        
+        // Adicionar à rodada atual
+        const events = [...get().events, newGoal]
+        // Adicionar ao histórico total
+        const allEvents = [...get().allEvents, newGoal]
+        
         const scores = { ...get().round.scores }
         scores[g.team] = (scores[g.team] ?? 0) + 1
-        set({ events, round: { ...get().round, scores } })
+        set({ events, allEvents, round: { ...get().round, scores } })
         return id
       },
 
       editGoal: (id, patch) => {
         const events = get().events.map(e => e.id === id ? { ...e, ...patch } : e)
-        set({ events })
+        const allEvents = get().allEvents.map(e => e.id === id ? { ...e, ...patch } : e)
+        set({ events, allEvents })
       },
 
       deleteGoal: (id) => {
         const target = get().events.find(e => e.id === id)
         if (!target) return
         const events = get().events.filter(e => e.id !== id)
+        const allEvents = get().allEvents.filter(e => e.id !== id)
         const scores = { ...get().round.scores }
         scores[target.team] = Math.max((scores[target.team] ?? 0) - 1, 0)
-        set({ events, round: { ...get().round, scores } })
+        set({ events, allEvents, round: { ...get().round, scores } })
       },
 
       endRoundChooseNext: (nextOpponent) => {
@@ -180,9 +193,15 @@ export const useMatchStore = create<MatchStore>()(
           // reseta cronômetro da rodada:
           accumulatedSec: 0,
           runningSince: null,
-          // reseta gols da partida:
-          events: [],
+          // RESETAR apenas gols da rodada atual:
+          events: [], // Resetar lista de gols da rodada
+          // MANTER todos os gols da partida para estatísticas:
+          allEvents: [...get().allEvents], // Não resetar, manter para estatísticas
         })
+      },
+
+      getAllEvents: () => {
+        return get().allEvents
       },
 
       recomputeScores: () => {
@@ -201,6 +220,7 @@ export const useMatchStore = create<MatchStore>()(
       clearEvents: () => {
         set({ 
           events: [],
+          allEvents: [],
           round: { ...get().round, scores: { Preto:0, Verde:0, Cinza:0, Vermelho:0 } }
         })
       },
@@ -208,6 +228,7 @@ export const useMatchStore = create<MatchStore>()(
       clearAll: () => {
         set({ 
           events: [],
+          allEvents: [],
           history: [],
           round: { ...get().round, scores: { Preto:0, Verde:0, Cinza:0, Vermelho:0 } }
         })
@@ -220,6 +241,7 @@ export const useMatchStore = create<MatchStore>()(
           accumulatedSec: 0,
           now: Date.now(),
           events: [],
+          allEvents: [],
           history: [],
           durationMin: 10,
         })
@@ -244,6 +266,7 @@ export const useMatchStore = create<MatchStore>()(
         runningSince: s.runningSince,
         accumulatedSec: s.accumulatedSec,
         events: s.events,
+        allEvents: s.allEvents,
         history: s.history,
         durationMin: s.durationMin,
       }),

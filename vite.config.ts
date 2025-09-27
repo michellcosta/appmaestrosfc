@@ -11,9 +11,47 @@ export default defineConfig(({ mode }) => ({
   base: '/',
   server: {
     host: "::", // IPv6 - permite acesso externo
-    port: 8080,
+    port: 5173,
     open: true, // Abre automaticamente o navegador
-    strictPort: false, // Permite tentar outras portas se 8080 não estiver disponível
+    strictPort: false, // Permite tentar outras portas se 5173 não estiver disponível
+  },
+  build: {
+    // Otimizações de build para produção
+    target: 'esnext',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: mode === 'production',
+        drop_debugger: mode === 'production',
+        pure_funcs: mode === 'production' ? ['console.log', 'console.info'] : []
+      }
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunks para melhor cache
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-router': ['react-router-dom'],
+          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-tabs'],
+          'vendor-utils': ['date-fns', 'clsx', 'tailwind-merge'],
+          'vendor-charts': ['recharts'],
+          'vendor-supabase': ['@supabase/supabase-js', '@supabase/auth-helpers-react'],
+          'vendor-pdf': ['jspdf', 'html2canvas']
+        },
+        chunkFileNames: (chunkInfo) => {
+          const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop().replace('.tsx', '').replace('.ts', '') : 'chunk';
+          return `assets/[name]-[hash].js`;
+        },
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
+      }
+    },
+    // Otimizações de tamanho
+    chunkSizeWarningLimit: 1000,
+    sourcemap: mode !== 'production',
+    // Otimizações de CSS
+    cssCodeSplit: true,
+    cssMinify: true
   },
   plugins: [
     react(), 

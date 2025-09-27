@@ -65,3 +65,4 @@ Deploy production+cache refresh
 Browser bookmark icons update  
 
 Seu app ícone is CUSTOMIZED ✅
+

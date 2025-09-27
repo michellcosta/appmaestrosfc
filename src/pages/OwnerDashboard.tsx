@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/auth/OfflineAuthProvider';
 import { useGamesStore } from '@/store/gamesStore';
 import { useDonationStore } from '@/store/donationStore';
@@ -11,6 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DatePicker } from '@/components/ui/date-picker';
+import { TimePicker } from '@/components/ui/time-picker';
 import { 
   Crown, 
   Users, 
@@ -51,6 +54,7 @@ import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
 
 export default function OwnerDashboard() {
   const { user, signOut } = useAuth();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('overview');
   
   // Store global de jogos
@@ -122,6 +126,7 @@ export default function OwnerDashboard() {
   const [showAddPlayerModal, setShowAddPlayerModal] = useState(false);
   const [showEditPlayerModal, setShowEditPlayerModal] = useState(false);
   const [showDeletePlayerModal, setShowDeletePlayerModal] = useState(false);
+  const [showClearAllModal, setShowClearAllModal] = useState(false);
   const [playerToEdit, setPlayerToEdit] = useState(null);
   const [playerToDelete, setPlayerToDelete] = useState(null);
 
@@ -159,11 +164,27 @@ export default function OwnerDashboard() {
     ]
   });
 
+  // Detectar parâmetro de query para abrir modal de criação
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'create-game') {
+      openCreateModal();
+      // Limpar o parâmetro da URL
+      const url = new URL(window.location);
+      url.searchParams.delete('action');
+      window.history.replaceState({}, '', url);
+    }
+  }, [searchParams]);
+
   // Funções para edição de jogos
   const openEditModal = (match) => {
+    // Converter YYYY-MM-DD para DD/MM/YYYY
+    const dateParts = match.date.split('-');
+    const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+    
     setEditingMatch(match);
     setEditForm({
-      date: match.date,
+      date: formattedDate,
       time: match.time,
       location: match.location,
       maxPlayers: match.maxPlayers
@@ -196,8 +217,31 @@ export default function OwnerDashboard() {
   const saveMatchChanges = () => {
     if (!editingMatch) return;
     
+    // Validar formato da data DD/MM/YYYY
+    const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    const dateMatch = editForm.date.match(dateRegex);
+    
+    if (!dateMatch) {
+      alert('Por favor, insira a data no formato DD/MM/YYYY.');
+      return;
+    }
+
+    // Converter DD/MM/YYYY para YYYY-MM-DD
+    const [, day, month, year] = dateMatch;
+    const isoDate = `${year}-${month}-${day}`;
+
+    // Validar se a data é válida
+    const dateObj = new Date(isoDate);
+    if (isNaN(dateObj.getTime())) {
+      alert('Por favor, insira uma data válida.');
+      return;
+    }
+    
     // Atualizar o jogo no store global
-    updateMatch(editingMatch.id, editForm);
+    updateMatch(editingMatch.id, {
+      ...editForm,
+      date: isoDate
+    });
     
     closeEditModal();
     alert('Jogo atualizado com sucesso!');
@@ -226,9 +270,12 @@ export default function OwnerDashboard() {
 
   // Funções para modal de criação
   const openCreateModal = () => {
-    // Definir data padrão para hoje
+    // Definir data padrão para hoje no formato DD/MM/YYYY
     const today = new Date();
-    const todayDate = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    const day = today.getDate().toString().padStart(2, '0');
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const year = today.getFullYear();
+    const todayDate = `${day}/${month}/${year}`;
     const currentTime = today.toTimeString().slice(0, 5); // Formato HH:MM
     
     setCreateForm({
@@ -256,9 +303,29 @@ export default function OwnerDashboard() {
       return;
     }
 
+    // Validar formato da data DD/MM/YYYY
+    const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    const dateMatch = createForm.date.match(dateRegex);
+    
+    if (!dateMatch) {
+      alert('Por favor, insira a data no formato DD/MM/YYYY.');
+      return;
+    }
+
+    // Converter DD/MM/YYYY para YYYY-MM-DD
+    const [, day, month, year] = dateMatch;
+    const isoDate = `${year}-${month}-${day}`;
+
+    // Validar se a data é válida
+    const dateObj = new Date(isoDate);
+    if (isNaN(dateObj.getTime())) {
+      alert('Por favor, insira uma data válida.');
+      return;
+    }
+
     // Adicionar nova partida ao store global
     addMatch({
-      date: createForm.date,
+      date: isoDate,
       time: createForm.time,
       location: createForm.location,
       maxPlayers: createForm.maxPlayers
@@ -285,6 +352,21 @@ export default function OwnerDashboard() {
         'nexus-play-players',
         'app_players'
       ];
+
+      // Verificar se há dados de exemplo sendo carregados automaticamente
+      const hasExampleData = localStorage.getItem('maestrosfc_players_example_loaded');
+      const noExampleData = localStorage.getItem('maestrosfc_no_example_data');
+      
+      if (hasExampleData || noExampleData === 'true') {
+        console.log('⚠️ Dados de exemplo detectados ou desabilitados - limpando automaticamente');
+        // Limpar dados de exemplo
+        localStorage.removeItem('maestrosfc_players_example_loaded');
+        localStorage.removeItem('players-store');
+        localStorage.removeItem('maestrosfc_match_participants');
+        localStorage.removeItem('maestrosfc_team_draw');
+        localStorage.removeItem('maestrosfc_games');
+        localStorage.removeItem('maestrosfc_donations');
+      }
       
       for (const key of possibleStorageKeys) {
         const data = localStorage.getItem(key);
@@ -334,6 +416,24 @@ export default function OwnerDashboard() {
 
       setOfflinePlayers(uniquePlayers);
       setShowOfflineSyncNotice(uniquePlayers.length > 0);
+      
+      // Se não há jogadores, garantir que os stores também estejam limpos
+      if (uniquePlayers.length === 0) {
+        try {
+          // Limpar stores para evitar dados de exemplo
+          localStorage.removeItem('players-store');
+          localStorage.removeItem('maestrosfc_match_participants');
+          localStorage.removeItem('maestrosfc_team_draw');
+          localStorage.removeItem('maestrosfc_games');
+          localStorage.removeItem('maestrosfc_donations');
+          
+          // Marcar que não há dados de exemplo para evitar recarregamento
+          localStorage.setItem('maestrosfc_no_example_data', 'true');
+          console.log('🧹 Stores limpos - sem jogadores encontrados');
+        } catch (cleanupError) {
+          console.warn('⚠️ Erro ao limpar stores:', cleanupError);
+        }
+      }
     } catch (error) {
       console.error('Erro ao carregar jogadores offline:', error);
     } finally {
@@ -577,6 +677,11 @@ export default function OwnerDashboard() {
 
   // useEffect para carregar jogadores ao iniciar
   React.useEffect(() => {
+    // Verificar se há flag de não carregar dados de exemplo
+    const noExampleData = localStorage.getItem('maestrosfc_no_example_data');
+    if (noExampleData === 'true') {
+      console.log('🚫 Dados de exemplo desabilitados - carregando apenas jogadores reais');
+    }
     loadOfflinePlayers();
   }, []);
 
@@ -588,47 +693,137 @@ export default function OwnerDashboard() {
     }
   }, [offlinePlayers.length]);
 
+  // Função para abrir modal de exclusão
+  const openClearAllModal = () => {
+    setShowClearAllModal(true);
+  };
+
   // Função para excluir TODOS os jogadores
-  const clearAllPlayers = () => {
-    if (confirm('⚠️ ATENÇÃO: Isso irá EXCLUIR TODOS os jogadores permanentemente!\n\nDeseja continuar?')) {
-      try {
-        // Limpar todos os possíveis locais de armazenamento
-        const possibleStorageKeys = [
-          'offline_players',
-          'local_players', 
-          'players-store',
-          'nexus-play-players',
-          'app_players',
-          'maestrosfc_player_stats',
-          'players-store' // Store do Zustand para jogadores ativos de partida
-        ];
-        
-        // Remove objetos específicos mas não limpa tudo do localStorage
-        for (const key of possibleStorageKeys) {
-          localStorage.removeItem(key);
+  const clearAllPlayers = async () => {
+    const playerCount = offlinePlayers.length;
+
+    try {
+      console.log('🧹 Iniciando limpeza completa de jogadores e ranking...');
+      
+      // Limpar o estado atual primeiro
+      setOfflinePlayers([]);
+      setShowOfflineSyncNotice(false);
+      
+      // Reset dos formulários
+      setPlayerForm({
+        name: '',
+        email: '',
+        role: 'diarista',
+        position: 'Meio',
+        shirt_size: 'G',
+        stars: 5
+      });
+      
+      // Fechar todos os modais
+      setShowAddPlayerModal(false);
+      setShowEditPlayerModal(false);
+      setShowDeletePlayerModal(false);
+      setPlayerToEdit(null);
+      setPlayerToDelete(null);
+      
+      // Limpar localStorage de forma mais segura
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (
+          key.startsWith('maestrosfc_') ||
+          key.startsWith('players-') ||
+          key.startsWith('nexus-') ||
+          key.startsWith('app_') ||
+          key.startsWith('offline_') ||
+          key.startsWith('local_') ||
+          key.includes('match-participants') ||
+          key.includes('players-store') ||
+          key.includes('match-store') ||
+          key.includes('games-store') ||
+          key.includes('achievements-store')
+        )) {
+          keysToRemove.push(key);
         }
-        
-        // Limpar store do Zustand para representações de time
-        try {
-          // Reset simples do store está invocando state direto
-          localStorage.removeItem('players-store'); // Zustand persistence
-          console.log('♾️ Stored Zustand players removed');
-        } catch (resetError) {
-          console.warn('⚠️ Não consegui limpar o store Zustand, mas segui');
-        }
-        
-        // Limpar o estado atual
-        setOfflinePlayers([]);
-        setShowOfflineSyncNotice(false);
-        
-        // Confirmar exclusão
-        alert('✅ Todos os jogadores foram excluídos com sucesso!');
-        
-        console.log('🧹 Todas as fontes de jogadores limpas');
-      } catch (error) {
-        console.error('❌ Erro ao limpar jogadores:', error);
-        alert('⚠️ Erro ao excluir alguns dados. Verifique se não há recarregamento em andamento.');
       }
+      
+      // Remover chaves uma por uma
+      keysToRemove.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+          console.log(`🗑️ Removido: ${key}`);
+        } catch (error) {
+          console.warn(`⚠️ Erro ao remover ${key}:`, error);
+        }
+      });
+      
+      // Limpar sessionStorage
+      try {
+        sessionStorage.clear();
+        console.log('🧹 SessionStorage limpo');
+      } catch (sessionError) {
+        console.warn('⚠️ Erro ao limpar sessionStorage:', sessionError);
+      }
+
+      // Resetar stores do Zustand para limpar ranking e estatísticas
+      try {
+        // Reset direto dos stores
+        const { usePlayersStore } = await import('@/store/playersStore');
+        usePlayersStore.getState().reset();
+        console.log('🔄 PlayersStore resetado');
+        
+        const { useMatchParticipantsStore } = await import('@/store/matchParticipantsStore');
+        useMatchParticipantsStore.getState().reset();
+        console.log('🔄 MatchParticipantsStore resetado');
+        
+        const { useMatchStore } = await import('@/store/matchStore');
+        useMatchStore.getState().resetToInitialState();
+        console.log('🔄 MatchStore resetado');
+
+        const { usePlayerStatsStore } = await import('@/store/playerStatsStore');
+        usePlayerStatsStore.getState().resetStats(new Date().toISOString());
+        console.log('🔄 PlayerStatsStore resetado (ranking limpo)');
+        
+        // Limpar store de jogos se existir
+        try {
+          const { useGamesStore } = await import('@/store/gamesStore');
+          // Se o store tiver método de reset, usar
+          if (useGamesStore.getState().reset) {
+            useGamesStore.getState().reset();
+            console.log('🔄 GamesStore resetado');
+          }
+        } catch (gamesError) {
+          console.warn('⚠️ GamesStore não encontrado ou sem reset:', gamesError);
+        }
+        
+        // Limpar store de conquistas se existir
+        try {
+          const { useAchievementsStore } = await import('@/store/achievementsStore');
+          if (useAchievementsStore.getState().reset) {
+            useAchievementsStore.getState().reset();
+            console.log('🔄 AchievementsStore resetado');
+          }
+        } catch (achievementsError) {
+          console.warn('⚠️ AchievementsStore não encontrado ou sem reset:', achievementsError);
+        }
+        
+      } catch (storeError) {
+        console.warn('⚠️ Erro ao resetar stores:', storeError);
+      }
+
+      console.log('🧹 Todas as fontes de jogadores e ranking limpas');
+      
+      // Confirmar exclusão com detalhes
+      alert(`✅ SUCESSO!\n\n• ${playerCount} jogador(es) excluído(s)\n• Ranking e estatísticas limpos\n• Dados mockados removidos do localStorage\n• Todos os dados foram removidos\n• Sistema limpo e pronto para jogadores reais\n\nA página será recarregada em 3 segundos...`);
+      
+      // Recarregar a página após 3 segundos
+      setTimeout(() => {
+        window.location.reload();
+      }, 3000);
+      
+    } catch (error) {
+      console.error('❌ Erro ao limpar jogadores:', error);
+      alert(`⚠️ Erro ao excluir dados: ${error.message}\n\nTente recarregar a página e tentar novamente.`);
     }
   };
 
@@ -1133,17 +1328,35 @@ export default function OwnerDashboard() {
                   {offlinePlayers.length > 0 && (
                     <Button 
                       variant="destructive" 
-                      onClick={() => clearAllPlayers()}
-                      className="w-full sm:w-auto"
+                      onClick={() => openClearAllModal()}
+                      className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                     >
                       <Trash2 className='w-4 h-4 mr-2' />
-                      Excluir Todos
+                      🗑️ Excluir Todos ({offlinePlayers.length})
                     </Button>
                   )}
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Aviso quando não há jogadores */}
+              {offlinePlayers.length === 0 && (
+                <div className="text-center py-12 bg-zinc-50 dark:bg-zinc-800 rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-600">
+                  <Users className="w-16 h-16 text-zinc-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-zinc-600 mb-2">Nenhum jogador cadastrado</h3>
+                  <p className="text-zinc-500 dark:text-zinc-400 mb-6">
+                    Comece adicionando jogadores ao seu grupo
+                  </p>
+                  <Button 
+                    onClick={() => setShowAddPlayerModal(true)}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Primeiro Jogador
+                  </Button>
+                </div>
+              )}
+
               {/* Filtros de Jogadores */}
               {showPlayerFilters && (
                 <div className="mb-4 p-4 bg-zinc-50 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
@@ -1757,26 +1970,28 @@ export default function OwnerDashboard() {
               <Label htmlFor="date" className="text-right dark:text-zinc-300">
                 Data
               </Label>
-              <Input
-                id="date"
-                type="date"
-                value={editForm.date}
-                onChange={(e) => setEditForm(prev => ({ ...prev, date: e.target.value }))}
-                className="col-span-3 dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100"
-              />
+              <div className="col-span-3">
+                <DatePicker
+                  value={editForm.date}
+                  onChange={(value) => setEditForm(prev => ({ ...prev, date: value }))}
+                  placeholder="DD/MM/YYYY"
+                  className="dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100"
+                />
+              </div>
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="time" className="text-right dark:text-zinc-300">
                 Horário
               </Label>
-              <Input
-                id="time"
-                type="time"
-                value={editForm.time}
-                onChange={(e) => setEditForm(prev => ({ ...prev, time: e.target.value }))}
-                className="col-span-3 dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100"
-              />
+              <div className="col-span-3">
+                <TimePicker
+                  value={editForm.time}
+                  onChange={(value) => setEditForm(prev => ({ ...prev, time: value }))}
+                  placeholder="HH:MM"
+                  className="dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100"
+                />
+              </div>
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
@@ -1876,21 +2091,19 @@ export default function OwnerDashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="create-date" className="dark:text-zinc-300">Data</Label>
-                <Input
-                  id="create-date"
-                  type="date"
+                <DatePicker
                   value={createForm.date}
-                  onChange={(e) => setCreateForm(prev => ({ ...prev, date: e.target.value }))}
+                  onChange={(value) => setCreateForm(prev => ({ ...prev, date: value }))}
+                  placeholder="DD/MM/YYYY"
                   className="dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100"
                 />
               </div>
               <div>
                 <Label htmlFor="create-time" className="dark:text-zinc-300">Horário</Label>
-                <Input
-                  id="create-time"
-                  type="time"
+                <TimePicker
                   value={createForm.time}
-                  onChange={(e) => setCreateForm(prev => ({ ...prev, time: e.target.value }))}
+                  onChange={(value) => setCreateForm(prev => ({ ...prev, time: value }))}
+                  placeholder="HH:MM"
                   className="dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100"
                 />
               </div>
@@ -2594,6 +2807,91 @@ export default function OwnerDashboard() {
             <Button variant="destructive" onClick={handleDeletePlayer}>
               <Trash2 className="w-4 h-4 mr-2" />
               Excluir Jogador
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Confirmação para Excluir Todos */}
+      <Dialog open={showClearAllModal} onOpenChange={setShowClearAllModal}>
+        <DialogContent className="sm:max-w-[500px] p-6 bg-white dark:bg-zinc-900 rounded-lg shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-red-600 dark:text-red-400 flex items-center">
+              <AlertCircle className="w-6 h-6 mr-2" />
+              🚨 Excluir Todos os Jogadores
+            </DialogTitle>
+            <DialogDescription className="text-base text-zinc-600 dark:text-zinc-400 mt-2">
+              Esta ação irá remover permanentemente todos os jogadores do sistema.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-4">
+            {/* Estatísticas dos jogadores */}
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4">
+              <h4 className="font-semibold text-red-800 dark:text-red-200 mb-2">📊 Jogadores que serão excluídos:</h4>
+              <div className="text-sm text-red-700 dark:text-red-300">
+                <div className="font-medium">Total: {offlinePlayers.length} jogador(es)</div>
+                {Object.entries(offlinePlayers.reduce((acc, player) => {
+                  acc[player.role] = (acc[player.role] || 0) + 1;
+                  return acc;
+                }, {})).map(([role, count]) => (
+                  <div key={role} className="ml-2">• {role}: {count} jogador(es)</div>
+                ))}
+              </div>
+            </div>
+
+            {/* Avisos importantes */}
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
+              <h4 className="font-semibold text-amber-800 dark:text-amber-200 mb-2">⚠️ Avisos Importantes:</h4>
+              <ul className="text-sm text-amber-700 dark:text-amber-300 space-y-1">
+                <li>• Esta ação NÃO pode ser desfeita</li>
+                <li>• Todos os dados serão perdidos permanentemente</li>
+                <li>• Sistema será resetado completamente</li>
+                <li>• Backup será criado automaticamente</li>
+              </ul>
+            </div>
+
+            {/* Campo de confirmação */}
+            <div className="space-y-2">
+              <Label htmlFor="confirm-text" className="text-sm font-medium">
+                Para confirmar, digite "EXCLUIR TODOS":
+              </Label>
+              <Input
+                id="confirm-text"
+                placeholder="Digite EXCLUIR TODOS"
+                className="border-red-200 dark:border-red-700 focus:border-red-400 dark:focus:border-red-500"
+                onChange={(e) => {
+                  if (e.target.value === 'EXCLUIR TODOS') {
+                    // Habilitar botão de confirmação
+                    document.getElementById('confirm-delete-btn')?.removeAttribute('disabled');
+                  } else {
+                    document.getElementById('confirm-delete-btn')?.setAttribute('disabled', 'true');
+                  }
+                }}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-3 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowClearAllModal(false)}
+              className="w-full sm:w-auto text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Cancelar
+            </Button>
+            <Button
+              id="confirm-delete-btn"
+              variant="destructive"
+              onClick={() => {
+                setShowClearAllModal(false);
+                clearAllPlayers();
+              }}
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-semibold"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              🗑️ Excluir Todos
             </Button>
           </DialogFooter>
         </DialogContent>

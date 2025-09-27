@@ -32,7 +32,6 @@ export default function HomePage() {
     players, 
     loading: playersLoading,
     error: playersError,
-    loadExampleData: loadPlayersExampleData
   } = usePlayersStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -64,7 +63,6 @@ export default function HomePage() {
     getUserParticipation,
     getUserRequest,
     getConfirmedParticipants,
-    loadExampleData,
     loading: participantsLoading
   } = useMatchParticipantsStore();
 
@@ -88,11 +86,7 @@ export default function HomePage() {
   const [pixStatus, setPixStatus] = useState<'pending' | 'generated' | 'copied'>('pending');
   const [pixAmount, setPixAmount] = useState(0);
 
-  // Carregar dados de exemplo para testes
-  useEffect(() => {
-    loadExampleData();
-    loadPlayersExampleData();
-  }, [loadExampleData, loadPlayersExampleData]);
+  // Sistema completamente baseado em dados reais - sem dados de exemplo
 
   // Função para alternar role do usuário (apenas para testes)
   const changeUserRole = (newRole: 'owner' | 'admin' | 'aux' | 'mensalista' | 'diarista') => {

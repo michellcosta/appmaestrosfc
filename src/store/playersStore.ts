@@ -48,8 +48,6 @@ interface PlayersStore {
   clearTeamDraw: () => void
   reset: () => void
   
-  // Função para carregar dados de exemplo (para testes)
-  loadExampleData: () => void
 }
 
 export const usePlayersStore = create<PlayersStore>()(
@@ -72,16 +70,20 @@ export const usePlayersStore = create<PlayersStore>()(
         set({ loading: true, error: null })
         
         try {
-          // Buscar sorteio de times
-          const { data: teamDrawData, error: teamDrawError } = await supabase
-            .from('team_draw')
-            .select('*')
-            .eq('match_id', matchId)
-            .single()
+          // Buscar sorteio de times - TEMPORARIAMENTE DESABILITADO
+          // const { data: teamDrawData, error: teamDrawError } = await supabase
+          //   .from('team_draw')
+          //   .select('*')
+          //   .eq('match_id', matchId)
+          //   .single()
 
-          if (teamDrawError) {
-            throw new Error(`Erro ao carregar sorteio: ${teamDrawError.message}`)
-          }
+          // if (teamDrawError) {
+          //   throw new Error(`Erro ao carregar sorteio: ${teamDrawError.message}`)
+          // }
+
+          // Dados temporários para evitar erro 400
+          const teamDrawData = null;
+          const teamDrawError = null;
 
           if (!teamDrawData) {
             set({ teamDraw: null, players: [], loading: false })
@@ -135,70 +137,92 @@ export const usePlayersStore = create<PlayersStore>()(
         set({ loading: true, error: null })
         
         try {
-          // Implementação local para desenvolvimento
-          // Simular sorteio de times com jogadores de exemplo
-          const basePlayerNames = [
-            'Michell', 'Thiago', 'Sérgio Jr', 'Oton', 'Jorge', 'Yuri',
-            'Carlos', 'Rafael', 'Bruno', 'Diego', 'Felipe', 'Lucas',
-            'André', 'Pedro', 'Gabriel', 'Mateus', 'João', 'Ricardo',
-            'Fernando', 'Gustavo', 'Leonardo', 'Rodrigo', 'Marcelo', 'Paulo',
-            'Daniel', 'Vinicius', 'Alexandre', 'Roberto'
+          // Buscar jogadores reais do localStorage
+          const offlinePlayers = [];
+          const possibleStorageKeys = [
+            'offline_players',
+            'local_players', 
+            'players-store',
+            'nexus-play-players',
+            'app_players'
           ];
           
+          for (const key of possibleStorageKeys) {
+            const data = localStorage.getItem(key);
+            if (data) {
+              try {
+                const parsed = JSON.parse(data);
+                if (Array.isArray(parsed)) {
+                  offlinePlayers.push(...parsed);
+                } else if (parsed.players && Array.isArray(parsed.players)) {
+                  offlinePlayers.push(...parsed.players);
+                } else if (parsed.state && Array.isArray(parsed.state.players)) {
+                  offlinePlayers.push(...parsed.state.players);
+                }
+              } catch (e) {
+                console.warn(`Erro ao parse dados da chave ${key}:`, e);
+              }
+            }
+          }
+          
+          // Se não há jogadores reais, não fazer sorteio
+          if (offlinePlayers.length === 0) {
+            console.warn('⚠️ Nenhum jogador cadastrado encontrado. Cadastre jogadores primeiro.');
+            set({
+              players: [],
+              currentMatchId: matchId,
+              loading: false,
+              error: 'Nenhum jogador cadastrado. Cadastre jogadores no sistema primeiro.'
+            });
+            return;
+          }
+          
+          // Usar jogadores reais para o sorteio
           const positions = ['Gol', 'Zaga', 'Meio', 'Atacante'];
           const teams: TeamColor[] = ['Preto', 'Verde', 'Cinza', 'Vermelho'];
           
-          // Gerar jogadores aleatórios
-          const shuffledNames = [...basePlayerNames].sort(() => Math.random() - 0.5);
+          // Filtrar jogadores válidos e embaralhar
+          const validPlayers = offlinePlayers
+            .filter(player => player && player.name)
+            .sort(() => Math.random() - 0.5);
           
-          const examplePlayers: PlayerWithTeam[] = [];
+          const teamPlayers: PlayerWithTeam[] = [];
           let playerIndex = 0;
           
-          // Distribuir jogadores nos 4 times com lógica adaptativa
+          // Distribuir jogadores reais nos times
           for (let teamIndex = 0; teamIndex < teams.length; teamIndex++) {
             const teamColor = teams[teamIndex];
-            
-            // Calcular quantos jogadores este time deve ter
-            const remainingPlayers = shuffledNames.length - playerIndex;
+            const remainingPlayers = validPlayers.length - playerIndex;
             const remainingTeams = teams.length - teamIndex;
             
             let playersForThisTeam;
             if (remainingPlayers >= playersPerTeam * remainingTeams) {
-              // Há jogadores suficientes para completar todos os times restantes
               playersForThisTeam = playersPerTeam;
             } else {
-              // Distribuir os jogadores restantes de forma equilibrada
               playersForThisTeam = Math.floor(remainingPlayers / remainingTeams);
               if (teamIndex < (remainingPlayers % remainingTeams)) {
                 playersForThisTeam += 1;
               }
             }
             
-            // Adicionar jogadores ao time
-            for (let i = 0; i < playersForThisTeam && playerIndex < shuffledNames.length; i++) {
-              const name = shuffledNames[playerIndex];
-              examplePlayers.push({
-                id: (playerIndex + 1).toString(),
-                name,
-                email: `${name.toLowerCase().replace(' ', '')}@example.com`,
-                role: 'mensalista',
-                shirt_size: 'G',
-                created_at: new Date(),
+            for (let i = 0; i < playersForThisTeam && playerIndex < validPlayers.length; i++) {
+              const player = validPlayers[playerIndex];
+              teamPlayers.push({
+                ...player,
                 team_color: teamColor,
                 is_substitute: false,
-                position: positions[Math.floor(Math.random() * positions.length)],
-                stars: Math.floor(Math.random() * 3) + 3 // 3-5 estrelas
+                position: player.position || positions[Math.floor(Math.random() * positions.length)]
               });
               playerIndex++;
             }
           }
 
           set({
-            players: examplePlayers,
+            players: teamPlayers,
             currentMatchId: matchId,
             loading: false,
             error: null
-          })
+          });
 
         } catch (error: any) {
           set({ 
@@ -352,269 +376,6 @@ export const usePlayersStore = create<PlayersStore>()(
           players: [],
           teamDraw: null,
           currentMatchId: null,
-          loading: false,
-          error: null
-        })
-      },
-
-      // Carregar dados de exemplo para testes
-      loadExampleData: () => {
-        const examplePlayers: PlayerWithTeam[] = [
-          {
-            id: '1',
-            name: 'Michell',
-            email: 'michell@example.com',
-            role: 'mensalista',
-            shirt_size: 'G',
-            created_at: new Date(),
-            team_color: 'Preto',
-            is_substitute: false,
-            position: 'Atacante',
-            stars: 4
-          },
-          {
-            id: '2',
-            name: 'Thiago',
-            email: 'thiago@example.com',
-            role: 'mensalista',
-            shirt_size: 'G',
-            created_at: new Date(),
-            team_color: 'Preto',
-            is_substitute: false,
-            position: 'Meio',
-            stars: 3
-          },
-          {
-            id: '3',
-            name: 'Sérgio Jr',
-            email: 'sergio@example.com',
-            role: 'mensalista',
-            shirt_size: 'GG',
-            created_at: new Date(),
-            team_color: 'Verde',
-            is_substitute: false,
-            position: 'Zaga',
-            stars: 4
-          },
-          {
-            id: '4',
-            name: 'Oton',
-            email: 'oton@example.com',
-            role: 'mensalista',
-            shirt_size: 'G',
-            created_at: new Date(),
-            team_color: 'Verde',
-            is_substitute: false,
-            position: 'Gol',
-            stars: 5
-          },
-          {
-            id: '5',
-            name: 'Jorge',
-            email: 'jorge@example.com',
-            role: 'diarista',
-            shirt_size: 'G',
-            created_at: new Date(),
-            team_color: 'Cinza',
-            is_substitute: false,
-            position: 'Meio',
-            stars: 3
-          },
-          {
-            id: '6',
-            name: 'Yuri',
-            email: 'yuri@example.com',
-            role: 'mensalista',
-            shirt_size: 'GG',
-            created_at: new Date(),
-            team_color: 'Cinza',
-            is_substitute: false,
-            position: 'Atacante',
-            stars: 4
-          },
-          {
-            id: '7',
-            name: 'Maurício',
-            email: 'mauricio@example.com',
-            role: 'diarista',
-            shirt_size: 'G',
-            created_at: new Date(),
-            team_color: 'Vermelho',
-            is_substitute: false,
-            position: 'Zaga',
-            stars: 3
-          },
-          {
-            id: '8',
-            name: 'Gabriel',
-            email: 'gabriel@example.com',
-            role: 'mensalista',
-            shirt_size: 'G',
-            created_at: new Date(),
-            team_color: 'Vermelho',
-            is_substitute: false,
-            position: 'Atacante',
-            stars: 4
-          },
-          {
-            id: '9',
-            name: 'Carlos',
-            email: 'carlos@example.com',
-            role: 'mensalista',
-            shirt_size: 'M',
-            created_at: new Date(),
-            is_substitute: false,
-            position: 'Meio',
-            stars: 3
-          },
-          {
-            id: '10',
-            name: 'Rafael',
-            email: 'rafael@example.com',
-            role: 'diarista',
-            shirt_size: 'G',
-            created_at: new Date(),
-            is_substitute: false,
-            position: 'Zaga',
-            stars: 4
-          },
-          {
-            id: '11',
-            name: 'Bruno',
-            email: 'bruno@example.com',
-            role: 'mensalista',
-            shirt_size: 'GG',
-            created_at: new Date(),
-            is_substitute: false,
-            position: 'Atacante',
-            stars: 5
-          },
-          {
-            id: '12',
-            name: 'Lucas',
-            email: 'lucas@example.com',
-            role: 'mensalista',
-            shirt_size: 'G',
-            created_at: new Date(),
-            is_substitute: false,
-            position: 'Gol',
-            stars: 3
-          },
-          {
-            id: '13',
-            name: 'Pedro',
-            email: 'pedro@example.com',
-            role: 'diarista',
-            shirt_size: 'M',
-            created_at: new Date(),
-            is_substitute: false,
-            position: 'Meio',
-            stars: 4
-          },
-          {
-            id: '14',
-            name: 'André',
-            email: 'andre@example.com',
-            role: 'mensalista',
-            shirt_size: 'G',
-            created_at: new Date(),
-            is_substitute: false,
-            position: 'Zaga',
-            stars: 3
-          },
-          {
-            id: '15',
-            name: 'Felipe',
-            email: 'felipe@example.com',
-            role: 'mensalista',
-            shirt_size: 'GG',
-            created_at: new Date(),
-            is_substitute: false,
-            position: 'Atacante',
-            stars: 4
-          },
-          {
-            id: '16',
-            name: 'Diego',
-            email: 'diego@example.com',
-            role: 'diarista',
-            shirt_size: 'G',
-            created_at: new Date(),
-            is_substitute: false,
-            position: 'Meio',
-            stars: 3
-          },
-          {
-            id: '17',
-            name: 'Rodrigo',
-            email: 'rodrigo@example.com',
-            role: 'mensalista',
-            shirt_size: 'M',
-            created_at: new Date(),
-            is_substitute: false,
-            position: 'Zaga',
-            stars: 4
-          },
-          {
-            id: '18',
-            name: 'Marcelo',
-            email: 'marcelo@example.com',
-            role: 'mensalista',
-            shirt_size: 'G',
-            created_at: new Date(),
-            is_substitute: false,
-            position: 'Atacante',
-            stars: 5
-          },
-          {
-            id: '19',
-            name: 'João',
-            email: 'joao@example.com',
-            role: 'diarista',
-            shirt_size: 'GG',
-            created_at: new Date(),
-            is_substitute: false,
-            position: 'Gol',
-            stars: 4
-          },
-          {
-            id: '20',
-            name: 'Vinicius',
-            email: 'vinicius@example.com',
-            role: 'mensalista',
-            shirt_size: 'G',
-            created_at: new Date(),
-            is_substitute: false,
-            position: 'Meio',
-            stars: 3
-          },
-          {
-            id: '21',
-            name: 'Leonardo',
-            email: 'leonardo@example.com',
-            role: 'mensalista',
-            shirt_size: 'M',
-            created_at: new Date(),
-            is_substitute: false,
-            position: 'Zaga',
-            stars: 4
-          },
-          {
-            id: '22',
-            name: 'Gustavo',
-            email: 'gustavo@example.com',
-            role: 'diarista',
-            shirt_size: 'G',
-            created_at: new Date(),
-            is_substitute: false,
-            position: 'Atacante',
-            stars: 3
-          }
-        ]
-
-        set({
-          players: examplePlayers,
-          currentMatchId: 'example-match',
           loading: false,
           error: null
         })

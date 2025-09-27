@@ -8,6 +8,7 @@ import UpdateNotification from '@/components/UpdateNotification';
 import BottomNav from '@/components/layout/BottomNav';
 import MobileHeader from '@/components/layout/MobileHeader';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Loading component
 const PageLoader = () => (
@@ -16,54 +17,45 @@ const PageLoader = () => (
   </div>
 );
 
-// Lazy loaded pages for better performance
-const HomePage = React.lazy(() => import('@/pages/Home'));
-const Match = React.lazy(() => import('@/pages/Match'));
-const FinancePage = React.lazy(() => import('@/pages/Finance'));
-const VotePage = React.lazy(() => import('@/pages/Vote'));
-const InvitesApprovalsPage = React.lazy(() => import('@/pages/Admin/InvitesApprovals'));
-const PerfilPage = React.lazy(() => import('@/pages/Perfil'));
-const RankingPage = React.lazy(() => import('@/pages/Ranking'));
-const OwnerDashboard = React.lazy(() => import('@/pages/OwnerDashboard'));
-const TestAuth = React.lazy(() => import('@/pages/TestAuth'));
-const SimpleLogin = React.lazy(() => import('@/pages/SimpleLogin'));
-const CreateOwner = React.lazy(() => import('@/pages/CreateOwner'));
-const CreateOwnerWithGoogle = React.lazy(() => import('@/pages/CreateOwnerWithGoogle'));
-const CheckTables = React.lazy(() => import('@/pages/CheckTables'));
-const DebugAuth = React.lazy(() => import('@/pages/DebugAuth'));
-const SimpleAuth = React.lazy(() => import('@/pages/SimpleAuth'));
-const Login = React.lazy(() => import('@/pages/Login'));
-const OfflineAuth = React.lazy(() => import('@/pages/OfflineAuth'));
-const TestGoogleAuth = React.lazy(() => import('@/pages/TestGoogleAuth'));
-const TestGoogleOAuth = React.lazy(() => import('@/pages/TestGoogleOAuth'));
-const CreateInvite = React.lazy(() => import('@/pages/CreateInvite'));
-const AcceptInvite = React.lazy(() => import('@/pages/AcceptInvite'));
-import RestrictedAccess from '@/pages/RestrictedAccess';
-import ManageAdmins from '@/pages/ManageAdmins';
-import ConfigureAccess from '@/pages/ConfigureAccess';
-import ApproveParticipants from '@/pages/ApproveParticipants';
-import TestPage from '@/pages/TestPage';
-import SimpleTest from '@/pages/SimpleTest';
-import TestRouteButton from '@/pages/TestRouteButton';
+// Lazy loaded pages com chunks otimizados para melhor performance
+const HomePage = React.lazy(() => import(/* webpackChunkName: "pages-home" */ '@/pages/Home'));
+const Match = React.lazy(() => import(/* webpackChunkName: "pages-match" */ '@/pages/Match'));
+const FinancePage = React.lazy(() => import(/* webpackChunkName: "pages-finance" */ '@/pages/Finance'));
+const VotePage = React.lazy(() => import(/* webpackChunkName: "pages-vote" */ '@/pages/Vote'));
+const InvitesApprovalsPage = React.lazy(() => import(/* webpackChunkName: "pages-admin" */ '@/pages/Admin/InvitesApprovals'));
+const PerfilPage = React.lazy(() => import(/* webpackChunkName: "pages-perfil" */ '@/pages/Perfil'));
+const RankingPage = React.lazy(() => import(/* webpackChunkName: "pages-ranking" */ '@/pages/Ranking'));
+const OwnerDashboard = React.lazy(() => import(/* webpackChunkName: "pages-owner" */ '@/pages/OwnerDashboard'));
+const CreateOwner = React.lazy(() => import(/* webpackChunkName: "pages-create" */ '@/pages/CreateOwner'));
+const CreateOwnerWithGoogle = React.lazy(() => import(/* webpackChunkName: "pages-create-google" */ '@/pages/CreateOwnerWithGoogle'));
+const Login = React.lazy(() => import(/* webpackChunkName: "pages-auth" */ '@/pages/Login'));
+const CreateInvite = React.lazy(() => import(/* webpackChunkName: "pages-invite" */ '@/pages/CreateInvite'));
+const AcceptInvite = React.lazy(() => import(/* webpackChunkName: "pages-accept" */ '@/pages/AcceptInvite'));
+// Componentes administrativos com lazy loading
+const RestrictedAccess = React.lazy(() => import(/* webpackChunkName: "pages-admin-restricted" */ '@/pages/RestrictedAccess'));
+const ManageAdmins = React.lazy(() => import(/* webpackChunkName: "pages-admin-manage" */ '@/pages/ManageAdmins'));
+const ConfigureAccess = React.lazy(() => import(/* webpackChunkName: "pages-admin-configure" */ '@/pages/ConfigureAccess'));
+const ApproveParticipants = React.lazy(() => import(/* webpackChunkName: "pages-admin-approve" */ '@/pages/ApproveParticipants'));
 
 export default function AppRouter() {
   // Initialize performance monitoring
   usePerformanceMonitor(true);
 
   return (
-    <ThemeProvider>
-      <ToastProvider>
-        <OfflineAuthProvider>
-          <div className="min-h-[100dvh] bg-background text-foreground">
-          {/* Install Popup - Aparece apenas uma vez */}
-          <OneTimeInstallPopup />
-          
-          {/* Update Notification */}
-          <UpdateNotification />
-          
-          <div className="mx-auto w-full max-w-4xl pb-20 pt-4">
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <ToastProvider>
+          <OfflineAuthProvider>
+            <div className="min-h-[100dvh] bg-background text-foreground">
+            {/* Install Popup - Aparece apenas uma vez */}
+            <OneTimeInstallPopup />
+            
+            {/* Update Notification */}
+            <UpdateNotification />
+            
+            <div className="mx-auto w-full max-w-4xl pb-20 pt-4">
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
                 <Route path="/" element={<Login />} />
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/fetch" element={<HomePage />} />
@@ -74,36 +66,26 @@ export default function AppRouter() {
                 <Route path="/ranking" element={<RankingPage />} />
                 <Route path="/perfil" element={<PerfilPage />} />
                 <Route path="/owner-dashboard" element={<OwnerDashboard />} />
-                <Route path="/test-auth" element={<TestAuth />} />
-                <Route path="/simple-login" element={<SimpleLogin />} />
                 <Route path="/create-owner" element={<CreateOwner />} />
                 <Route path="/create-owner-google" element={<CreateOwnerWithGoogle />} />
-                <Route path="/check-tables" element={<CheckTables />} />
-                <Route path="/debug-auth" element={<DebugAuth />} />
-                <Route path="/simple-auth" element={<SimpleAuth />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/offline-auth" element={<OfflineAuth />} />
-                <Route path="/test-google-auth" element={<TestGoogleAuth />} />
-                <Route path="/test-google-oauth" element={<TestGoogleOAuth />} />
                 <Route path="/create-invite" element={<CreateInvite />} />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
                 <Route path="/restricted" element={<RestrictedAccess />} />
                 <Route path="/manage-admins" element={<ManageAdmins />} />
                 <Route path="/configure-access" element={<ConfigureAccess />} />
                 <Route path="/approve-participants" element={<ApproveParticipants />} />
-                <Route path="/test-page" element={<TestPage />} />
-                <Route path="/simple-test" element={<SimpleTest />} />
-                <Route path="/test-route-button" element={<TestRouteButton />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
-          </div>
-          
-          {/* Bottom Navigation */}
-          <BottomNav />
-          </div>
-        </OfflineAuthProvider>
-      </ToastProvider>
-    </ThemeProvider>
+            </div>
+            
+            {/* Bottom Navigation */}
+            <BottomNav />
+            </div>
+          </OfflineAuthProvider>
+        </ToastProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }

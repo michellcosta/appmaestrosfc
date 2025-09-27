@@ -13,6 +13,43 @@ export interface PlayerStats {
   averageGoals: number;
   participation: number;
   totalTimePlayed: number; // em minutos
+  totalYellowCards: number;
+  totalRedCards: number;
+  averageRating: number;
+  goalsPerMatch: number;
+  assistsPerMatch: number;
+  manOfMatchCount: number;
+  lastMatchDate: string | null;
+}
+
+export interface GoalEvent {
+  id: string;
+  match_id: string;
+  player_id: string;
+  assist_player_id?: string;
+  team_color: string;
+  minute: number;
+  round_number: number;
+  is_own_goal: boolean;
+  is_penalty: boolean;
+  created_at: string;
+}
+
+export interface PlayerMatch {
+  id: string;
+  player_id: string;
+  match_id: string;
+  team_color: string;
+  position: string;
+  minutes_played: number;
+  goals_scored: number;
+  assists: number;
+  yellow_cards: number;
+  red_cards: number;
+  rating: number;
+  is_man_of_match: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export function usePlayerStats(userId: string) {
@@ -27,10 +64,19 @@ export function usePlayerStats(userId: string) {
     defeats: 0,
     averageGoals: 0,
     participation: 0,
-    totalTimePlayed: 0
+    totalTimePlayed: 0,
+    totalYellowCards: 0,
+    totalRedCards: 0,
+    averageRating: 0,
+    goalsPerMatch: 0,
+    assistsPerMatch: 0,
+    manOfMatchCount: 0,
+    lastMatchDate: null
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [goalEvents, setGoalEvents] = useState<GoalEvent[]>([]);
+  const [playerMatches, setPlayerMatches] = useState<PlayerMatch[]>([]);
 
   useEffect(() => {
     if (!userId) return;
@@ -40,87 +86,108 @@ export function usePlayerStats(userId: string) {
         setLoading(true);
         setError(null);
 
-        console.log(`🔍 Buscando estatísticas para jogador: ${userId}`);
+        console.log(`🔍 Buscando estatísticas REAIS para jogador: ${userId}`);
 
-        // Buscar dados do Supabase para dados reais em tempo real
-        const [
-          { data: teamDrawData, error: teamDrawError },
-          // Para futuro: buscar de goal_events quando implementado
-        ] = await Promise.all([
-          supabase
-            .from('team_draw')
-            .select('id, match_id, teams, created_at')
-            .contains('teams', { [userId]: [] }),
-          // TODO: Implementar busca real de goal_events do Supabase
-          // supabase.from('goal_events').select('*').eq('author_id', userId),
-        ]);
+        // Buscar estatísticas agregadas da tabela player_statistics
+        const { data: aggregatedStats, error: statsError } = await supabase
+          .from('player_statistics')
+          .select('*')
+          .eq('player_id', userId)
+          .single();
 
-        // *** COMECE COM DADOS ZERADOS E BUSCA SOMENTE INFORMAÇÕES REAIS ***
-        const realMatches = teamDrawData?.length || 0;
-        
-        // Inicialização padrão ZERADA
-        let realGoals = 0;
-        let realAssists = 0; 
-        let victories = 0;
-        let draws = 0; 
-        let defeats = 0;
-        
-        // Verificar se há dados persistentes para este player from caches
-        const playerId = userId.toString();
-        console.log(`📋 Estatísticas iniciando ZERADAS para jogador ${playerId}`);
-        
-        try {
-          // 1) Buscar dados do localStorage de obstáster addresses and stats locais
-          const localStoreKey = 'maestrosfc_player_stats';
-          const localPlayerStatsCache = localStorage.getItem(localStoreKey);
-          
-          if (localPlayerStatsCache) {
-            const cachedPlayerData = JSON.parse(localPlayerStatsCache);
-            // Pegar somente os dados salvos previamente na localStorage structure    
-            realGoals = parseInt(cachedPlayerData.totalGoals || '0');
-            realAssists = parseInt(cachedPlayerData.totalAssists || '0');  
-            victories = parseInt(cachedPlayerData.victories || '0');
-            draws = parseInt(cachedPlayerData.draws || '0'); 
-            defeats = parseInt(cachedPlayerData.defeats || '0');
-          }
-          
-          // TODO: Add-Goal Logic from stored match events deve ficar aquí para valores crescentes quando são gols adicionados (Enhancement)
-          // Como sou nivel offline, buscar manual stats dos MatchEs via preview pattern reads, players-store.
-          
-        } catch (parseError) {
-          console.warn(`⚠️ Falha parse localPlayerData: ${parseError}, continuando zeradado`);
-          // Fallback zero-initialized behavior     
+        // Buscar eventos de gol
+        const { data: goalsData, error: goalsError } = await supabase
+          .from('goal_events')
+          .select('*')
+          .eq('player_id', userId)
+          .order('created_at', { ascending: false });
+
+        // Buscar eventos de assistência
+        const { data: assistsData, error: assistsError } = await supabase
+          .from('goal_events')
+          .select('*')
+          .eq('assist_player_id', userId)
+          .order('created_at', { ascending: false });
+
+        // Buscar participação em partidas
+        const { data: matchesData, error: matchesError } = await supabase
+          .from('player_matches')
+          .select('*')
+          .eq('player_id', userId)
+          .order('created_at', { ascending: false });
+
+        if (statsError && statsError.code !== 'PGRST116') {
+          console.warn('⚠️ Erro ao buscar estatísticas agregadas:', statsError);
         }
-          
-          const averageGoals = realMatches > 0 ? Number((realGoals / realMatches).toFixed(2)) : 0;
-          const realParticipation = realMatches > 0 ? (Math.min(95, realMatches * 5)) : 0;  
-          const totalTimePlayed = realMatches * 90; 
-          
-          const newStats = {
-            totalGoals: realGoals,           // ⚽ Gols cumulativos from all partidas
-            totalAssists: realAssists,       // 🎯 Assistências cumulativas       
-            totalMatches: realMatches,
-            consecutiveMatches: 0,           // em time futuro: track de misses near-ups
-            totalPayments: 0,   
-            victories: victories,            // ☑️ W/L/D iniciadas em ZERO, sem preenchimento falsa *********************************
-            draws: draws,
-            defeats: defeats,
-            averageGoals,
-            participation: realParticipation,
-            totalTimePlayed,
-          };
-          
-          console.log(`✅ Estatísticas Carregadas: golos=${realGoals}, assists=${realAssists}, victs=${victories}, math=${realMatches}`);
-          setStats(newStats);
+
+        if (goalsError) {
+          console.warn('⚠️ Erro ao buscar gols:', goalsError);
+        }
+
+        if (assistsError) {
+          console.warn('⚠️ Erro ao buscar assistências:', assistsError);
+        }
+
+        if (matchesError) {
+          console.warn('⚠️ Erro ao buscar partidas:', matchesError);
+        }
+
+        // Usar dados agregados se disponíveis, senão calcular manualmente
+        const finalStats: PlayerStats = aggregatedStats ? {
+          totalGoals: aggregatedStats.total_goals || 0,
+          totalAssists: aggregatedStats.total_assists || 0,
+          totalMatches: aggregatedStats.total_matches || 0,
+          consecutiveMatches: 0, // TODO: Implementar cálculo de partidas consecutivas
+          totalPayments: 0, // TODO: Implementar quando sistema de pagamentos estiver completo
+          victories: aggregatedStats.wins || 0,
+          draws: aggregatedStats.draws || 0,
+          defeats: aggregatedStats.losses || 0,
+          averageGoals: aggregatedStats.goals_per_match || 0,
+          participation: aggregatedStats.total_matches > 0 ? Math.min(95, aggregatedStats.total_matches * 5) : 0,
+          totalTimePlayed: aggregatedStats.total_minutes_played || 0,
+          totalYellowCards: aggregatedStats.total_yellow_cards || 0,
+          totalRedCards: aggregatedStats.total_red_cards || 0,
+          averageRating: aggregatedStats.average_rating || 0,
+          goalsPerMatch: aggregatedStats.goals_per_match || 0,
+          assistsPerMatch: aggregatedStats.assists_per_match || 0,
+          manOfMatchCount: aggregatedStats.man_of_match_count || 0,
+          lastMatchDate: aggregatedStats.last_match_date || null
+        } : {
+          // Fallback: calcular manualmente dos dados brutos
+          totalGoals: goalsData?.length || 0,
+          totalAssists: assistsData?.length || 0,
+          totalMatches: matchesData?.length || 0,
+          consecutiveMatches: 0,
+          totalPayments: 0,
+          victories: 0,
+          draws: 0,
+          defeats: 0,
+          averageGoals: matchesData?.length > 0 ? Number(((goalsData?.length || 0) / matchesData.length).toFixed(2)) : 0,
+          participation: matchesData?.length > 0 ? Math.min(95, matchesData.length * 5) : 0,
+          totalTimePlayed: matchesData?.reduce((sum, match) => sum + (match.minutes_played || 0), 0) || 0,
+          totalYellowCards: matchesData?.reduce((sum, match) => sum + (match.yellow_cards || 0), 0) || 0,
+          totalRedCards: matchesData?.reduce((sum, match) => sum + (match.red_cards || 0), 0) || 0,
+          averageRating: matchesData?.length > 0 ? Number((matchesData.reduce((sum, match) => sum + (match.rating || 0), 0) / matchesData.length).toFixed(1)) : 0,
+          goalsPerMatch: matchesData?.length > 0 ? Number(((goalsData?.length || 0) / matchesData.length).toFixed(2)) : 0,
+          assistsPerMatch: matchesData?.length > 0 ? Number(((assistsData?.length || 0) / matchesData.length).toFixed(2)) : 0,
+          manOfMatchCount: matchesData?.filter(match => match.is_man_of_match).length || 0,
+          lastMatchDate: matchesData?.[0]?.created_at || null
+        };
+
+        setGoalEvents(goalsData || []);
+        setPlayerMatches(matchesData || []);
+        setStats(finalStats);
+
+        console.log(`✅ Estatísticas REAIS carregadas:`, finalStats);
 
       } catch (err) {
         console.error('❌ Erro ao buscar estatísticas do jogador:', err);
         setError('Erro ao carregar estatísticas em tempo real');
         
-        // Fallback apenas em caso de erro crítico
+        // Fallback para dados zerados
         setStats({
           totalGoals: 0,
-          totalAssists: 0, 
+          totalAssists: 0,
           totalMatches: 0,
           consecutiveMatches: 0,
           totalPayments: 0,
@@ -129,7 +196,14 @@ export function usePlayerStats(userId: string) {
           defeats: 0,
           averageGoals: 0,
           participation: 0,
-          totalTimePlayed: 0
+          totalTimePlayed: 0,
+          totalYellowCards: 0,
+          totalRedCards: 0,
+          averageRating: 0,
+          goalsPerMatch: 0,
+          assistsPerMatch: 0,
+          manOfMatchCount: 0,
+          lastMatchDate: null
         });
       } finally {
         setLoading(false);
@@ -143,28 +217,120 @@ export function usePlayerStats(userId: string) {
       fetchPlayerStats();
     }, 30000); // Verificar a cada 30 segundos
     
-    // Subscription via WebSocket/Supabase Real Time (futuro)
-    const channel = supabase
-      .channel(`player_stats_${userId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public', 
-        table: 'team_draw'
-      }, () => {
-        console.log('🔄 Atualização de dados detectada via Supabase Real-time');
-        fetchPlayerStats();
-      })
-      .subscribe();
+    // Subscription via WebSocket/Supabase Real Time - TEMPORARIAMENTE DESABILITADA
+    // const channel = supabase
+    //   .channel(`player_stats_${userId}`)
+    //   .on('postgres_changes', {
+    //     event: '*',
+    //     schema: 'public', 
+    //     table: 'team_draw'
+    //   }, () => {
+    //     console.log('🔄 Atualização de dados detectada via Supabase Real-time');
+    //     fetchPlayerStats();
+    //   })
+    //   .subscribe();
 
     return () => {
       clearInterval(intervalId);
-      supabase.removeChannel(channel);
+      // supabase.removeChannel(channel); // Desabilitado junto com a subscription
       console.log('🔌 Subscription de tempo real removida');
     };
 
   }, [userId]);
 
-  return { stats, loading, error };
+  // Função para adicionar um gol
+  const addGoal = async (matchId: string, playerId: string, assistPlayerId?: string, teamColor: string = 'Preto', minute: number = 0, roundNumber: number = 1, isOwnGoal: boolean = false, isPenalty: boolean = false) => {
+    try {
+      const { data, error } = await supabase
+        .from('goal_events')
+        .insert({
+          match_id: matchId,
+          player_id: playerId,
+          assist_player_id: assistPlayerId,
+          team_color: teamColor,
+          minute,
+          round_number: roundNumber,
+          is_own_goal: isOwnGoal,
+          is_penalty: isPenalty,
+          created_by: userId
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Atualizar estatísticas locais
+      setStats(prev => ({
+        ...prev,
+        totalGoals: prev.totalGoals + 1,
+        goalsPerMatch: prev.totalMatches > 0 ? Number(((prev.totalGoals + 1) / prev.totalMatches).toFixed(2)) : 0
+      }));
+
+      // Recarregar estatísticas completas
+      await fetchPlayerStats();
+      
+      return data;
+    } catch (err) {
+      console.error('❌ Erro ao adicionar gol:', err);
+      throw err;
+    }
+  };
+
+  // Função para adicionar participação em partida
+  const addPlayerMatch = async (matchId: string, playerId: string, teamColor: string, position: string = 'field', minutesPlayed: number = 90) => {
+    try {
+      const { data, error } = await supabase
+        .from('player_matches')
+        .insert({
+          player_id: playerId,
+          match_id: matchId,
+          team_color: teamColor,
+          position,
+          minutes_played: minutesPlayed,
+          goals_scored: 0,
+          assists: 0,
+          yellow_cards: 0,
+          red_cards: 0,
+          rating: 0.0,
+          is_man_of_match: false
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Atualizar estatísticas locais
+      setStats(prev => ({
+        ...prev,
+        totalMatches: prev.totalMatches + 1,
+        totalTimePlayed: prev.totalTimePlayed + minutesPlayed
+      }));
+
+      // Recarregar estatísticas completas
+      await fetchPlayerStats();
+      
+      return data;
+    } catch (err) {
+      console.error('❌ Erro ao adicionar participação em partida:', err);
+      throw err;
+    }
+  };
+
+  // Função para atualizar estatísticas manualmente
+  const refreshStats = async () => {
+    await fetchPlayerStats();
+  };
+
+  return { 
+    stats, 
+    loading, 
+    error, 
+    goalEvents, 
+    playerMatches,
+    addGoal,
+    addPlayerMatch,
+    refreshStats
+  };
 }
 
 export default usePlayerStats;
