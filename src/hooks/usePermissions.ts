@@ -51,6 +51,12 @@ export function usePermissions() {
     return ['owner', 'admin', 'aux'].includes(role || '');
   };
 
+  const canManagePlayers = () => {
+    if (!user) return false;
+    const role = user.role;
+    return ['owner', 'admin', 'aux'].includes(role || '');
+  };
+
   const canApproveUsers = () => {
     if (!user) return false;
     const role = user.role;
@@ -111,6 +117,7 @@ export function usePermissions() {
     canSeeVote,
     canSeeDashboard,
     canCreateInvites,
+    canManagePlayers,
     canApproveUsers,
     canRequestToPlay,
     canPayDaily,

@@ -1,10 +1,13 @@
 // Supabase Client (Front)
 import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_CONFIG } from '@/config/supabase';
 
-// Configuração do Supabase com fallbacks para desenvolvimento
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || SUPABASE_CONFIG.url;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || SUPABASE_CONFIG.anonKey;
+// Configuração do Supabase
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables');
+}
 
 console.log('🔍 Supabase configurado:');
 console.log('URL:', supabaseUrl);
@@ -16,4 +19,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
   },
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  }
 });

@@ -512,7 +512,7 @@ All colors MUST be HSL.
     
     /* Muted - Gray */
     --muted: 222 12% 14%;
-    --muted-foreground: 215 15% 60%;
+    --muted-foreground: 215 15% 55%;
     
     /* Accent - Green Dark */
     --accent: 142 30% 15%;
@@ -531,8 +531,8 @@ All colors MUST be HSL.
     --success-foreground: 0 0% 100%;
     
     /* Borders & Input */
-    --border: 222 12% 15%;
-    --input: 222 12% 18%;
+    --border: 222 12% 25%;
+    --input: 222 12% 25%;
     --ring: 142 71% 45%;
     
     /* Team Colors (adjusted for dark) */
@@ -557,6 +557,9 @@ All colors MUST be HSL.
     --tabbar-background: 222 12% 8%;
     --tabbar-foreground: 215 15% 60%;
     --tabbar-active: 142 71% 55%;
+    
+    /* Placeholder specific for dark mode */
+    --placeholder-foreground: 215 15% 50%;
   }
 }
 

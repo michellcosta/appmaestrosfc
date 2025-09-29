@@ -183,4 +183,27 @@ function useToast() {
   };
 }
 
+// Helper functions for toast
+export const useToastHelpers = () => {
+  const { toast } = useToast();
+  
+  const success = (title: string, description?: string) => {
+    toast({
+      title,
+      description,
+      variant: "default",
+    });
+  };
+  
+  const error = (title: string, description?: string) => {
+    toast({
+      title,
+      description,
+      variant: "destructive",
+    });
+  };
+  
+  return { success, error };
+};
+
 export { useToast, toast };

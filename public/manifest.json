@@ -1,92 +1,61 @@
 {
-  "name": "App Maestros FC",
-  "short_name": "Maestros FC",
-  "description": "Sistema de gestão completo para grupo de futebol - jogos, pagamentos, ranking e muito mais",
+  "name": "Nexus Play",
+  "short_name": "Nexus",
+  "description": "Sistema de gestão de peladas do Maestros FC",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#ffffff",
-  "theme_color": "#16a34a",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
   "scope": "/",
   "lang": "pt-BR",
-  "dir": "ltr",
-  "categories": ["sports", "utilities", "productivity"],
-  "prefer_related_applications": false,
-  "display_override": ["window-controls-overlay", "standalone"],
-  "edge_side_panel": {
-    "preferred_width": 400
-  },
+  "categories": ["sports", "lifestyle"],
   "icons": [
-    {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon.svg", 
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ],
   "shortcuts": [
     {
-      "name": "Próximo Jogo",
-      "short_name": "Jogos",
-      "description": "Ver próximos jogos",
-      "url": "/",
+      "name": "Nova Partida",
+      "short_name": "Partida",
+      "description": "Criar nova partida",
+      "url": "/match",
       "icons": [
         {
-          "src": "/icon.svg",
-          "sizes": "192x192",
-          "type": "image/svg+xml"
+          "src": "/icon-192.png",
+          "sizes": "192x192"
         }
       ]
     },
     {
       "name": "Financeiro",
-      "short_name": "Pagamentos",
-      "description": "Gerenciar pagamentos",
+      "short_name": "Financeiro",
+      "description": "Gestão financeira",
       "url": "/finance",
       "icons": [
         {
-          "src": "/icon.svg",
-          "sizes": "192x192",
-          "type": "image/svg+xml"
+          "src": "/icon-192.png",
+          "sizes": "192x192"
         }
       ]
-    },
+    }
+  ],
+  "screenshots": [
     {
-      "name": "Ranking",
-      "short_name": "Ranking",
-      "description": "Ver ranking do grupo",
-      "url": "/ranking",
-      "icons": [
-        {
-          "src": "/icon.svg",
-          "sizes": "192x192",
-          "type": "image/svg+xml"
-        }
-      ]
+      "src": "/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
     }
   ]
 }

@@ -1805,9 +1805,17 @@ export default function OwnerDashboard() {
                      <Button 
                        className='w-full' 
                        variant="outline"
-                       onClick={() => window.location.href = '/manage-admins'}
+                       onClick={() => window.location.href = '/manage-players'}
                      >
                        <Users className='w-4 h-4 mr-2' />
+                       Gerenciar Jogadores
+                     </Button>
+                     <Button 
+                       className='w-full' 
+                       variant="outline"
+                       onClick={() => window.location.href = '/manage-admins'}
+                     >
+                       <Shield className='w-4 h-4 mr-2' />
                        Gerenciar Admins
                      </Button>
                      <Button 
@@ -1960,7 +1968,7 @@ export default function OwnerDashboard() {
               <Edit className="w-5 h-5" />
               Editar Jogo
             </DialogTitle>
-            <DialogDescription className="dark:text-zinc-400">
+            <DialogDescription className="dark:text-zinc-300">
               Faça as alterações necessárias nos dados do jogo.
             </DialogDescription>
           </DialogHeader>
@@ -2044,7 +2052,7 @@ export default function OwnerDashboard() {
               <AlertCircle className="w-5 h-5 text-red-500" />
               Confirmar Exclusão
             </DialogTitle>
-            <DialogDescription className="dark:text-zinc-400">
+            <DialogDescription className="dark:text-zinc-300">
               Tem certeza que deseja excluir esta partida? Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
@@ -2082,7 +2090,7 @@ export default function OwnerDashboard() {
               <Plus className="w-5 h-5" />
               Nova Partida
             </DialogTitle>
-            <DialogDescription className="dark:text-zinc-400">
+            <DialogDescription className="dark:text-zinc-300">
               Preencha os dados para criar uma nova partida.
             </DialogDescription>
           </DialogHeader>
@@ -2116,9 +2124,9 @@ export default function OwnerDashboard() {
                 placeholder="Ex: Rua das Flores, 123 - Bairro, Cidade - Estado"
                 value={createForm.location}
                 onChange={(e) => setCreateForm(prev => ({ ...prev, location: e.target.value }))}
-                className="dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100 dark:placeholder-zinc-400"
+                className="dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100 dark:placeholder-zinc-300"
               />
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+              <p className="text-xs text-zinc-500 dark:text-zinc-300 mt-1">
                 💡 Cole aqui o endereço completo do Google Maps para facilitar a navegação
               </p>
             </div>

@@ -104,6 +104,9 @@ export default {
           foreground: "hsl(var(--tabbar-foreground))",
           active: "hsl(var(--tabbar-active))",
         },
+        placeholder: {
+          DEFAULT: "hsl(var(--placeholder-foreground))",
+        },
         // Modern Color Palette
         electric: {
           50: "#f0f9ff",

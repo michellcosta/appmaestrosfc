@@ -1,127 +1,314 @@
-const CACHE_NAME = 'maestros-fc-v1.0.2';
-const STATIC_CACHE = 'maestros-fc-static-v1.0.2';
-const DYNAMIC_CACHE = 'maestros-fc-dynamic-v1.0.2';
+const CACHE_NAME = 'nexus-play-v1';
+const STATIC_CACHE = 'nexus-static-v1';
+const DYNAMIC_CACHE = 'nexus-dynamic-v1';
 
-const urlsToCache = [
+// Assets para cache estático
+const STATIC_ASSETS = [
   '/',
-  '/index.html',
   '/manifest.json',
-  '/icon.svg',
   '/icon-192.png',
   '/icon-512.png'
 ];
 
-// Estratégias de cache
-const CACHE_STRATEGIES = {
-  static: ['/manifest.json', '/icon.svg', '/icon-192.png', '/icon-512.png'],
-  dynamic: ['/api/', '/supabase/'],
-  networkFirst: ['/match', '/ranking', '/finance']
-};
+// Rotas que devem ser cached
+const CACHE_ROUTES = [
+  '/',
+  '/home',
+  '/match',
+  '/finance',
+  '/ranking',
+  '/perfil'
+];
 
-// Install event
-self.addEventListener('install', function(event) {
-  console.log('Service Worker installing...');
+// Instalar service worker
+self.addEventListener('install', (event) => {
+  console.log('SW: Installing...');
+  
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(function(cache) {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+    Promise.all([
+      // Cache de assets estáticos
+      caches.open(STATIC_CACHE).then((cache) => {
+        return cache.addAll(STATIC_ASSETS);
+      }),
+      
+      // Cache de rotas principais
+      caches.open(DYNAMIC_CACHE).then((cache) => {
+        return cache.addAll(CACHE_ROUTES);
       })
-      .then(function() {
-        console.log('Service Worker installation complete');
-        return self.skipWaiting();
-      })
-  );
-});
-
-// Activate event
-self.addEventListener('activate', function(event) {
-  console.log('Service Worker activating...');
-  event.waitUntil(
-    caches.keys().then(function(cacheNames) {
-      return Promise.all(
-        cacheNames.map(function(cacheName) {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(function() {
-      console.log('Service Worker activation complete');
-      return self.clients.claim();
+    ]).then(() => {
+      console.log('SW: Installation complete');
+      return self.skipWaiting();
     })
   );
 });
 
-// Fetch event com estratégias otimizadas
-self.addEventListener('fetch', function(event) {
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') {
-    return;
-  }
-
-  // Skip chrome-extension and other non-http requests
-  if (!event.request.url.startsWith('http')) {
-    return;
-  }
-
-  const url = new URL(event.request.url);
-  const pathname = url.pathname;
-
-  // Estratégia Cache First para assets estáticos
-  if (CACHE_STRATEGIES.static.some(path => pathname.includes(path))) {
-    event.respondWith(cacheFirst(event.request, STATIC_CACHE));
-    return;
-  }
-
-  // Estratégia Network First para dados dinâmicos
-  if (CACHE_STRATEGIES.networkFirst.some(path => pathname.includes(path))) {
-    event.respondWith(networkFirst(event.request, DYNAMIC_CACHE));
-    return;
-  }
-
-  // Estratégia padrão (Cache First com fallback para Network)
-  event.respondWith(cacheFirst(event.request, DYNAMIC_CACHE));
+// Ativar service worker
+self.addEventListener('activate', (event) => {
+  console.log('SW: Activating...');
+  
+  event.waitUntil(
+    Promise.all([
+      // Limpar caches antigos
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME && 
+                cacheName !== STATIC_CACHE && 
+                cacheName !== DYNAMIC_CACHE) {
+              console.log('SW: Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      }),
+      
+      // Assumir controle de todas as abas
+      self.clients.claim()
+    ]).then(() => {
+      console.log('SW: Activation complete');
+    })
+  );
 });
 
-// Cache First Strategy
-async function cacheFirst(request, cacheName) {
+// Interceptar requisições
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+  
+  // Ignorar requisições não-HTTP
+  if (!request.url.startsWith('http')) {
+    return;
+  }
+  
+  // Estratégia para diferentes tipos de requisições
+  if (request.method === 'GET') {
+    // Páginas estáticas - stale-while-revalidate
+    if (CACHE_ROUTES.some(route => url.pathname.startsWith(route))) {
+      event.respondWith(handleStaticRequest(request));
+    }
+    // Assets estáticos - cache first
+    else if (url.pathname.startsWith('/assets/') || 
+             url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico)$/)) {
+      event.respondWith(handleAssetRequest(request));
+    }
+    // API - network first
+    else if (url.pathname.startsWith('/api/')) {
+      event.respondWith(handleApiRequest(request));
+    }
+    // Outras requisições - network first
+    else {
+      event.respondWith(handleNetworkFirst(request));
+    }
+  }
+  // POST/PUT/DELETE - sempre network
+  else {
+    event.respondWith(handleMutationRequest(request));
+  }
+});
+
+// Estratégia: stale-while-revalidate para páginas
+async function handleStaticRequest(request) {
+  const cache = await caches.open(DYNAMIC_CACHE);
+  const cached = await cache.match(request);
+  
+  // Retornar cache imediatamente se disponível
+  if (cached) {
+    // Atualizar cache em background
+    fetch(request).then((response) => {
+      if (response.ok) {
+        cache.put(request, response.clone());
+      }
+    }).catch(() => {}); // Ignorar erros de atualização
+    
+    return cached;
+  }
+  
+  // Se não há cache, buscar da rede
   try {
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
+    const response = await fetch(request);
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    console.log('SW: Network error for', request.url);
+    return new Response('Offline', { status: 503 });
+  }
+}
+
+// Estratégia: cache first para assets
+async function handleAssetRequest(request) {
+  const cache = await caches.open(STATIC_CACHE);
+  const cached = await cache.match(request);
+  
+  if (cached) {
+    return cached;
+  }
+  
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    return new Response('Asset not available offline', { status: 503 });
+  }
+}
+
+// Estratégia: network first para API
+async function handleApiRequest(request) {
+  try {
+    const response = await fetch(request);
+    return response;
+  } catch (error) {
+    // Tentar cache como fallback
+    const cache = await caches.open(DYNAMIC_CACHE);
+    const cached = await cache.match(request);
+    
+    if (cached) {
+      return cached;
     }
     
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      const cache = await caches.open(cacheName);
-      cache.put(request, networkResponse.clone());
-    }
-    return networkResponse;
-  } catch (error) {
-    console.error('Cache First failed:', error);
-    return new Response('Offline', { status: 503 });
+    return new Response('API unavailable offline', { status: 503 });
   }
 }
 
-// Network First Strategy
-async function networkFirst(request, cacheName) {
+// Estratégia: network first para outras requisições
+async function handleNetworkFirst(request) {
   try {
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      const cache = await caches.open(cacheName);
-      cache.put(request, networkResponse.clone());
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(DYNAMIC_CACHE);
+      cache.put(request, response.clone());
     }
-    return networkResponse;
+    return response;
   } catch (error) {
-    console.error('Network First failed:', error);
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
+    const cache = await caches.open(DYNAMIC_CACHE);
+    const cached = await cache.match(request);
+    
+    if (cached) {
+      return cached;
     }
-    return new Response('Offline', { status: 503 });
+    
+    return new Response('Content not available offline', { status: 503 });
   }
 }
 
-console.log('Service Worker: Loaded successfully');
+// Estratégia: sempre network para mutações
+async function handleMutationRequest(request) {
+  try {
+    return await fetch(request);
+  } catch (error) {
+    // Para mutações offline, adicionar à fila
+    if (request.method === 'POST' || request.method === 'PUT' || request.method === 'DELETE') {
+      await addToOfflineQueue(request);
+      return new Response('Request queued for offline sync', { status: 202 });
+    }
+    
+    return new Response('Network error', { status: 503 });
+  }
+}
+
+// Adicionar à fila offline
+async function addToOfflineQueue(request) {
+  try {
+    const queueData = {
+      url: request.url,
+      method: request.method,
+      headers: Object.fromEntries(request.headers.entries()),
+      body: await request.clone().text(),
+      timestamp: Date.now()
+    };
+    
+    // Armazenar no IndexedDB (implementação simplificada)
+    const db = await openOfflineDB();
+    const transaction = db.transaction(['offlineQueue'], 'readwrite');
+    const store = transaction.objectStore('offlineQueue');
+    await store.add(queueData);
+    
+    console.log('SW: Request queued for offline sync');
+  } catch (error) {
+    console.error('SW: Error queuing request:', error);
+  }
+}
+
+// Abrir IndexedDB para fila offline
+function openOfflineDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('nexus_offline_queue', 1);
+    
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('offlineQueue')) {
+        db.createObjectStore('offlineQueue', { keyPath: 'timestamp' });
+      }
+    };
+  });
+}
+
+// Background Sync
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'background-sync') {
+    console.log('SW: Background sync triggered');
+    event.waitUntil(processOfflineQueue());
+  }
+});
+
+// Processar fila offline
+async function processOfflineQueue() {
+  try {
+    const db = await openOfflineDB();
+    const transaction = db.transaction(['offlineQueue'], 'readwrite');
+    const store = transaction.objectStore('offlineQueue');
+    const requests = await store.getAll();
+    
+    for (const requestData of requests) {
+      try {
+        const response = await fetch(requestData.url, {
+          method: requestData.method,
+          headers: requestData.headers,
+          body: requestData.body
+        });
+        
+        if (response.ok) {
+          await store.delete(requestData.timestamp);
+          console.log('SW: Offline request synced successfully');
+        }
+      } catch (error) {
+        console.error('SW: Error syncing offline request:', error);
+      }
+    }
+  } catch (error) {
+    console.error('SW: Error processing offline queue:', error);
+  }
+}
+
+// Push notifications (se implementado)
+self.addEventListener('push', (event) => {
+  if (event.data) {
+    const data = event.data.json();
+    
+    event.waitUntil(
+      self.registration.showNotification(data.title, {
+        body: data.body,
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        tag: data.tag,
+        data: data.data
+      })
+    );
+  }
+});
+
+// Click em notificação
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  
+  event.waitUntil(
+    clients.openWindow('/')
+  );
+});

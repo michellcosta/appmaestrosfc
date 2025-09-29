@@ -36,6 +36,7 @@ const RestrictedAccess = React.lazy(() => import(/* webpackChunkName: "pages-adm
 const ManageAdmins = React.lazy(() => import(/* webpackChunkName: "pages-admin-manage" */ '@/pages/ManageAdmins'));
 const ConfigureAccess = React.lazy(() => import(/* webpackChunkName: "pages-admin-configure" */ '@/pages/ConfigureAccess'));
 const ApproveParticipants = React.lazy(() => import(/* webpackChunkName: "pages-admin-approve" */ '@/pages/ApproveParticipants'));
+const ManagePlayers = React.lazy(() => import(/* webpackChunkName: "pages-manage-players" */ '@/pages/ManagePlayers'));
 
 export default function AppRouter() {
   // Initialize performance monitoring
@@ -75,6 +76,7 @@ export default function AppRouter() {
                 <Route path="/manage-admins" element={<ManageAdmins />} />
                 <Route path="/configure-access" element={<ConfigureAccess />} />
                 <Route path="/approve-participants" element={<ApproveParticipants />} />
+                <Route path="/manage-players" element={<ManagePlayers />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>

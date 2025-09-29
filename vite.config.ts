@@ -14,6 +14,9 @@ export default defineConfig(({ mode }) => ({
     port: 5173,
     open: true, // Abre automaticamente o navegador
     strictPort: false, // Permite tentar outras portas se 5173 não estiver disponível
+    hmr: {
+      overlay: false // Desabilitar overlay de erro para evitar problemas
+    }
   },
   build: {
     // Otimizações de build para produção
