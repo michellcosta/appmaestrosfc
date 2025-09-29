@@ -52,13 +52,36 @@ export default function ManagePlayers() {
   const loadPlayers = async () => {
     try {
       setLoading(true);
+      // Buscar usuários do auth.users com suas memberships
       const { data, error } = await supabase
-        .from('users')
-        .select('*')
+        .from('memberships')
+        .select(`
+          role,
+          user_id,
+          auth.users!inner(
+            id,
+            email,
+            created_at
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPlayers(data || []);
+      
+      // Transformar dados para o formato esperado
+      const players = (data || []).map((membership: any) => ({
+        id: membership.user_id,
+        name: membership.auth.users.email?.split('@')[0] || 'Usuário',
+        email: membership.auth.users.email,
+        role: membership.role,
+        position: 'Meio', // Default
+        stars: 5, // Default
+        shirt_size: 'G', // Default
+        approved: true, // Default
+        created_at: membership.auth.users.created_at
+      }));
+      
+      setPlayers(players);
     } catch (err: any) {
       error('Erro ao carregar jogadores', err.message);
     } finally {
@@ -76,38 +99,22 @@ export default function ManagePlayers() {
 
     try {
       if (editingPlayer) {
-        // Editar jogador existente
+        // Editar role do jogador existente
         const { error } = await supabase
-          .from('users')
+          .from('memberships')
           .update({
-            name: formData.name,
-            email: formData.email,
-            role: formData.role,
-            position: formData.position,
-            stars: formData.stars,
-            shirt_size: formData.shirt_size,
-            approved: formData.approved
+            role: formData.role
           })
-          .eq('id', editingPlayer.id);
+          .eq('user_id', editingPlayer.id);
 
         if (error) throw error;
         success('Jogador atualizado', `${formData.name} foi atualizado com sucesso`);
       } else {
-        // Criar novo jogador
-        const { error } = await supabase
-          .from('users')
-          .insert({
-            name: formData.name,
-            email: formData.email,
-            role: formData.role,
-            position: formData.position,
-            stars: formData.stars,
-            shirt_size: formData.shirt_size,
-            approved: formData.approved
-          });
-
-        if (error) throw error;
-        success('Jogador criado', `${formData.name} foi adicionado ao sistema`);
+        // Criar novo usuário e membership
+        // Primeiro, criar o usuário no auth.users (isso seria feito pelo Google OAuth)
+        // Por enquanto, apenas mostrar mensagem
+        error('Funcionalidade limitada', 'Novos usuários devem fazer login com Google primeiro');
+        return;
       }
 
       // Limpar formulário e recarregar
@@ -137,10 +144,11 @@ export default function ManagePlayers() {
     if (!confirm(`Tem certeza que deseja remover ${playerName}?`)) return;
 
     try {
+      // Remover membership (não deletar o usuário do auth.users)
       const { error } = await supabase
-        .from('users')
+        .from('memberships')
         .delete()
-        .eq('id', playerId);
+        .eq('user_id', playerId);
 
       if (error) throw error;
       success('Jogador removido', `${playerName} foi removido do sistema`);
