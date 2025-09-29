@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Criar Ícones para Nexus Play</title>
+</head>
+<body>
+    <canvas id="canvas192" width="192" height="192" style="border: 1px solid #ccc;"></canvas>
+    <canvas id="canvas512" width="512" height="512" style="border: 1px solid #ccc;"></canvas>
+    
+    <script>
+        // Criar ícone 192x192
+        const canvas192 = document.getElementById('canvas192');
+        const ctx192 = canvas192.getContext('2d');
+        
+        // Fundo verde
+        ctx192.fillStyle = '#10b981';
+        ctx192.fillRect(0, 0, 192, 192);
+        
+        // Círculo branco
+        ctx192.fillStyle = '#ffffff';
+        ctx192.beginPath();
+        ctx192.arc(96, 96, 80, 0, 2 * Math.PI);
+        ctx192.fill();
+        
+        // Texto "N"
+        ctx192.fillStyle = '#10b981';
+        ctx192.font = 'bold 80px Arial';
+        ctx192.textAlign = 'center';
+        ctx192.textBaseline = 'middle';
+        ctx192.fillText('N', 96, 96);
+        
+        // Download
+        const link192 = document.createElement('a');
+        link192.download = 'icon-192.png';
+        link192.href = canvas192.toDataURL();
+        link192.textContent = 'Download 192x192';
+        document.body.appendChild(link192);
+        
+        // Criar ícone 512x512
+        const canvas512 = document.getElementById('canvas512');
+        const ctx512 = canvas512.getContext('2d');
+        
+        // Fundo verde
+        ctx512.fillStyle = '#10b981';
+        ctx512.fillRect(0, 0, 512, 512);
+        
+        // Círculo branco
+        ctx512.fillStyle = '#ffffff';
+        ctx512.beginPath();
+        ctx512.arc(256, 256, 200, 0, 2 * Math.PI);
+        ctx512.fill();
+        
+        // Texto "N"
+        ctx512.fillStyle = '#10b981';
+        ctx512.font = 'bold 200px Arial';
+        ctx512.textAlign = 'center';
+        ctx512.textBaseline = 'middle';
+        ctx512.fillText('N', 256, 256);
+        
+        // Download
+        const link512 = document.createElement('a');
+        link512.download = 'icon-512.png';
+        link512.href = canvas512.toDataURL();
+        link512.textContent = 'Download 512x512';
+        document.body.appendChild(link512);
+    </script>
+</body>
+</html>
