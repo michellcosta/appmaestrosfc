@@ -52,37 +52,48 @@ export default function ManagePlayers() {
   const loadPlayers = async () => {
     try {
       setLoading(true);
-      // Buscar usuários do auth.users com suas memberships
-      const { data, error } = await supabase
+      
+      // Primeiro, buscar memberships
+      const { data: memberships, error: membershipsError } = await supabase
         .from('memberships')
-        .select(`
-          role,
-          user_id,
-          auth.users!inner(
-            id,
-            email,
-            created_at
-          )
-        `)
+        .select('role, user_id, created_at')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (membershipsError) throw membershipsError;
       
-      // Transformar dados para o formato esperado
-      const players = (data || []).map((membership: any) => ({
-        id: membership.user_id,
-        name: membership.auth.users.email?.split('@')[0] || 'Usuário',
-        email: membership.auth.users.email,
-        role: membership.role,
-        position: 'Meio', // Default
-        stars: 5, // Default
-        shirt_size: 'G', // Default
-        approved: true, // Default
-        created_at: membership.auth.users.created_at
-      }));
+      if (!memberships || memberships.length === 0) {
+        setPlayers([]);
+        return;
+      }
+
+      // Buscar usuários do auth.users
+      const userIds = memberships.map(m => m.user_id);
+      const { data: users, error: usersError } = await supabase
+        .from('auth.users')
+        .select('id, email, created_at')
+        .in('id', userIds);
+
+      if (usersError) throw usersError;
+      
+      // Combinar dados
+      const players = memberships.map((membership: any) => {
+        const user = users?.find(u => u.id === membership.user_id);
+        return {
+          id: membership.user_id,
+          name: user?.email?.split('@')[0] || 'Usuário',
+          email: user?.email,
+          role: membership.role,
+          position: 'Meio', // Default
+          stars: 5, // Default
+          shirt_size: 'G', // Default
+          approved: true, // Default
+          created_at: user?.created_at || membership.created_at
+        };
+      });
       
       setPlayers(players);
     } catch (err: any) {
+      console.error('Erro ao carregar jogadores:', err);
       error('Erro ao carregar jogadores', err.message);
     } finally {
       setLoading(false);
