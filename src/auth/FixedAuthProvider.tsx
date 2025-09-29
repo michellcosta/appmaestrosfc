@@ -53,14 +53,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               role: profile.role
             });
           } else if (mounted) {
-            // Se não tem perfil, criar um automaticamente
+            // Se não tem perfil, criar um automaticamente como DIARISTA
             const { data: newUser } = await supabase
               .from('users')
               .insert({
                 auth_id: session.user.id,
                 email: session.user.email,
                 name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
-                role: 'owner'
+                role: 'diarista'
               })
               .select()
               .single();

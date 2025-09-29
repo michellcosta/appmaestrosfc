@@ -108,7 +108,7 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
             id: session.user.id,
             email: session.user.email,
             name: userMetadata?.full_name || userMetadata?.name || session.user.email?.split('@')[0],
-            role: 'owner',
+            role: 'diarista',
             avatar_url: googleAvatarUrl,
             custom_avatar: null,
             group_id: `group_${session.user.id.slice(-8)}`

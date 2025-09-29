@@ -63,14 +63,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (profileError) {
             console.error('Erro ao buscar perfil:', profileError);
-            // Se não tem perfil, criar um automaticamente
+            // Se não tem perfil, criar um automaticamente como DIARISTA
             const { data: newUser, error: createError } = await supabase
               .from('users')
               .insert({
                 auth_id: session.user.id,
                 email: session.user.email,
                 name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário',
-                role: 'owner'
+                role: 'diarista'
               })
               .select()
               .single();
