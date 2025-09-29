@@ -34,7 +34,7 @@ export default function DiaristRedirect({ children }: DiaristRedirectProps) {
 
   // Enquanto carrega, mostra o conteúdo normal
   if (loading) {
-    return <>{children}</>;
+    return <div>{children}</div>;
   }
 
   // Se é diarista não aprovado, não renderiza o conteúdo (será redirecionado)
@@ -43,5 +43,5 @@ export default function DiaristRedirect({ children }: DiaristRedirectProps) {
   }
 
   // Para todos os outros casos, renderiza o conteúdo normal
-  return <>{children}</>;
+  return <div>{children}</div>;
 }

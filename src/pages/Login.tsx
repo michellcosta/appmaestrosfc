@@ -245,6 +245,20 @@ export default function Login() {
                 }`}>{message}</p>
               </div>
             )}
+
+            {/* Create Owner Link */}
+            <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
+              <button 
+                onClick={() => navigate('/create-owner-google')}
+                className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded-lg text-white font-medium text-sm transition-colors duration-200 text-center flex items-center justify-center gap-2"
+              >
+                <Shield className="w-4 h-4 text-purple-200" />
+                👑 Criar Conta Owner com Google
+              </button>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center mt-2">
+                Primeira vez? Crie sua conta como proprietário
+              </p>
+            </div>
           </div>
         </div>
 

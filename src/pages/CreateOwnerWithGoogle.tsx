@@ -22,7 +22,6 @@ export default function CreateOwnerWithGoogle() {
   }, [user]);
 
   const handleCreateOwnerWithGoogle = async () => {
-    // Verificar se o usuário pode criar owners
     if (!canCreateOwner(user?.id)) {
       setError(PROTECTION_MESSAGES.CANNOT_CREATE_OWNER);
       return;

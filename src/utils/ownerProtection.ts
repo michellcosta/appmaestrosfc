@@ -42,6 +42,15 @@ export function isMainOwner(userId: string | undefined): boolean {
  * Apenas o owner principal pode criar novos owners
  */
 export function canCreateOwner(currentUserId: string | undefined): boolean {
+  // Verificar se já existe um owner principal
+  const mainOwnerId = getMainOwnerId();
+  
+  // Se não há owner principal definido, permite criar
+  if (!mainOwnerId) {
+    return true;
+  }
+  
+  // Apenas o owner principal pode criar novos owners
   return isMainOwner(currentUserId);
 }
 
