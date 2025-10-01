@@ -91,12 +91,12 @@ export default function OwnerDashboardSimple() {
 
     // Funções para criação de jogos
     const openCreateGameModal = () => {
-        // Definir data padrão para hoje
+        // Definir data padrão para hoje no formato YYYY-MM-DD para o input date
         const today = new Date();
-        const day = today.getDate().toString().padStart(2, '0');
-        const month = (today.getMonth() + 1).toString().padStart(2, '0');
         const year = today.getFullYear();
-        const defaultDate = `${day}/${month}/${year}`;
+        const month = (today.getMonth() + 1).toString().padStart(2, '0');
+        const day = today.getDate().toString().padStart(2, '0');
+        const defaultDate = `${year}-${month}-${day}`;
 
         setCreateForm({
             date: defaultDate,
@@ -125,9 +125,15 @@ export default function OwnerDashboardSimple() {
                 return;
             }
 
+            // Converter data de YYYY-MM-DD para DD/MM/YYYY para o sistema
+            const [year, month, day] = createForm.date.split('-');
+            const formattedDate = `${day}/${month}/${year}`;
+
+            console.log('Criando jogo com data:', formattedDate);
+
             // Criar o jogo
             addMatch({
-                date: createForm.date,
+                date: formattedDate,
                 time: createForm.time,
                 location: createForm.location,
                 maxPlayers: createForm.maxPlayers
@@ -421,11 +427,26 @@ export default function OwnerDashboardSimple() {
                                 <Label htmlFor="date">Data *</Label>
                                 <Input
                                     id="date"
-                                    type="text"
-                                    placeholder="DD/MM/AAAA"
+                                    type="date"
+                                    min={new Date().toISOString().split('T')[0]} // Não permitir datas no passado
                                     value={createForm.date}
-                                    onChange={(e) => setCreateForm(prev => ({ ...prev, date: e.target.value }))}
+                                    onChange={(e) => {
+                                        const dateValue = e.target.value;
+                                        console.log('Data selecionada:', dateValue);
+                                        setCreateForm(prev => ({ ...prev, date: dateValue }));
+                                    }}
                                 />
+                                {createForm.date && (
+                                    <div className="flex items-center gap-2 mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                        <p className="text-xs text-green-700">
+                                            Data selecionada: {(() => {
+                                                const [year, month, day] = createForm.date.split('-');
+                                                return `${day}/${month}/${year}`;
+                                            })()}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
                             <div>

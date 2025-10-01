@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
-import { usePlayersStore, PlayerWithTeam } from '@/store/playersStore'
+import { PlayerWithTeam, usePlayersStore } from '@/store/playersStore'
 import { TeamColor, TeamDraw, User } from '@/types'
-import { supabase } from '@/lib/supabase'
+import { useEffect, useState } from 'react'
 
 export interface UseTeamDrawReturn {
   // Estado
@@ -9,30 +8,30 @@ export interface UseTeamDrawReturn {
   teamDraw: TeamDraw | null
   loading: boolean
   error: string | null
-  
+
   // Funções de times
   getPlayersByTeam: (teamColor: TeamColor) => PlayerWithTeam[]
   getAvailablePlayersForTeam: (teamColor: TeamColor) => PlayerWithTeam[]
   getAllAvailablePlayers: () => PlayerWithTeam[]
-  
+
   // Ações
   loadTeamDraw: (matchId: string) => Promise<void>
   drawTeams: (matchId: string, playersPerTeam?: 5 | 6) => Promise<void>
   refreshTeamDraw: () => Promise<void>
-  
+
   // Substituições
   substitutePlayer: (playerId: string, substituteId: string, teamColor: TeamColor) => void
   addPlayerToTeam: (player: User, teamColor: TeamColor) => void
-  
+
   // Busca
   searchPlayers: (query: string) => PlayerWithTeam[]
   getPlayerById: (playerId: string) => PlayerWithTeam | undefined
   getPlayerByName: (name: string) => PlayerWithTeam | undefined
-  
+
   // Validações
   canPlayerScore: (playerId: string, teamColor: TeamColor) => boolean
   canPlayerAssist: (playerId: string, assistedPlayerId: string, teamColor: TeamColor) => boolean
-  
+
   // Estatísticas
   getTeamStats: () => Record<TeamColor, { total: number; active: number; substitutes: number }>
   hasTeamDraw: boolean
@@ -87,10 +86,10 @@ export const useTeamDraw = (matchId?: string): UseTeamDrawReturn => {
     try {
       // Usar implementação local para desenvolvimento
       await storeDrawTeams(targetMatchId, playersPerTeam)
-      
+
       // Recarregar dados após sorteio
       await loadTeamDraw(targetMatchId)
-      
+
       return { success: true }
     } catch (error: any) {
       console.error('Erro ao sortear times:', error)
@@ -134,10 +133,10 @@ export const useTeamDraw = (matchId?: string): UseTeamDrawReturn => {
   // Verificar se sorteio está completo (pelo menos 2 times com jogadores)
   const isTeamDrawComplete = () => {
     if (!hasTeamDraw) return false
-    
+
     const stats = getTeamStats()
     const teamsWithPlayers = Object.values(stats).filter(stat => stat.active > 0).length
-    
+
     return teamsWithPlayers >= 2
   }
 
@@ -147,30 +146,30 @@ export const useTeamDraw = (matchId?: string): UseTeamDrawReturn => {
     teamDraw,
     loading,
     error,
-    
+
     // Funções de times
     getPlayersByTeam,
     getAvailablePlayersForTeam,
     getAllAvailablePlayers,
-    
+
     // Ações
     loadTeamDraw,
     drawTeams,
     refreshTeamDraw,
-    
+
     // Substituições
     substitutePlayer,
     addPlayerToTeam,
-    
+
     // Busca
     searchPlayers,
     getPlayerById,
     getPlayerByName,
-    
+
     // Validações
     canPlayerScore,
     canPlayerAssist,
-    
+
     // Estatísticas
     getTeamStats,
     hasTeamDraw,
@@ -181,7 +180,7 @@ export const useTeamDraw = (matchId?: string): UseTeamDrawReturn => {
 // Hook específico para modal de gol
 export const useGoalModal = (matchId?: string) => {
   const teamDraw = useTeamDraw(matchId)
-  
+
   // Obter opções de jogadores para seletor
   const getPlayerOptions = (teamColor: TeamColor) => {
     const players = teamDraw.getPlayersByTeam(teamColor)

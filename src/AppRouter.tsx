@@ -24,7 +24,7 @@ const VotePage = React.lazy(() => import(/* webpackChunkName: "pages-vote" */ '@
 const InvitesApprovalsPage = React.lazy(() => import(/* webpackChunkName: "pages-admin" */ '@/pages/Admin/InvitesApprovals'));
 const PerfilPage = React.lazy(() => import(/* webpackChunkName: "pages-perfil" */ '@/pages/Perfil'));
 const RankingPage = React.lazy(() => import(/* webpackChunkName: "pages-ranking" */ '@/pages/Ranking'));
-const OwnerDashboard = React.lazy(() => import(/* webpackChunkName: "pages-owner" */ '@/pages/OwnerDashboardSimple'));
+const OwnerDashboard = React.lazy(() => import(/* webpackChunkName: "pages-owner" */ '@/pages/OwnerDashboardMobile'));
 const CreateOwner = React.lazy(() => import(/* webpackChunkName: "pages-create" */ '@/pages/CreateOwner'));
 const CreateOwnerWithGoogle = React.lazy(() => import(/* webpackChunkName: "pages-create-google" */ '@/pages/CreateOwnerWithGoogle'));
 const Login = React.lazy(() => import(/* webpackChunkName: "pages-auth" */ '@/pages/Login'));
@@ -35,7 +35,8 @@ const RestrictedAccess = React.lazy(() => import(/* webpackChunkName: "pages-adm
 const ManageAdmins = React.lazy(() => import(/* webpackChunkName: "pages-admin-manage" */ '@/pages/ManageAdmins'));
 const ConfigureAccess = React.lazy(() => import(/* webpackChunkName: "pages-admin-configure" */ '@/pages/ConfigureAccess'));
 const ApproveParticipants = React.lazy(() => import(/* webpackChunkName: "pages-admin-approve" */ '@/pages/ApproveParticipants'));
-const ManagePlayers = React.lazy(() => import(/* webpackChunkName: "pages-manage-players" */ '@/pages/ManagePlayersSimple'));
+const ManagePlayers = React.lazy(() => import(/* webpackChunkName: "pages-manage-players" */ '@/pages/ManagePlayersMobile'));
+const TeamDrawMobile = React.lazy(() => import(/* webpackChunkName: "pages-team-draw" */ '@/pages/TeamDrawMobile'));
 const ListUsers = React.lazy(() => import(/* webpackChunkName: "pages-list-users" */ '@/pages/ListUsers'));
 
 export default function AppRouter() {
@@ -77,6 +78,7 @@ export default function AppRouter() {
                     <Route path="/configure-access" element={<ConfigureAccess />} />
                     <Route path="/approve-participants" element={<ApproveParticipants />} />
                     <Route path="/manage-players" element={<ManagePlayers />} />
+                    <Route path="/team-draw/:matchId" element={<TeamDrawMobile />} />
                     <Route path="/list-users" element={<ListUsers />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>

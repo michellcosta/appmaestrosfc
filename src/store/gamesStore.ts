@@ -1,6 +1,6 @@
-import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
 import { SyncService } from '@/services/syncService'
+import { create } from 'zustand'
+import { createJSONStorage, persist } from 'zustand/middleware'
 
 export interface GameMatch {
   id: number
@@ -88,17 +88,84 @@ export const useGamesStore = create<GamesStore>()(
 
       getUpcomingMatches: () => {
         const now = new Date()
-        const today = now.toISOString().split('T')[0]
-        
+        const today = now.toISOString().split('T')[0] // YYYY-MM-DD
+
         return get().matches
           .filter(match => {
+            // Validar se a data existe e está no formato correto
+            if (!match.date || typeof match.date !== 'string') {
+              console.warn('Partida com data inválida:', match);
+              return false;
+            }
+
+            let matchDate: string;
+
+            // Verificar se é formato DD/MM/YYYY
+            if (match.date.includes('/')) {
+              const dateParts = match.date.split('/');
+              if (dateParts.length !== 3) {
+                console.warn('Partida com formato de data inválido:', match.date);
+                return false;
+              }
+
+              const [day, month, year] = dateParts;
+
+              // Validar se os componentes são números válidos
+              if (isNaN(Number(day)) || isNaN(Number(month)) || isNaN(Number(year))) {
+                console.warn('Partida com componentes de data inválidos:', match.date);
+                return false;
+              }
+
+              // Converter data DD/MM/YYYY para YYYY-MM-DD para comparação
+              matchDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            }
+            // Verificar se é formato YYYY-MM-DD
+            else if (match.date.includes('-')) {
+              const dateParts = match.date.split('-');
+              if (dateParts.length !== 3) {
+                console.warn('Partida com formato de data inválido:', match.date);
+                return false;
+              }
+
+              const [year, month, day] = dateParts;
+
+              // Validar se os componentes são números válidos
+              if (isNaN(Number(year)) || isNaN(Number(month)) || isNaN(Number(day))) {
+                console.warn('Partida com componentes de data inválidos:', match.date);
+                return false;
+              }
+
+              // Já está no formato YYYY-MM-DD
+              matchDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            }
+            else {
+              console.warn('Partida com formato de data não suportado:', match.date);
+              return false;
+            }
+
             // Filtrar apenas partidas futuras ou de hoje
-            return match.date >= today && match.status !== 'cancelled'
+            return matchDate >= today && match.status !== 'cancelled'
           })
           .sort((a, b) => {
             // Ordenar por data e horário
-            const dateA = new Date(`${a.date}T${a.time}`)
-            const dateB = new Date(`${b.date}T${b.time}`)
+            let dateA: Date, dateB: Date;
+
+            // Converter data A
+            if (a.date.includes('/')) {
+              const [dayA, monthA, yearA] = a.date.split('/');
+              dateA = new Date(`${yearA}-${monthA.padStart(2, '0')}-${dayA.padStart(2, '0')}T${a.time}`);
+            } else {
+              dateA = new Date(`${a.date}T${a.time}`);
+            }
+
+            // Converter data B
+            if (b.date.includes('/')) {
+              const [dayB, monthB, yearB] = b.date.split('/');
+              dateB = new Date(`${yearB}-${monthB.padStart(2, '0')}-${dayB.padStart(2, '0')}T${b.time}`);
+            } else {
+              dateB = new Date(`${b.date}T${b.time}`);
+            }
+
             return dateA.getTime() - dateB.getTime()
           })
       },
