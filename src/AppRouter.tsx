@@ -24,7 +24,7 @@ const VotePage = React.lazy(() => import(/* webpackChunkName: "pages-vote" */ '@
 const InvitesApprovalsPage = React.lazy(() => import(/* webpackChunkName: "pages-admin" */ '@/pages/Admin/InvitesApprovals'));
 const PerfilPage = React.lazy(() => import(/* webpackChunkName: "pages-perfil" */ '@/pages/Perfil'));
 const RankingPage = React.lazy(() => import(/* webpackChunkName: "pages-ranking" */ '@/pages/Ranking'));
-const OwnerDashboard = React.lazy(() => import(/* webpackChunkName: "pages-owner" */ '@/pages/OwnerDashboardSimple'));
+const OwnerDashboard = React.lazy(() => import(/* webpackChunkName: "pages-owner" */ '@/pages/OwnerDashboardConvex'));
 const CreateOwner = React.lazy(() => import(/* webpackChunkName: "pages-create" */ '@/pages/CreateOwner'));
 const CreateOwnerWithGoogle = React.lazy(() => import(/* webpackChunkName: "pages-create-google" */ '@/pages/CreateOwnerWithGoogle'));
 const Login = React.lazy(() => import(/* webpackChunkName: "pages-auth" */ '@/pages/Login'));
