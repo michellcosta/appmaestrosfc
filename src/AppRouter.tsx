@@ -1,14 +1,13 @@
-import React, { Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { OfflineAuthProvider } from './auth/OfflineAuthProvider';
-import { ThemeProvider } from '@/contexts/ThemeContext';
-import { ToastProvider } from '@/components/ui/toast';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import OneTimeInstallPopup from '@/components/OneTimeInstallPopup';
 import UpdateNotification from '@/components/UpdateNotification';
 import BottomNav from '@/components/layout/BottomNav';
-import MobileHeader from '@/components/layout/MobileHeader';
+import { ToastProvider } from '@/components/ui/toast';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import React, { Suspense } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { OfflineAuthProvider } from './auth/OfflineAuthProvider';
 
 // Loading component
 const PageLoader = () => (
@@ -36,7 +35,9 @@ const RestrictedAccess = React.lazy(() => import(/* webpackChunkName: "pages-adm
 const ManageAdmins = React.lazy(() => import(/* webpackChunkName: "pages-admin-manage" */ '@/pages/ManageAdmins'));
 const ConfigureAccess = React.lazy(() => import(/* webpackChunkName: "pages-admin-configure" */ '@/pages/ConfigureAccess'));
 const ApproveParticipants = React.lazy(() => import(/* webpackChunkName: "pages-admin-approve" */ '@/pages/ApproveParticipants'));
-const ManagePlayers = React.lazy(() => import(/* webpackChunkName: "pages-manage-players" */ '@/pages/ManagePlayers'));
+const ManagePlayers = React.lazy(() => import(/* webpackChunkName: "pages-manage-players" */ '@/pages/ManagePlayersSimple'));
+const ListUsers = React.lazy(() => import(/* webpackChunkName: "pages-list-users" */ '@/pages/ListUsers'));
+const Jogo = React.lazy(() => import(/* webpackChunkName: "pages-jogo" */ '@/pages/Jogo'));
 
 export default function AppRouter() {
   // Initialize performance monitoring
@@ -48,42 +49,44 @@ export default function AppRouter() {
         <ToastProvider>
           <OfflineAuthProvider>
             <div className="min-h-[100dvh] bg-background text-foreground">
-            {/* Install Popup - Aparece apenas uma vez */}
-            <OneTimeInstallPopup />
-            
-            {/* Update Notification */}
-            <UpdateNotification />
-            
-            <div className="mx-auto w-full max-w-4xl pb-20 pt-4">
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                <Route path="/" element={<Login />} />
-                <Route path="/home" element={<HomePage />} />
-                <Route path="/fetch" element={<HomePage />} />
-                <Route path="/match" element={<Match />} />
-                <Route path="/finance" element={<FinancePage />} />
-                <Route path="/vote" element={<Navigate to="/ranking" replace />} />
-                <Route path="/admin/invites" element={<InvitesApprovalsPage />} />
-                <Route path="/ranking" element={<RankingPage />} />
-                <Route path="/perfil" element={<PerfilPage />} />
-                <Route path="/owner-dashboard" element={<OwnerDashboard />} />
-                <Route path="/create-owner" element={<CreateOwner />} />
-                <Route path="/create-owner-google" element={<CreateOwnerWithGoogle />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/create-invite" element={<CreateInvite />} />
-                <Route path="/accept-invite" element={<AcceptInvite />} />
-                <Route path="/restricted" element={<RestrictedAccess />} />
-                <Route path="/manage-admins" element={<ManageAdmins />} />
-                <Route path="/configure-access" element={<ConfigureAccess />} />
-                <Route path="/approve-participants" element={<ApproveParticipants />} />
-                <Route path="/manage-players" element={<ManagePlayers />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Suspense>
-            </div>
-            
-            {/* Bottom Navigation */}
-            <BottomNav />
+              {/* Install Popup - Aparece apenas uma vez */}
+              <OneTimeInstallPopup />
+
+              {/* Update Notification */}
+              <UpdateNotification />
+
+              <div className="mx-auto w-full max-w-4xl pb-20 pt-4">
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route path="/" element={<Login />} />
+                    <Route path="/home" element={<HomePage />} />
+                    <Route path="/fetch" element={<HomePage />} />
+                    <Route path="/match" element={<Match />} />
+                    <Route path="/finance" element={<FinancePage />} />
+                    <Route path="/vote" element={<Navigate to="/ranking" replace />} />
+                    <Route path="/admin/invites" element={<InvitesApprovalsPage />} />
+                    <Route path="/ranking" element={<RankingPage />} />
+                    <Route path="/perfil" element={<PerfilPage />} />
+                    <Route path="/owner-dashboard" element={<OwnerDashboard />} />
+                    <Route path="/create-owner" element={<CreateOwner />} />
+                    <Route path="/create-owner-google" element={<CreateOwnerWithGoogle />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/create-invite" element={<CreateInvite />} />
+                    <Route path="/accept-invite" element={<AcceptInvite />} />
+                    <Route path="/restricted" element={<RestrictedAccess />} />
+                    <Route path="/manage-admins" element={<ManageAdmins />} />
+                    <Route path="/configure-access" element={<ConfigureAccess />} />
+                    <Route path="/approve-participants" element={<ApproveParticipants />} />
+                    <Route path="/manage-players" element={<ManagePlayers />} />
+                     <Route path="/list-users" element={<ListUsers />} />
+                     <Route path="/jogo" element={<Jogo />} />
+                     <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </Suspense>
+              </div>
+
+              {/* Bottom Navigation */}
+              <BottomNav />
             </div>
           </OfflineAuthProvider>
         </ToastProvider>

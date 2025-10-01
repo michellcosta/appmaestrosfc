@@ -2,16 +2,19 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import AppRouter from './AppRouter'
-import { initSentry } from './config/sentry'
+import ConvexProvider from './ConvexProvider'
 import './index.css'
 
-// Inicializar Sentry
-initSentry();
+// Sentry desabilitado temporariamente para evitar tela branca
+// import { initSentry } from './config/sentry'
+// initSentry();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <AppRouter />
-    </BrowserRouter>
+    <ConvexProvider>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <AppRouter />
+      </BrowserRouter>
+    </ConvexProvider>
   </React.StrictMode>,
 )
