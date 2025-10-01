@@ -69,3 +69,11 @@ export const liveView = query({
     };
   }
 });
+
+export const api = {
+  create,
+  drawTeams,
+  start,
+  end,
+  liveView
+};

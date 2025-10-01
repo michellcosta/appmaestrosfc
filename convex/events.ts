@@ -25,3 +25,8 @@ export const rankingTop = query({
         return withNames.sort((a, b) => b.goals - a.goals || b.assists - a.assists || b.updatedAt - a.updatedAt).slice(0, limit);
     }
 });
+
+export const api = {
+    addGoal,
+    rankingTop
+};

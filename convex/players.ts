@@ -17,3 +17,8 @@ export const listActive = query({
     handler: async (ctx) =>
         ctx.db.query("players").withIndex("by_active", q => q.eq("active", true)).collect()
 });
+
+export const api = {
+    add,
+    listActive
+};
