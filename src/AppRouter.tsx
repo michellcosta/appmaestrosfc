@@ -37,7 +37,7 @@ const ConfigureAccess = React.lazy(() => import(/* webpackChunkName: "pages-admi
 const ApproveParticipants = React.lazy(() => import(/* webpackChunkName: "pages-admin-approve" */ '@/pages/ApproveParticipants'));
 const ManagePlayers = React.lazy(() => import(/* webpackChunkName: "pages-manage-players" */ '@/pages/ManagePlayersSimple'));
 const ListUsers = React.lazy(() => import(/* webpackChunkName: "pages-list-users" */ '@/pages/ListUsers'));
-const Jogo = React.lazy(() => import(/* webpackChunkName: "pages-jogo" */ '@/pages/Jogo'));
+// const Jogo = React.lazy(() => import(/* webpackChunkName: "pages-jogo" */ '@/pages/Jogo'));
 
 export default function AppRouter() {
   // Initialize performance monitoring
@@ -79,7 +79,7 @@ export default function AppRouter() {
                     <Route path="/approve-participants" element={<ApproveParticipants />} />
                     <Route path="/manage-players" element={<ManagePlayers />} />
                     <Route path="/list-users" element={<ListUsers />} />
-                    <Route path="/jogo" element={<Jogo />} />
+                    {/* <Route path="/jogo" element={<Jogo />} /> */}
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </Suspense>
