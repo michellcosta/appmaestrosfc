@@ -130,8 +130,8 @@ export default function ManagePlayersMobile() {
 
     const handleCreatePlayer = async () => {
         try {
-            if (!createForm.name || !createForm.email) {
-                alert('Por favor, preencha o nome e email.');
+            if (!createForm.email) {
+                alert('Por favor, preencha o email.');
                 return;
             }
 
@@ -154,9 +154,20 @@ export default function ManagePlayersMobile() {
             await loadPlayers();
             closeCreateModal();
             alert('✅ Jogador criado com sucesso!');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao criar jogador:', error);
-            alert('❌ Erro ao criar jogador. Verifique se o email já não está cadastrado.');
+            
+            let errorMessage = '❌ Erro ao criar jogador.';
+            
+            if (error?.code === '23505') {
+                errorMessage = '❌ Email já está cadastrado. Use outro email.';
+            } else if (error?.code === '42501') {
+                errorMessage = '❌ Sem permissão. Faça login novamente.';
+            } else if (error?.message) {
+                errorMessage = `❌ ${error.message}`;
+            }
+            
+            alert(errorMessage);
         }
     };
 
