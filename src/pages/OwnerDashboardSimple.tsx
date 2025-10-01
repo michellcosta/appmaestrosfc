@@ -12,7 +12,6 @@ import {
     DollarSign,
     Settings,
     Shield,
-    Trophy,
     UserCheck,
     Users,
     Plus,
@@ -196,24 +195,6 @@ export default function OwnerDashboardSimple() {
                         </CardContent>
                     </Card>
 
-                    {/* Sistema de Jogo */}
-                    <Card className="cursor-pointer hover:shadow-md transition-shadow opacity-50">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Sistema de Jogo</CardTitle>
-                            <Trophy className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-xs text-muted-foreground mb-4">
-                                Nexus Play - Em desenvolvimento
-                            </p>
-                            <Button
-                                disabled
-                                className="w-full"
-                            >
-                                Em breve
-                            </Button>
-                        </CardContent>
-                    </Card>
 
                     {/* Finanças */}
                     <Card className="cursor-pointer hover:shadow-md transition-shadow">
