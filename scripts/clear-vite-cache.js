@@ -13,24 +13,24 @@ console.log('🧹 Limpando cache do Vite completamente...\n');
 // Limpar cache do Vite
 const viteCache = join(process.cwd(), 'node_modules', '.vite');
 if (existsSync(viteCache)) {
-  rmSync(viteCache, { recursive: true, force: true });
-  console.log('✅ Cache do Vite limpo');
+    rmSync(viteCache, { recursive: true, force: true });
+    console.log('✅ Cache do Vite limpo');
 } else {
-  console.log('⚠️ Cache do Vite não encontrado');
+    console.log('⚠️ Cache do Vite não encontrado');
 }
 
 // Limpar dist
 const distDir = join(process.cwd(), 'dist');
 if (existsSync(distDir)) {
-  rmSync(distDir, { recursive: true, force: true });
-  console.log('✅ Diretório dist limpo');
+    rmSync(distDir, { recursive: true, force: true });
+    console.log('✅ Diretório dist limpo');
 }
 
 // Limpar .vite
 const dotVite = join(process.cwd(), '.vite');
 if (existsSync(dotVite)) {
-  rmSync(dotVite, { recursive: true, force: true });
-  console.log('✅ Diretório .vite limpo');
+    rmSync(dotVite, { recursive: true, force: true });
+    console.log('✅ Diretório .vite limpo');
 }
 
 console.log('\n🎯 PRÓXIMOS PASSOS:');
