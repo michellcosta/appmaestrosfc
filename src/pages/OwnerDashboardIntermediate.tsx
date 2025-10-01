@@ -2,12 +2,18 @@ import { useAuth } from '@/auth/OfflineAuthProvider';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import {
     BarChart3,
     Crown,
     DollarSign,
     LogOut,
+    Plus,
     Settings,
     Shield,
     Trophy,
@@ -22,6 +28,9 @@ export default function OwnerDashboardIntermediate() {
     const navigate = useNavigate();
     const [players, setPlayers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showInviteModal, setShowInviteModal] = useState(false);
+    const [inviteEmail, setInviteEmail] = useState('');
+    const [inviteRole, setInviteRole] = useState('player');
 
     useEffect(() => {
         loadPlayers();
@@ -57,6 +66,18 @@ export default function OwnerDashboardIntermediate() {
         }
     };
 
+    const handleCreateInvite = async () => {
+        try {
+            // Lógica para criar convite
+            console.log('Criando convite para:', inviteEmail, 'com role:', inviteRole);
+            setShowInviteModal(false);
+            setInviteEmail('');
+            setInviteRole('player');
+        } catch (error) {
+            console.error('Erro ao criar convite:', error);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
             <div className="max-w-7xl mx-auto">
@@ -78,6 +99,15 @@ export default function OwnerDashboardIntermediate() {
                                     Owner
                                 </Badge>
                             </div>
+                            <Button
+                                onClick={() => setShowInviteModal(true)}
+                                variant="default"
+                                size="sm"
+                                className="flex items-center gap-2"
+                            >
+                                <Plus className="h-4 w-4" />
+                                Convidar
+                            </Button>
                             <Button
                                 onClick={handleSignOut}
                                 variant="outline"
@@ -263,12 +293,57 @@ export default function OwnerDashboardIntermediate() {
                     </Card>
                 </div>
 
+                {/* Invite Modal */}
+                <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Convidar Novo Membro</DialogTitle>
+                            <DialogDescription>
+                                Envie um convite para um novo membro do time.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                            <div>
+                                <Label htmlFor="email">Email</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    value={inviteEmail}
+                                    onChange={(e) => setInviteEmail(e.target.value)}
+                                    placeholder="email@exemplo.com"
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="role">Função</Label>
+                                <div className="flex items-center space-x-2">
+                                    <Switch
+                                        id="role"
+                                        checked={inviteRole === 'admin'}
+                                        onCheckedChange={(checked) => setInviteRole(checked ? 'admin' : 'player')}
+                                    />
+                                    <Label htmlFor="role">
+                                        {inviteRole === 'admin' ? 'Administrador' : 'Jogador'}
+                                    </Label>
+                                </div>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setShowInviteModal(false)}>
+                                Cancelar
+                            </Button>
+                            <Button onClick={handleCreateInvite}>
+                                Enviar Convite
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
                 {/* Status */}
                 <div className="mt-8 p-4 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                         <span className="text-sm text-green-800">
-                            Sistema funcionando corretamente - Versão Intermediária
+                            Sistema funcionando corretamente - Versão Intermediária + Modal
                         </span>
                     </div>
                 </div>
