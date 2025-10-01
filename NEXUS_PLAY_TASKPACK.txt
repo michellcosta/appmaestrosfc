@@ -1,0 +1,336 @@
+# NEXUS PLAY — TASKPACK (Convex, Vite/React)
+# Objetivo: cadastrar jogadores → sortear times → partida ao vivo (gols/assistências) → ranking, sem SQL.
+# IMPORTANTE: Explique qualquer erro e proponha correção antes de prosseguir.
+
+====================================================
+= 0) CONTEXTO DO PROJETO (verificado no repo)      =
+====================================================
+- Este projeto é Vite/React (existe vite.config.ts).
+- Deploy existente na Vercel (existe vercel.json). 
+- NÃO mexer em Supabase/SQL neste taskpack.
+
+====================================================
+= 1) DEPENDÊNCIA & DEV SERVER DO CONVEX            =
+====================================================
+1) Instalar Convex:
+   npm i convex
+
+2) Em um terminal SEPARADO, iniciar o dev do Convex:
+   npx convex dev
+   -> Copie a URL exibida (ex.: https://xxxx.convex.cloud)
+
+3) Variáveis de ambiente:
+   - Em .env (Vite/CRA):
+     VITE_CONVEX_URL=<URL_DO_CONVEX>
+   Se não existir .env, CRIAR.
+
+====================================================
+= 2) PROVIDER DO CONVEX (src/ConvexProvider.tsx)   =
+====================================================
+Criar arquivo: src/ConvexProvider.tsx (se não existir) com:
+
+--- src/ConvexProvider.tsx ---
+import { ConvexProvider, ConvexReactClient } from "convex/react";
+
+const url = (import.meta as any)?.env?.VITE_CONVEX_URL;
+if (!url) console.warn("⚠ VITE_CONVEX_URL não configurada no .env");
+
+const client = new ConvexReactClient(String(url || ""));
+
+export default function Provider({ children }: { children: React.ReactNode }) {
+  return <ConvexProvider client={client}>{children}</ConvexProvider>;
+}
+--- end ---
+
+Envolver a aplicação com este Provider:
+- Em src/main.tsx (ou equivalente): importe o Provider e envolva <App /> com <Provider>.
+
+====================================================
+= 3) BACKEND (CONVEX) — CRIAR PASTA E ARQUIVOS     =
+====================================================
+Criar/atualizar os arquivos abaixo em /convex.
+
+--- convex/schema.ts ---
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
+
+export default defineSchema({
+  players: defineTable({
+    name: v.string(),
+    createdBy: v.string(),
+    createdAt: v.number(),
+    active: v.optional(v.boolean()),
+  }).index("by_active", ["active"]),
+
+  matches: defineTable({
+    status: v.string(), // "pending" | "live" | "ended"
+    createdBy: v.string(),
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    endedAt: v.optional(v.number()),
+  }).index("by_status", ["status"]),
+
+  matchPlayers: defineTable({
+    matchId: v.id("matches"),
+    playerId: v.id("players"),
+    team: v.string(), // "A" | "B"
+  }).index("by_match", ["matchId"])
+    .index("by_team", ["matchId","team"]),
+
+  events: defineTable({
+    matchId: v.id("matches"),
+    type: v.string(), // "goal"
+    scorerId: v.id("players"),
+    assistId: v.optional(v.id("players")),
+    team: v.string(), // "A" | "B"
+    at: v.number(),
+    createdBy: v.string(),
+  }).index("by_match", ["matchId"]),
+
+  playerStats: defineTable({
+    playerId: v.id("players"),
+    goals: v.number(),
+    assists: v.number(),
+    updatedAt: v.number(),
+  }).index("by_player", ["playerId"])
+   .index("by_goals", ["goals"]),
+});
+--- end ---
+
+--- convex/players.ts ---
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
+
+export const add = mutation({
+  args: { name: v.string(), userId: v.string() },
+  handler: async (ctx, { name, userId }) => {
+    const playerId = await ctx.db.insert("players", {
+      name, createdBy: userId, createdAt: Date.now(), active: true
+    });
+    await ctx.db.insert("playerStats", { playerId, goals: 0, assists: 0, updatedAt: Date.now() });
+    return playerId;
+  }
+});
+
+export const listActive = query({
+  args: {},
+  handler: async (ctx) =>
+    ctx.db.query("players").withIndex("by_active", q => q.eq("active", true)).collect()
+});
+--- end ---
+
+--- convex/matches.ts ---
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
+
+export const create = mutation({
+  args: { userId: v.string() },
+  handler: async (ctx, { userId }) =>
+    ctx.db.insert("matches", { status: "pending", createdBy: userId, createdAt: Date.now() })
+});
+
+export const drawTeams = mutation({
+  args: { matchId: v.id("matches"), playerIds: v.array(v.id("players")) },
+  handler: async (ctx, { matchId, playerIds }) => {
+    const shuffled = [...playerIds].sort(() => Math.random() - 0.5);
+    const half = Math.ceil(shuffled.length / 2);
+    const A = shuffled.slice(0, half), B = shuffled.slice(half);
+    for (const id of A) await ctx.db.insert("matchPlayers", { matchId, playerId: id, team: "A" });
+    for (const id of B) await ctx.db.insert("matchPlayers", { matchId, playerId: id, team: "B" });
+    return { teamA: A, teamB: B };
+  }
+});
+
+export const start = mutation({
+  args: { matchId: v.id("matches") },
+  handler: async (ctx, { matchId }) => {
+    await ctx.db.patch(matchId, { status: "live", startedAt: Date.now() });
+  }
+});
+
+export const liveView = query({
+  args: { matchId: v.id("matches") },
+  handler: async (ctx, { matchId }) => {
+    const match = await ctx.db.get(matchId);
+    const roster = await ctx.db.query("matchPlayers").withIndex("by_match", q => q.eq("matchId", matchId)).collect();
+    const evs = await ctx.db.query("events").withIndex("by_match", q => q.eq("matchId", matchId)).collect();
+    const score = evs.reduce((acc, e) => {
+      if (e.type === "goal") acc[e.team] = (acc[e.team] ?? 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    return { match, roster, events: evs, scoreA: score["A"] ?? 0, scoreB: score["B"] ?? 0 };
+  }
+});
+--- end ---
+
+--- convex/events.ts ---
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
+
+export const addGoal = mutation({
+  args: { matchId: v.id("matches"), scorerId: v.id("players"), assistId: v.optional(v.id("players")), team: v.string(), userId: v.string() },
+  handler: async (ctx, a) => {
+    await ctx.db.insert("events", { ...a, type: "goal", at: Date.now() });
+    const s = await ctx.db.query("playerStats").withIndex("by_player", q => q.eq("playerId", a.scorerId)).first();
+    if (s) await ctx.db.patch(s._id, { goals: s.goals + 1, updatedAt: Date.now() });
+    if (a.assistId) {
+      const as = await ctx.db.query("playerStats").withIndex("by_player", q => q.eq("playerId", a.assistId!)).first();
+      if (as) await ctx.db.patch(as._id, { assists: as.assists + 1, updatedAt: Date.now() });
+    }
+  }
+});
+
+export const rankingTop = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, { limit = 100 }) => {
+    const stats = await ctx.db.query("playerStats").collect();
+    const withNames = await Promise.all(stats.map(async ps => {
+      const p = await ctx.db.get(ps.playerId);
+      return { id: ps.playerId, name: p?.name ?? "Jogador", goals: ps.goals, assists: ps.assists, updatedAt: ps.updatedAt };
+    }));
+    return withNames.sort((a,b)=> b.goals-a.goals || b.assists-a.assists || b.updatedAt-a.updatedAt).slice(0, limit);
+  }
+});
+--- end ---
+
+Após criar os arquivos acima, CONFIRMAR que o terminal de npx convex dev não mostra erros. Se mostrar, corrigir antes de seguir.
+
+====================================================
+= 4) PÁGINA /jogo (UI mínima)                      =
+====================================================
+Criar página Jogo. Detecte se há React Router:
+- Se existir src/main.tsx com BrowserRouter/Router: 
+  - Criar src/pages/Jogo.tsx (conteúdo abaixo) e registrar rota /jogo.
+- Se NÃO houver router:
+  - Criar src/pages/Jogo.tsx e *modificar* src/main.tsx para:
+    - Importar Jogo e, se window.location.pathname === "/jogo", renderizar <Jogo/>; senão renderizar <App/>.
+    - (Explicar no commit o ajuste simples de routing.)
+
+Conteúdo de src/pages/Jogo.tsx:
+--- src/pages/Jogo.tsx ---
+import { useState } from "react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+
+const USER = "owner";
+
+export default function Jogo() {
+  const players = useQuery(api.players.listActive, {}) ?? [];
+  const create = useMutation(api.matches.create);
+  const draw = useMutation(api.matches.drawTeams);
+  const start = useMutation(api.matches.start);
+  const addPlayer = useMutation(api.players.add);
+  const [name, setName] = useState("");
+  const [matchId, setMatchId] = useState<any>(null);
+  const live = useQuery(api.matches.liveView, matchId ? { matchId } : "skip");
+  const addGoal = useMutation(api.events.addGoal);
+
+  const onAdd = async () => {
+    if (!name.trim()) return;
+    await addPlayer({ name: name.trim(), userId: USER });
+    setName("");
+  };
+
+  const onStart = async () => {
+    if (players.length < 2) return alert("Adicione pelo menos 2 jogadores");
+    const id = await create({ userId: USER });
+    await draw({ matchId: id, playerIds: players.map(p => (p as any)._id) });
+    await start({ matchId: id });
+    setMatchId(id);
+  };
+
+  return (
+    <main style={{maxWidth:820, margin:"24px auto", padding:16}}>
+      <h2>Nexus Play — Jogo</h2>
+
+      <section style={card}>
+        <h3>Jogadores</h3>
+        <ul>{players.map((p:any) => <li key={p._id}>{p.name}</li>)}</ul>
+        <div style={{display:"flex", gap:8}}>
+          <input value={name} onChange={e=>setName(e.target.value)} placeholder="Nome do jogador" />
+          <button onClick={onAdd}>Adicionar</button>
+        </div>
+      </section>
+
+      <section style={card}>
+        <h3>Partida</h3>
+        <button onClick={onStart} disabled={!players.length}>Sortear times & Iniciar</button>
+        {matchId && <p>Partida ativa: {String((matchId as any).id ?? matchId)}</p>}
+      </section>
+
+      {matchId && live && (
+        <section style={card}>
+          <h3>Ao vivo — Placar: A {live.scoreA} x {live.scoreB} B</h3>
+          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
+            <Team live={live} team="A" matchId={matchId} addGoal={addGoal}/>
+            <Team live={live} team="B" matchId={matchId} addGoal={addGoal}/>
+          </div>
+        </section>
+      )}
+
+      <Ranking />
+    </main>
+  );
+}
+
+function Team({ live, team, matchId, addGoal }: any) {
+  const roster = live.roster.filter((r:any)=>r.team===team);
+  return (
+    <div>
+      <h4>Time {team}</h4>
+      {roster.map((r:any)=>(
+        <button key={r._id} onClick={()=>addGoal({ matchId, scorerId: r.playerId, team, userId: "owner" })}>
+          Gol — #{r.playerId.id}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Ranking() {
+  const list = useQuery(api.events.rankingTop, { limit: 100 }) ?? [];
+  return (
+    <section style={card}>
+      <h3>Ranking</h3>
+      <ol>{list.map((r:any)=> <li key={r.id.id}>{r.name} — {r.goals} G • {r.assists} A</li>)}</ol>
+    </section>
+  );
+}
+
+const card: React.CSSProperties = { margin:"16px 0", padding:12, border:"1px solid #eee", borderRadius:12 };
+--- end ---
+
+Integração do Provider (se ainda não estiver ativo):
+- Em src/main.tsx: importar Provider de "src/ConvexProvider" e envolver <App /> com <Provider>.
+
+====================================================
+= 5) BUILD LOCAL                                   =
+====================================================
+- Executar: npm run build
+- Se der erro de caminho do api gerado pelo Convex, ajustar o import relativo em Jogo.tsx:
+  - "../../convex/_generated/api" → subir/baixar níveis conforme estrutura real.
+
+====================================================
+= 6) GIT & PULL REQUEST                            =
+====================================================
+- Criar branch se estiver em main/dev:
+  git checkout -b feature/nexus-jogo
+- Commit:
+  git add -A
+  git commit -m "feat(nexus): jogadores/sorteio/ao-vivo/ranking (Convex)"
+- Push:
+  git push -u origin feature/nexus-jogo
+- Abrir PR para a branch dev com descrição:
+  - Jogadores (add/list)
+  - Sorteio times
+  - Partida ao vivo (placar)
+  - Ranking (gols/assist)
+
+====================================================
+= 7) TESTE MANUAL                                  =
+====================================================
+- Abrir /jogo
+- Adicionar 8–20 jogadores
+- Sortear & iniciar (cria match)
+- Clicar "Gol" e ver placar ao vivo
+- Conferir Ranking refletindo gols/assist

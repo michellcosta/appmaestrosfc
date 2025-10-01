@@ -1,11 +1,11 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
 import { initializeOwnerProtection } from '@/utils/ownerProtection';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type AppUser = {
   id: string;
   email?: string | null;
   name?: string | null;
-  role?: 'owner'|'admin'|'aux'|'mensalista'|'diarista';
+  role?: 'owner' | 'admin' | 'aux' | 'mensalista' | 'diarista';
   avatar_url?: string | null;
   custom_avatar?: string | null;
   group_id?: string | null;
@@ -24,11 +24,11 @@ type AuthCtx = {
 const Ctx = createContext<AuthCtx>({
   user: null,
   loading: true,
-  signInWithGoogle: async () => {},
-  signOut: async () => {},
-  refreshProfile: async () => {},
-  signInOffline: async () => {},
-  updateAvatar: async () => {},
+  signInWithGoogle: async () => { },
+  signOut: async () => { },
+  refreshProfile: async () => { },
+  signInOffline: async () => { },
+  updateAvatar: async () => { },
 });
 
 export const useAuth = () => useContext(Ctx);
@@ -47,16 +47,15 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
         if (offlineUser && mounted) {
           try {
             const userData = JSON.parse(offlineUser);
-            
+
             // Adicionar group_id se não existir (para usuários antigos)
             if (!userData.group_id) {
               userData.group_id = `group_${userData.id.slice(-8)}`;
               localStorage.setItem('offline_user', JSON.stringify(userData));
-              console.log('🔧 Adicionado group_id ao usuário existente:', userData.group_id);
             }
-            
+
             setUser(userData);
-            
+
             // Inicializar proteções do owner principal
             initializeOwnerProtection(userData);
           } catch (error) {
@@ -66,24 +65,22 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
           // Não criar usuário padrão automaticamente - apenas quando fizer login explícito
           // Se não há usuário offline, redirecionar para página de login
           setUser(null);
-          console.log('🔍 Nenhum usuário encontrado no localStorage - redirecionando para login');
         }
 
         // Verificar sessão do Supabase para Google OAuth
         const { supabase } = await import('@/lib/supabase');
         const { data: { session } } = await supabase.auth.getSession();
-        
+
         if (session?.user && mounted) {
+          console.log('🔍 Sessão Google encontrada:', {
+            email: session.user.email,
+            userId: session.user.id
+          });
           // Extrair foto do perfil do Google com múltiplas tentativas
           let googleAvatarUrl = null;
           const userMetadata = session.user.user_metadata;
-          
-          // Tentar múltiplas fontes para a foto do Google com debug detalhado
-          console.log('🔍 Analisando metadados do Google:', {
-            userMetadata: userMetadata,
-            available_fields: Object.keys(userMetadata || {})
-          });
 
+          // Tentar múltiplas fontes para a foto do Google com debug detalhado
           const possibleAvatarSources = [
             userMetadata?.avatar_url,
             userMetadata?.picture,
@@ -95,32 +92,63 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
           for (const [index, avatarSource] of possibleAvatarSources.entries()) {
             if (avatarSource) {
               googleAvatarUrl = avatarSource;
-              console.log(`📸 Avatar Google encontrado na fonte ${index + 1}:`, avatarSource);
               break;
             }
           }
-          
+
           if (!googleAvatarUrl) {
-            console.log('⚠️ Nenhuma foto encontrada nos metadados do Google');
           }
-          
+
+          // Verificar se é o owner principal na inicialização
+          const isMainOwner = session.user.email === 'michellcosta1269@gmail.com';
+
           const googleUser: AppUser = {
             id: session.user.id,
             email: session.user.email,
             name: userMetadata?.full_name || userMetadata?.name || session.user.email?.split('@')[0],
-            role: 'diarista',
+            role: isMainOwner ? 'owner' : 'diarista',
             avatar_url: googleAvatarUrl,
             custom_avatar: null,
             group_id: `group_${session.user.id.slice(-8)}`
           };
-          
+
+          console.log('🔍 Google User inicializado:', {
+            email: googleUser.email,
+            role: googleUser.role,
+            isMainOwner: isMainOwner
+          });
+
           localStorage.setItem('offline_user', JSON.stringify(googleUser));
+
+          // Salvar no histórico de usuários (para a lista de usuários)
+          console.log('💾 Salvando usuário no histórico:', googleUser.email);
+          const existingUsers = JSON.parse(localStorage.getItem('all_users') || '[]');
+          console.log('📋 Usuários existentes no histórico:', existingUsers.length);
+
+          const userExists = existingUsers.some((u: any) => u.id === googleUser.id);
+          console.log('🔍 Usuário já existe no histórico?', userExists);
+
+          if (!userExists) {
+            existingUsers.push({
+              ...googleUser,
+              loginDate: new Date().toISOString(),
+              lastSeen: new Date().toISOString()
+            });
+          } else {
+            // Atualizar último acesso
+            const userIndex = existingUsers.findIndex((u: any) => u.id === googleUser.id);
+            if (userIndex !== -1) {
+              existingUsers[userIndex].lastSeen = new Date().toISOString();
+              existingUsers[userIndex].role = googleUser.role; // Atualizar role se mudou
+            }
+          }
+
+          localStorage.setItem('all_users', JSON.stringify(existingUsers));
           setUser(googleUser);
-          
+
           // Inicializar proteções do owner principal
           initializeOwnerProtection(googleUser);
-          
-          console.log('✅ Usuário Google carregado:', googleUser);
+
         }
       } catch (error) {
         console.error('❌ Erro ao inicializar auth:', error);
@@ -145,9 +173,9 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
               // Extrair foto do perfil do Google com múltiplas tentativas (versão do listener)
               let googleAvatarUrl = null;
               const userMetadata = session.user.user_metadata;
-              
+
               // Tentar múltiplas fontes para a foto do Google (listener version)
-              console.log('🔍 Analisando metadados do Google (listener):', {
+              console.log('User metadata debug:', {
                 userMetadata: userMetadata,
                 available_fields: Object.keys(userMetadata || {}),
                 user_identities: session.user.identities
@@ -164,36 +192,64 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
               for (const [index, avatarSource] of possibleAvatarSources.entries()) {
                 if (avatarSource) {
                   googleAvatarUrl = avatarSource;
-                  console.log(`📸 Avatar Google encontrado (listener) na fonte ${index + 1}:`, avatarSource);
+                  console.log(`Avatar encontrado na fonte ${index + 1}:`, avatarSource);
                   break;
                 }
               }
-              
+
               if (!googleAvatarUrl) {
-                console.log('⚠️ Nenhuma foto encontrada nos metadados do Google (listener)');
+                console.log('Nenhuma foto de avatar encontrada do Google');
               }
-              
+
+              // Verificar se é o owner principal
+              const isMainOwner = session.user.email === 'michellcosta1269@gmail.com';
+
               const googleUser: AppUser = {
                 id: session.user.id,
                 email: session.user.email,
                 name: userMetadata?.full_name || userMetadata?.name || session.user.email?.split('@')[0],
-                role: 'owner',
+                role: isMainOwner ? 'owner' : 'diarista',
                 avatar_url: googleAvatarUrl,
                 custom_avatar: null,
                 group_id: `group_${session.user.id.slice(-8)}`
               };
-              
+
+              console.log('🔍 Google User criado:', {
+                email: googleUser.email,
+                role: googleUser.role,
+                isMainOwner: isMainOwner
+              });
+
               localStorage.setItem('offline_user', JSON.stringify(googleUser));
+
+              // Salvar no histórico de usuários (para a lista de usuários)
+              const existingUsers = JSON.parse(localStorage.getItem('all_users') || '[]');
+              const userExists = existingUsers.some((u: any) => u.id === googleUser.id);
+
+              if (!userExists) {
+                existingUsers.push({
+                  ...googleUser,
+                  loginDate: new Date().toISOString(),
+                  lastSeen: new Date().toISOString()
+                });
+              } else {
+                // Atualizar último acesso
+                const userIndex = existingUsers.findIndex((u: any) => u.id === googleUser.id);
+                if (userIndex !== -1) {
+                  existingUsers[userIndex].lastSeen = new Date().toISOString();
+                  existingUsers[userIndex].role = googleUser.role; // Atualizar role se mudou
+                }
+              }
+
+              localStorage.setItem('all_users', JSON.stringify(existingUsers));
               setUser(googleUser);
-              
+
               // Inicializar proteções do owner principal
               initializeOwnerProtection(googleUser);
-              
-              console.log('✅ Login Google realizado:', googleUser);
+
             } else if (event === 'SIGNED_OUT') {
               localStorage.removeItem('offline_user');
               setUser(null);
-              console.log('✅ Logout Google realizado');
             }
           }
         );
@@ -216,8 +272,6 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
 
   const signInOffline = async (email: string, password: string) => {
     try {
-      console.log('🔍 Fazendo login offline...');
-      
       const userId = 'offline-' + Date.now();
       const userData = {
         id: userId,
@@ -229,11 +283,10 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
 
       // Salvar no localStorage
       localStorage.setItem('offline_user', JSON.stringify(userData));
-      
+
       // Definir usuário
       setUser(userData);
-      
-      console.log('✅ Login offline realizado:', userData);
+
     } catch (error) {
       console.error('❌ Erro no login offline:', error);
       throw error;
@@ -242,23 +295,19 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
 
   const signInWithGoogle = async () => {
     try {
-      console.log('🔍 Iniciando Google OAuth...');
-      
       // Importar supabase dinamicamente
       const { supabase } = await import('@/lib/supabase');
-      
+
       // Detectar se estamos em desenvolvimento ou produção
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      
+
       // Usar a porta atual da aplicação (Vite porta 8080 no config ou 5173 default)
       const currentPort = window.location.port || (isLocalhost ? '8080' : null);
-      const redirectUrl = isLocalhost 
+      const redirectUrl = isLocalhost
         ? `http://localhost:${currentPort || '8080'}/`
         : `${window.location.origin}/`;
-      
-      
-      console.log('🌐 Redirect URL será:', redirectUrl);
-      
+
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -271,7 +320,6 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
         throw error;
       }
 
-      console.log('✅ Google OAuth iniciado:', data);
     } catch (error) {
       console.error('❌ Erro no Google OAuth:', error);
       throw error;
@@ -280,17 +328,14 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
 
   const signOut = async () => {
     try {
-      console.log('🔍 Realizando logout...');
-      
       // Importar supabase dinamicamente para realizar logout completo
       try {
         const { supabase } = await import('@/lib/supabase');
         await supabase.auth.signOut();
-        console.log('✅ Supabase auth logout realizado');
       } catch (supabaseError) {
-        console.log('⚠️ Supabase logout falhou (continuando com logout local)');
+        console.error('Erro ao fazer logout do Supabase:', supabaseError);
       }
-      
+
       // Limpar dados locais - mais fileira gatilo
       localStorage.removeItem('offline_user');
       localStorage.removeItem('user_data');
@@ -298,8 +343,7 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
       // Limpar qualquer session data
       sessionStorage.clear();
       setUser(null);
-      
-      console.log('✅ Logout completo realizado');
+
     } catch (error) {
       console.error('❌ Erro no logout:', error);
       throw error;
@@ -324,7 +368,6 @@ export function OfflineAuthProvider({ children }: { children: React.ReactNode })
         const updatedUser = { ...user, custom_avatar: avatarUrl };
         localStorage.setItem('offline_user', JSON.stringify(updatedUser));
         setUser(updatedUser);
-        console.log('✅ Avatar atualizado:', avatarUrl);
       }
     } catch (error) {
       console.error('❌ Erro ao atualizar avatar:', error);

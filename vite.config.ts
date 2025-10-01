@@ -27,6 +27,13 @@ export default defineConfig(({ mode }) => ({
         drop_console: mode === 'production',
         drop_debugger: mode === 'production',
         pure_funcs: mode === 'production' ? ['console.log', 'console.info'] : []
+      },
+      mangle: {
+        toplevel: true,
+        keep_fnames: false
+      },
+      format: {
+        comments: false
       }
     },
     rollupOptions: {
@@ -71,10 +78,17 @@ export default defineConfig(({ mode }) => ({
         server.middlewares.use('/api/sync/data', (req: IncomingMessage, res: ServerResponse, next: () => void) => {
             console.log(`[SYNC API] ${req.method} ${req.url}`);
             
+            // Headers de segurança
             res.setHeader('Content-Type', 'application/json');
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
             res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+            
+            // Headers de segurança adicionais
+            res.setHeader('X-Content-Type-Options', 'nosniff');
+            res.setHeader('X-Frame-Options', 'DENY');
+            res.setHeader('X-XSS-Protection', '1; mode=block');
+            res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
             
             if (req.method === 'OPTIONS') {
               res.statusCode = 200;

@@ -78,9 +78,9 @@ export default function AppRouter() {
                     <Route path="/configure-access" element={<ConfigureAccess />} />
                     <Route path="/approve-participants" element={<ApproveParticipants />} />
                     <Route path="/manage-players" element={<ManagePlayers />} />
-                     <Route path="/list-users" element={<ListUsers />} />
-                     <Route path="/jogo" element={<Jogo />} />
-                     <Route path="*" element={<Navigate to="/" replace />} />
+                    <Route path="/list-users" element={<ListUsers />} />
+                    <Route path="/jogo" element={<Jogo />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </Suspense>
               </div>

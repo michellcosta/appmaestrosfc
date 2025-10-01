@@ -3,6 +3,9 @@
  * Garante que apenas o owner principal possa criar novos owners e não possa ser excluído
  */
 
+// Email do owner principal - Michell Costa
+const MAIN_OWNER_EMAIL = 'michellcosta1269@gmail.com';
+
 // ID do owner principal - será definido automaticamente no primeiro login
 let MAIN_OWNER_ID: string | null = null;
 
@@ -38,18 +41,25 @@ export function isMainOwner(userId: string | undefined): boolean {
 }
 
 /**
+ * Verifica se o usuário atual é o owner principal pelo email
+ */
+export function isMainOwnerByEmail(userEmail: string | undefined): boolean {
+  return userEmail === MAIN_OWNER_EMAIL;
+}
+
+/**
  * Verifica se é permitido criar novos owners
  * Apenas o owner principal pode criar novos owners
  */
 export function canCreateOwner(currentUserId: string | undefined): boolean {
   // Verificar se já existe um owner principal
   const mainOwnerId = getMainOwnerId();
-  
+
   // Se não há owner principal definido, permite criar
   if (!mainOwnerId) {
     return true;
   }
-  
+
   // Apenas o owner principal pode criar novos owners
   return isMainOwner(currentUserId);
 }
@@ -60,12 +70,12 @@ export function canCreateOwner(currentUserId: string | undefined): boolean {
  */
 export function canDeleteUser(targetUserId: string, currentUserId: string | undefined): boolean {
   const mainOwnerId = getMainOwnerId();
-  
+
   // Não pode excluir o owner principal
   if (targetUserId === mainOwnerId) {
     return false;
   }
-  
+
   // Apenas o owner principal pode excluir outros usuários
   return isMainOwner(currentUserId);
 }
@@ -76,8 +86,13 @@ export function canDeleteUser(targetUserId: string, currentUserId: string | unde
  */
 export function initializeOwnerProtection(currentUser: any): void {
   if (currentUser?.role === 'owner' && currentUser?.id) {
+    // Se o usuário é o owner principal por email, definir como owner principal
+    if (isMainOwnerByEmail(currentUser.email)) {
+      setMainOwnerId(currentUser.id);
+      console.log('🔒 Owner principal Michell Costa identificado e protegido');
+    }
     // Se não há owner principal definido, define o usuário atual
-    if (!getMainOwnerId()) {
+    else if (!getMainOwnerId()) {
       setMainOwnerId(currentUser.id);
     }
   }

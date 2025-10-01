@@ -1,68 +1,65 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/auth/OfflineAuthProvider';
-import { useGamesStore } from '@/store/gamesStore';
-import { useDonationStore } from '@/store/donationStore';
-import { supabase } from '@/lib/supabase';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
+import { CompleteInviteModal } from '@/components/CompleteInviteModal';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DatePicker } from '@/components/ui/date-picker';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TimePicker } from '@/components/ui/time-picker';
-import { 
-  Crown, 
-  Users, 
-  Calendar, 
-  DollarSign, 
-  Trophy, 
-  Settings, 
-  Plus,
-  Eye,
-  Edit,
-  Trash2,
+import { supabase } from '@/lib/supabase';
+import { useDonationStore } from '@/store/donationStore';
+import { useGamesStore } from '@/store/gamesStore';
+import {
+  AlertCircle,
+  BarChart3,
+  Bell,
+  Calendar,
   CheckCircle,
   Clock,
-  AlertCircle,
-  TrendingUp,
-  BarChart3,
-  Shield,
-  UserCheck,
-  UserX,
-  CreditCard,
-  FileText,
-  Bell,
-  LogOut,
-  Save,
-  X,
-  MapPin,
-  Info,
-  Repeat,
-  Heart,
   Coffee,
-  Play,
+  CreditCard,
+  Crown,
+  DollarSign,
+  Edit,
+  Eye,
+  FileText,
+  Heart,
+  Info,
+  LogOut,
   Mail,
-  Star
+  MapPin,
+  Plus,
+  Repeat,
+  Save,
+  Settings,
+  Shield,
+  Star,
+  Trash2,
+  TrendingUp,
+  Trophy,
+  UserCheck,
+  Users,
+  X
 } from 'lucide-react';
-import { isMainOwner, PROTECTION_MESSAGES } from '@/utils/ownerProtection';
-import { CompleteInviteModal } from '@/components/CompleteInviteModal';
-import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 export default function OwnerDashboard() {
   const { user, signOut } = useAuth();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('overview');
-  
+
   // Store global de jogos
   const { matches, addMatch, updateMatch, deleteMatch, getUpcomingMatches } = useGamesStore();
-  
+
   // Store de configurações de doação
   const { config, toggleHomeDisplay, toggleDashboardDisplay, toggleHelpArtistCard, toggleCoffeeForDevCard, resetToDefaults } = useDonationStore();
-  
+
   // Estados para modal de edição
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingMatch, setEditingMatch] = useState(null);
@@ -111,7 +108,7 @@ export default function OwnerDashboard() {
   });
 
   // ============ GERENCIAMENTO DE JOGADORES OFFLINE ============
-  
+
   // Estados principais dos jogadores
   const [offlinePlayers, setOfflinePlayers] = useState([]);
   const [loadingPlayers, setLoadingPlayers] = useState(true);
@@ -181,7 +178,7 @@ export default function OwnerDashboard() {
     // Converter YYYY-MM-DD para DD/MM/YYYY
     const dateParts = match.date.split('-');
     const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-    
+
     setEditingMatch(match);
     setEditForm({
       date: formattedDate,
@@ -216,11 +213,11 @@ export default function OwnerDashboard() {
 
   const saveMatchChanges = () => {
     if (!editingMatch) return;
-    
+
     // Validar formato da data DD/MM/YYYY
     const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
     const dateMatch = editForm.date.match(dateRegex);
-    
+
     if (!dateMatch) {
       alert('Por favor, insira a data no formato DD/MM/YYYY.');
       return;
@@ -236,13 +233,13 @@ export default function OwnerDashboard() {
       alert('Por favor, insira uma data válida.');
       return;
     }
-    
+
     // Atualizar o jogo no store global
     updateMatch(editingMatch.id, {
       ...editForm,
       date: isoDate
     });
-    
+
     closeEditModal();
     alert('Jogo atualizado com sucesso!');
   };
@@ -260,10 +257,10 @@ export default function OwnerDashboard() {
 
   const confirmDeleteMatch = () => {
     if (!matchToDelete) return;
-    
+
     // Remover o jogo do store global
     deleteMatch(matchToDelete.id);
-    
+
     closeDeleteModal();
     alert('Partida excluída com sucesso!');
   };
@@ -277,7 +274,7 @@ export default function OwnerDashboard() {
     const year = today.getFullYear();
     const todayDate = `${day}/${month}/${year}`;
     const currentTime = today.toTimeString().slice(0, 5); // Formato HH:MM
-    
+
     setCreateForm({
       date: todayDate,
       time: currentTime,
@@ -306,7 +303,7 @@ export default function OwnerDashboard() {
     // Validar formato da data DD/MM/YYYY
     const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
     const dateMatch = createForm.date.match(dateRegex);
-    
+
     if (!dateMatch) {
       alert('Por favor, insira a data no formato DD/MM/YYYY.');
       return;
@@ -343,11 +340,11 @@ export default function OwnerDashboard() {
     try {
       // Buscar jogadores salvos no localStorage mas excluindo o usuário atual
       const playersData = [];
-      
+
       // Lista para buscar JSON de jogadores em vários possíveis nomes de chave
       const possibleStorageKeys = [
         'offline_players',
-        'local_players', 
+        'local_players',
         'players-store',
         'nexus-play-players',
         'app_players'
@@ -356,7 +353,7 @@ export default function OwnerDashboard() {
       // Verificar se há dados de exemplo sendo carregados automaticamente
       const hasExampleData = localStorage.getItem('maestrosfc_players_example_loaded');
       const noExampleData = localStorage.getItem('maestrosfc_no_example_data');
-      
+
       if (hasExampleData || noExampleData === 'true') {
         console.log('⚠️ Dados de exemplo detectados ou desabilitados - limpando automaticamente');
         // Limpar dados de exemplo
@@ -367,7 +364,7 @@ export default function OwnerDashboard() {
         localStorage.removeItem('maestrosfc_games');
         localStorage.removeItem('maestrosfc_donations');
       }
-      
+
       for (const key of possibleStorageKeys) {
         const data = localStorage.getItem(key);
         if (data) {
@@ -385,7 +382,7 @@ export default function OwnerDashboard() {
           }
         }
       }
-      
+
       // Filtrar o usuário atual e normalizar dados
       const filteredPlayers = playersData
         .filter(player => player && player.id && player.id !== user?.id)
@@ -406,7 +403,7 @@ export default function OwnerDashboard() {
       // REMOVER DUPLICATAS por id para evitar problemas de duplicação na exclusão
       const uniquePlayers = [];
       const seenIds = new Set();
-      
+
       for (const player of filteredPlayers) {
         if (!seenIds.has(player.id)) {
           seenIds.add(player.id);
@@ -416,7 +413,7 @@ export default function OwnerDashboard() {
 
       setOfflinePlayers(uniquePlayers);
       setShowOfflineSyncNotice(uniquePlayers.length > 0);
-      
+
       // Se não há jogadores, garantir que os stores também estejam limpos
       if (uniquePlayers.length === 0) {
         try {
@@ -426,7 +423,7 @@ export default function OwnerDashboard() {
           localStorage.removeItem('maestrosfc_team_draw');
           localStorage.removeItem('maestrosfc_games');
           localStorage.removeItem('maestrosfc_donations');
-          
+
           // Marcar que não há dados de exemplo para evitar recarregamento
           localStorage.setItem('maestrosfc_no_example_data', 'true');
           console.log('🧹 Stores limpos - sem jogadores encontrados');
@@ -448,7 +445,7 @@ export default function OwnerDashboard() {
       if (playerRoleFilter && player.role !== playerRoleFilter) {
         return false;
       }
-      
+
       // Filtro por texto de busca
       if (playerSearchTerm) {
         const searchLower = playerSearchTerm.toLowerCase();
@@ -458,12 +455,12 @@ export default function OwnerDashboard() {
           return false;
         }
       }
-      
+
       // Filtro por status
       if (playerStatusFilter && player.status !== playerStatusFilter) {
         return false;
       }
-      
+
       return true;
     });
   }, [offlinePlayers, playerRoleFilter, playerSearchTerm, playerStatusFilter]);
@@ -481,7 +478,7 @@ export default function OwnerDashboard() {
       alert('Nome é obrigatório');
       return;
     }
-    
+
     if (!playerForm.email.trim()) {
       alert('Email é obrigatório');
       return;
@@ -514,7 +511,7 @@ export default function OwnerDashboard() {
           .insert({ name: playerForm.name.trim() })
           .select()
           .single();
-          
+
         if (error) {
           console.log('⚠️ Supabase não funcionou, continuando sem erro:', error.message);
         } else {
@@ -529,7 +526,7 @@ export default function OwnerDashboard() {
 
       // Sucesso garantido
       alert(`✅ Jogador ${playerForm.name} adicionado com sucesso!`);
-      
+
       // Reset form and close modal
       setPlayerForm({
         name: '',
@@ -539,7 +536,7 @@ export default function OwnerDashboard() {
         shirt_size: 'G',
         stars: 5
       });
-      
+
       setShowAddPlayerModal(false);
       alert(`✅ Jogador ${newPlayer.name} adicionado com sucesso no Supabase!`);
 
@@ -569,7 +566,7 @@ export default function OwnerDashboard() {
       alert('Nome é obrigatório');
       return;
     }
-    
+
     if (!playerForm.email.trim()) {
       alert('Email é obrigatório');
       return;
@@ -601,7 +598,7 @@ export default function OwnerDashboard() {
           .from('users')
           .update({ name: playerForm.name.trim() })
           .eq('id', playerToEdit.id);
-          
+
         if (resultadoSupabase.error) {
           console.log('⚠️ Erro Supabase na edição:', resultadoSupabase.error.message);
         } else {
@@ -612,7 +609,7 @@ export default function OwnerDashboard() {
       }
 
       alert('✅ Jogador editado com sucesso!');
-      
+
       setShowEditPlayerModal(false);
       setPlayerToEdit(null);
       setPlayerForm({
@@ -623,7 +620,7 @@ export default function OwnerDashboard() {
         shirt_size: 'G',
         stars: 5
       });
-      
+
       alert(`✅ Jogador ${playerForm.name} atualizado com sucesso no Supabase!`);
 
     } catch (error) {
@@ -660,13 +657,13 @@ export default function OwnerDashboard() {
       // 2. Deletar também do localStorage
       const updatedPlayers = offlinePlayers.filter(player => player.id !== playerToDelete.id);
       setOfflinePlayers(updatedPlayers);
-      
+
       // Salvar no localStorage
       localStorage.setItem('offline_players', JSON.stringify(updatedPlayers));
-      
+
       setShowDeletePlayerModal(false);
       setPlayerToDelete(null);
-      
+
       alert(`✅ Jogador ${playerToDelete.name} excluído com sucesso do Supabase!`);
 
     } catch (error) {
@@ -704,11 +701,11 @@ export default function OwnerDashboard() {
 
     try {
       console.log('🧹 Iniciando limpeza completa de jogadores e ranking...');
-      
+
       // Limpar o estado atual primeiro
       setOfflinePlayers([]);
       setShowOfflineSyncNotice(false);
-      
+
       // Reset dos formulários
       setPlayerForm({
         name: '',
@@ -718,14 +715,14 @@ export default function OwnerDashboard() {
         shirt_size: 'G',
         stars: 5
       });
-      
+
       // Fechar todos os modais
       setShowAddPlayerModal(false);
       setShowEditPlayerModal(false);
       setShowDeletePlayerModal(false);
       setPlayerToEdit(null);
       setPlayerToDelete(null);
-      
+
       // Limpar localStorage de forma mais segura
       const keysToRemove = [];
       for (let i = 0; i < localStorage.length; i++) {
@@ -746,7 +743,7 @@ export default function OwnerDashboard() {
           keysToRemove.push(key);
         }
       }
-      
+
       // Remover chaves uma por uma
       keysToRemove.forEach(key => {
         try {
@@ -756,7 +753,7 @@ export default function OwnerDashboard() {
           console.warn(`⚠️ Erro ao remover ${key}:`, error);
         }
       });
-      
+
       // Limpar sessionStorage
       try {
         sessionStorage.clear();
@@ -771,11 +768,11 @@ export default function OwnerDashboard() {
         const { usePlayersStore } = await import('@/store/playersStore');
         usePlayersStore.getState().reset();
         console.log('🔄 PlayersStore resetado');
-        
+
         const { useMatchParticipantsStore } = await import('@/store/matchParticipantsStore');
         useMatchParticipantsStore.getState().reset();
         console.log('🔄 MatchParticipantsStore resetado');
-        
+
         const { useMatchStore } = await import('@/store/matchStore');
         useMatchStore.getState().resetToInitialState();
         console.log('🔄 MatchStore resetado');
@@ -783,7 +780,7 @@ export default function OwnerDashboard() {
         const { usePlayerStatsStore } = await import('@/store/playerStatsStore');
         usePlayerStatsStore.getState().resetStats(new Date().toISOString());
         console.log('🔄 PlayerStatsStore resetado (ranking limpo)');
-        
+
         // Limpar store de jogos se existir
         try {
           const { useGamesStore } = await import('@/store/gamesStore');
@@ -795,7 +792,7 @@ export default function OwnerDashboard() {
         } catch (gamesError) {
           console.warn('⚠️ GamesStore não encontrado ou sem reset:', gamesError);
         }
-        
+
         // Limpar store de conquistas se existir
         try {
           const { useAchievementsStore } = await import('@/store/achievementsStore');
@@ -806,21 +803,21 @@ export default function OwnerDashboard() {
         } catch (achievementsError) {
           console.warn('⚠️ AchievementsStore não encontrado ou sem reset:', achievementsError);
         }
-        
+
       } catch (storeError) {
         console.warn('⚠️ Erro ao resetar stores:', storeError);
       }
 
       console.log('🧹 Todas as fontes de jogadores e ranking limpas');
-      
+
       // Confirmar exclusão com detalhes
       alert(`✅ SUCESSO!\n\n• ${playerCount} jogador(es) excluído(s)\n• Ranking e estatísticas limpos\n• Dados mockados removidos do localStorage\n• Todos os dados foram removidos\n• Sistema limpo e pronto para jogadores reais\n\nA página será recarregada em 3 segundos...`);
-      
+
       // Recarregar a página após 3 segundos
       setTimeout(() => {
         window.location.reload();
       }, 3000);
-      
+
     } catch (error) {
       console.error('❌ Erro ao limpar jogadores:', error);
       alert(`⚠️ Erro ao excluir dados: ${error.message}\n\nTente recarregar a página e tentar novamente.`);
@@ -830,18 +827,18 @@ export default function OwnerDashboard() {
   // Função para formatar data no formato dd-mm-aaaa
   const formatDate = (dateString) => {
     if (!dateString) return '';
-    
+
     // Se a data está no formato YYYY-MM-DD (ISO), converter para dd-mm-yyyy
     if (dateString.includes('-') && dateString.length === 10) {
       const [year, month, day] = dateString.split('-');
       return `${day}-${month}-${year}`;
     }
-    
+
     // Se a data está no formato dd/mm/yyyy, converter para dd-mm-yyyy
     if (dateString.includes('/')) {
       return dateString.replace(/\//g, '-');
     }
-    
+
     // Se já está no formato correto, retornar como está
     return dateString;
   };
@@ -860,13 +857,13 @@ export default function OwnerDashboard() {
     }
 
     const lastMatch = sortedMatches[0];
-    
+
     // Converter data da partida anterior para Date object (garantindo UTC para evitar problemas de timezone)
     const lastMatchDate = new Date(lastMatch.date + 'T00:00:00.000Z');
-    
+
     // Adicionar exatos 7 dias (7 * 24 * 60 * 60 * 1000 milliseconds)
     const newDate = new Date(lastMatchDate.getTime() + (7 * 24 * 60 * 60 * 1000));
-    
+
     // Formatar nova data para YYYY-MM-DD (formato do store)
     const newYear = newDate.getUTCFullYear();
     const newMonth = String(newDate.getUTCMonth() + 1).padStart(2, '0');
@@ -909,7 +906,7 @@ export default function OwnerDashboard() {
 
   const processDonation = () => {
     const amount = customAmount ? parseFloat(customAmount) : selectedDonationAmount;
-    
+
     if (!amount || amount <= 0) {
       alert('Por favor, selecione um valor válido para a doação.');
       return;
@@ -919,12 +916,12 @@ export default function OwnerDashboard() {
     // Em produção, aqui seria integrado com gateway de pagamento
     const pixKey = 'maestros.fc@gmail.com';
     const pixMessage = `Apoio ao Maestros FC - R$ ${amount.toFixed(2)}`;
-    
+
     // Gerar link PIX (simulado)
     const pixData = `00020126580014br.gov.bcb.pix0136${pixKey}0208${pixMessage}5204000053039865802BR5913Maestros FC6009SAO PAULO62070503***6304`;
-    
+
     alert(`Obrigado pelo apoio! 🙏\n\nValor: R$ ${amount.toFixed(2)}\nChave PIX: ${pixKey}\n\nEm breve você receberá o QR Code para pagamento.`);
-    
+
     closeDonationModal();
   };
 
@@ -934,7 +931,7 @@ export default function OwnerDashboard() {
       alert('Por favor, preencha a chave PIX para pagamentos.');
       return;
     }
-    
+
     // Aqui salvaria no localStorage ou banco de dados
     localStorage.setItem('pix_payment_config', JSON.stringify(pixPayment));
     alert('✅ Configuração PIX Pagamentos salva com sucesso!');
@@ -945,7 +942,7 @@ export default function OwnerDashboard() {
       alert('Por favor, preencha a chave PIX para doações.');
       return;
     }
-    
+
     // Aqui salvaria no localStorage ou banco de dados
     localStorage.setItem('pix_donation_config', JSON.stringify(pixDonation));
     alert('✅ Configuração PIX Doações salva com sucesso!');
@@ -955,7 +952,7 @@ export default function OwnerDashboard() {
   useEffect(() => {
     const savedPayment = localStorage.getItem('pix_payment_config');
     const savedDonation = localStorage.getItem('pix_donation_config');
-    
+
     if (savedPayment) {
       setPixPayment(JSON.parse(savedPayment));
     }
@@ -992,34 +989,34 @@ export default function OwnerDashboard() {
               </div>
             </div>
             <div className='flex items-center gap-3'>
-          <Badge variant="secondary" className='bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700'>
-            <Crown className='w-3 h-3 mr-1' />
-            Owner
-          </Badge>
-          <Button 
-            variant="destructive" 
-            size="sm"
-            onClick={async () => {
-              // Permitir logout sempre
-              try {
-                await signOut();
-                localStorage.clear();
-                sessionStorage.clear();
-                alert('Logout realizado com sucesso!');
-                window.location.href = '/login';
-              } catch (error) {
-                console.error('Erro ao fazer logout:', error);
-                localStorage.clear();
-                sessionStorage.clear();
-                window.location.href = '/login';
-              }
-            }}
-            className="dark:bg-red-600 dark:hover:bg-red-700"
-            title="Sair da conta"
-          >
-            <LogOut className='w-4 h-4 mr-2' />
-            Sair
-          </Button>
+              <Badge variant="secondary" className='bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700'>
+                <Crown className='w-3 h-3 mr-1' />
+                Owner
+              </Badge>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={async () => {
+                  // Permitir logout sempre
+                  try {
+                    await signOut();
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    alert('Logout realizado com sucesso!');
+                    window.location.href = '/login';
+                  } catch (error) {
+                    console.error('Erro ao fazer logout:', error);
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.href = '/login';
+                  }
+                }}
+                className="dark:bg-red-600 dark:hover:bg-red-700"
+                title="Sair da conta"
+              >
+                <LogOut className='w-4 h-4 mr-2' />
+                Sair
+              </Button>
             </div>
           </div>
         </div>
@@ -1171,10 +1168,10 @@ export default function OwnerDashboard() {
                   <span className='font-semibold text-orange-600 dark:text-orange-400'>R$ {dashboardData.financialStatus.pending}</span>
                 </div>
                 <div className='w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-2'>
-                  <div 
-                    className='bg-green-500 h-2 rounded-full' 
-                    style={{ 
-                      width: `${(dashboardData.financialStatus.paid / dashboardData.financialStatus.totalThisMonth) * 100}%` 
+                  <div
+                    className='bg-green-500 h-2 rounded-full'
+                    style={{
+                      width: `${(dashboardData.financialStatus.paid / dashboardData.financialStatus.totalThisMonth) * 100}%`
                     }}
                   ></div>
                 </div>
@@ -1200,7 +1197,7 @@ export default function OwnerDashboard() {
                     </div>
                     <div className='text-right'>
                       <p className='font-semibold dark:text-zinc-100'>R$ {payment.amount}</p>
-                      <Badge 
+                      <Badge
                         variant={payment.status === 'paid' ? 'default' : 'secondary'}
                         className={payment.status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'}
                       >
@@ -1263,7 +1260,7 @@ export default function OwnerDashboard() {
                         <p className='text-sm text-zinc-500'>{formatDate(match.date)} às {match.time}</p>
                       </div>
                     </div>
-                    
+
                     <div className='grid grid-cols-2 gap-4'>
                       <div>
                         <p className='text-sm text-zinc-500'>Vagas</p>
@@ -1276,7 +1273,7 @@ export default function OwnerDashboard() {
                         </Badge>
                       </div>
                     </div>
-                    
+
                     <div className='flex items-center justify-end gap-1'>
                       <Button size="sm" variant="outline" className='h-8 w-8 p-0' onClick={() => openEditModal(match)}>
                         <Edit className='w-4 h-4' />
@@ -1317,8 +1314,8 @@ export default function OwnerDashboard() {
                     <Plus className='w-4 h-4 mr-2' />
                     Adicionar Jogador
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => setShowPlayerFilters(!showPlayerFilters)}
                     className="w-full sm:w-auto"
                   >
@@ -1326,8 +1323,8 @@ export default function OwnerDashboard() {
                     Filtros
                   </Button>
                   {offlinePlayers.length > 0 && (
-                    <Button 
-                      variant="destructive" 
+                    <Button
+                      variant="destructive"
                       onClick={() => openClearAllModal()}
                       className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                     >
@@ -1347,7 +1344,7 @@ export default function OwnerDashboard() {
                   <p className="text-zinc-500 dark:text-zinc-400 mb-6">
                     Comece adicionando jogadores ao seu grupo
                   </p>
-                  <Button 
+                  <Button
                     onClick={() => setShowAddPlayerModal(true)}
                     className="bg-green-600 hover:bg-green-700 text-white"
                   >
@@ -1377,7 +1374,7 @@ export default function OwnerDashboard() {
                         <option value="diarista">Diarista</option>
                       </select>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="search-player">Buscar Jogador</Label>
                       <Input
@@ -1388,7 +1385,7 @@ export default function OwnerDashboard() {
                         className="w-full"
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="status-filter">Status</Label>
                       <select
@@ -1403,10 +1400,10 @@ export default function OwnerDashboard() {
                         <option value="inactive">Inativo</option>
                       </select>
                     </div>
-                    
+
                     <div className="flex items-end">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={() => clearPlayerFilters()}
                         className="w-full"
                       >
@@ -1427,8 +1424,8 @@ export default function OwnerDashboard() {
                       {offlinePlayers.length === 0 ? 'Nenhum jogador cadastrado' : 'Nenhum jogador encontrado'}
                     </h3>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-                      {offlinePlayers.length === 0 
-                        ? 'Adicione o primeiro jogador para começar.' 
+                      {offlinePlayers.length === 0
+                        ? 'Adicione o primeiro jogador para começar.'
                         : 'Tente ajustar os filtros de busca.'}
                     </p>
                     {offlinePlayers.length === 0 && (
@@ -1444,8 +1441,8 @@ export default function OwnerDashboard() {
                       <div className='flex items-center gap-3 flex-1 min-w-0'>
                         <div className='w-10 h-10 bg-zinc-200 dark:bg-zinc-700 rounded-full flex items-center justify-center flex-shrink-0'>
                           {player.avatar_url || player.custom_avatar ? (
-                            <img 
-                              src={player.avatar_url || player.custom_avatar} 
+                            <img
+                              src={player.avatar_url || player.custom_avatar}
                               alt={player.name}
                               className="w-full h-full rounded-full object-cover"
                             />
@@ -1476,28 +1473,28 @@ export default function OwnerDashboard() {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className='flex flex-wrap items-center gap-2'>
-                        <Badge 
+                        <Badge
                           variant="outline"
                           className={
                             player.role === 'owner' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' :
-                            player.role === 'admin' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
-                            player.role === 'aux' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
-                            player.role === 'mensalista' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300' :
-                            'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+                              player.role === 'admin' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
+                                player.role === 'aux' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
+                                  player.role === 'mensalista' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300' :
+                                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
                           }
                         >
                           {player.role === 'owner' ? '👑 Owner' :
-                         player.role === 'admin' ? '🛡️ Admin' :
-                         player.role === 'aux' ? '⚡ Auxiliar' :
-                         player.role === 'mensalista' ? '⭐ Mensalista' : 
-                         '🔹 Diarista'}
+                            player.role === 'admin' ? '🛡️ Admin' :
+                              player.role === 'aux' ? '⚡ Auxiliar' :
+                                player.role === 'mensalista' ? '⭐ Mensalista' :
+                                  '🔹 Diarista'}
                         </Badge>
-                        
+
                         <div className="flex items-center gap-1">
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="outline"
                             onClick={() => openEditPlayerModal(player)}
                             className="h-8 px-2"
@@ -1505,8 +1502,8 @@ export default function OwnerDashboard() {
                             <Edit className='w-4 h-4' />
                           </Button>
                           {player.id !== user?.id && (
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               variant="destructive"
                               onClick={() => openDeletePlayerModal(player)}
                               className="h-8 px-2"
@@ -1520,12 +1517,12 @@ export default function OwnerDashboard() {
                   ))
                 )}
               </div>
-              
+
               {/* Info sobre jogadores offline */}
               {offlinePlayers.length > 0 && (
                 <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                   <p className="text-sm text-blue-700 dark:text-blue-300">
-                    📱 <strong>Modo Offline:</strong> {offlinePlayers.length} jogador(es) armazenados localmente. 
+                    📱 <strong>Modo Offline:</strong> {offlinePlayers.length} jogador(es) armazenados localmente.
                     {showOfflineSyncNotice && (
                       <span className="block mt-1">
                         Para sincronizar com cloud, conecte-se à internet.
@@ -1602,9 +1599,8 @@ export default function OwnerDashboard() {
                 {dashboardData.recentPayments.map((payment) => (
                   <div key={payment.id} className='flex items-center justify-between p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700'>
                     <div className='flex items-center gap-3'>
-                      <div className={`w-3 h-3 rounded-full ${
-                        payment.status === 'paid' ? 'bg-green-500' : 'bg-orange-500'
-                      }`}></div>
+                      <div className={`w-3 h-3 rounded-full ${payment.status === 'paid' ? 'bg-green-500' : 'bg-orange-500'
+                        }`}></div>
                       <div>
                         <p className='font-medium text-zinc-900 dark:text-zinc-100'>{payment.player}</p>
                         <p className='text-sm text-zinc-600 dark:text-zinc-400'>{payment.date}</p>
@@ -1612,7 +1608,7 @@ export default function OwnerDashboard() {
                     </div>
                     <div className='text-right'>
                       <p className='font-semibold'>R$ {payment.amount}</p>
-                      <Badge 
+                      <Badge
                         variant={payment.status === 'paid' ? 'default' : 'secondary'}
                         className={payment.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}
                       >
@@ -1649,7 +1645,7 @@ export default function OwnerDashboard() {
                     <Input
                       id="payment-pix-key"
                       value={pixPayment.key}
-                      onChange={(e) => setPixPayment({...pixPayment, key: e.target.value})}
+                      onChange={(e) => setPixPayment({ ...pixPayment, key: e.target.value })}
                       placeholder="exemplo@email.com ou 11999999999"
                       className="mt-1 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
                     />
@@ -1659,7 +1655,7 @@ export default function OwnerDashboard() {
                     <Input
                       id="payment-account-name"
                       value={pixPayment.accountName}
-                      onChange={(e) => setPixPayment({...pixPayment, accountName: e.target.value})}
+                      onChange={(e) => setPixPayment({ ...pixPayment, accountName: e.target.value })}
                       placeholder="Conta João - Pagamentos"
                       className="mt-1 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
                     />
@@ -1669,12 +1665,12 @@ export default function OwnerDashboard() {
                     <Input
                       id="payment-description"
                       value={pixPayment.description}
-                      onChange={(e) => setPixPayment({...pixPayment, description: e.target.value})}
+                      onChange={(e) => setPixPayment({ ...pixPayment, description: e.target.value })}
                       placeholder="Para receber mensalidades e diárias"
                       className="mt-1 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
                     />
                   </div>
-                  <Button 
+                  <Button
                     className="w-full bg-blue-600 hover:bg-blue-700"
                     onClick={savePixPaymentConfig}
                   >
@@ -1704,7 +1700,7 @@ export default function OwnerDashboard() {
                     <Input
                       id="donation-pix-key"
                       value={pixDonation.key}
-                      onChange={(e) => setPixDonation({...pixDonation, key: e.target.value})}
+                      onChange={(e) => setPixDonation({ ...pixDonation, key: e.target.value })}
                       placeholder="exemplo@email.com ou 11999999999"
                       className="mt-1 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
                     />
@@ -1714,7 +1710,7 @@ export default function OwnerDashboard() {
                     <Input
                       id="donation-account-name"
                       value={pixDonation.accountName}
-                      onChange={(e) => setPixDonation({...pixDonation, accountName: e.target.value})}
+                      onChange={(e) => setPixDonation({ ...pixDonation, accountName: e.target.value })}
                       placeholder="Conta Maria - Doações"
                       className="mt-1 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
                     />
@@ -1724,12 +1720,12 @@ export default function OwnerDashboard() {
                     <Input
                       id="donation-description"
                       value={pixDonation.description}
-                      onChange={(e) => setPixDonation({...pixDonation, description: e.target.value})}
+                      onChange={(e) => setPixDonation({ ...pixDonation, description: e.target.value })}
                       placeholder="Para receber doações dos apoiadores"
                       className="mt-1 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
                     />
                   </div>
-                  <Button 
+                  <Button
                     className="w-full bg-green-600 hover:bg-green-700"
                     onClick={savePixDonationConfig}
                   >
@@ -1794,46 +1790,54 @@ export default function OwnerDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className='space-y-3'>
-                     <Button 
-                       className='w-full' 
-                       variant="outline"
-                       onClick={() => setInviteModalOpen(true)}
-                     >
-                       <Mail className='w-4 h-4 mr-2' />
-                       Criar Convites/Gerenciar
-                     </Button>
-                     <Button 
-                       className='w-full' 
-                       variant="outline"
-                       onClick={() => window.location.href = '/manage-players'}
-                     >
-                       <Users className='w-4 h-4 mr-2' />
-                       Gerenciar Jogadores
-                     </Button>
-                     <Button 
-                       className='w-full' 
-                       variant="outline"
-                       onClick={() => window.location.href = '/manage-admins'}
-                     >
-                       <Shield className='w-4 h-4 mr-2' />
-                       Gerenciar Admins
-                     </Button>
-                     <Button 
-                       className='w-full' 
-                       variant="outline"
-                       onClick={() => window.location.href = '/configure-access'}
-                     >
-                       <Shield className='w-4 h-4 mr-2' />
-                       Configurar Acessos
-                     </Button>
-                     <Button 
-                       className='w-full'
-                       variant="outline"
-                       onClick={() => window.location.href = '/approve-participants'}
-                     >
-                       <UserCheck className='w-4 h-4 mr-2' />
-                       Aprovar Participantes
-                     </Button>
+                <Button
+                  className='w-full'
+                  variant="outline"
+                  onClick={() => setInviteModalOpen(true)}
+                >
+                  <Mail className='w-4 h-4 mr-2' />
+                  Criar Convites/Gerenciar
+                </Button>
+                <Button
+                  className='w-full'
+                  variant="outline"
+                  onClick={() => window.location.href = '/manage-players'}
+                >
+                  <Users className='w-4 h-4 mr-2' />
+                  Gerenciar Jogadores
+                </Button>
+                <Button
+                  className='w-full'
+                  variant="outline"
+                  onClick={() => window.location.href = '/list-users'}
+                >
+                  <Users className='w-4 h-4 mr-2' />
+                  Listar Usuários
+                </Button>
+                <Button
+                  className='w-full'
+                  variant="outline"
+                  onClick={() => window.location.href = '/manage-admins'}
+                >
+                  <Shield className='w-4 h-4 mr-2' />
+                  Gerenciar Admins
+                </Button>
+                <Button
+                  className='w-full'
+                  variant="outline"
+                  onClick={() => window.location.href = '/configure-access'}
+                >
+                  <Shield className='w-4 h-4 mr-2' />
+                  Configurar Acessos
+                </Button>
+                <Button
+                  className='w-full'
+                  variant="outline"
+                  onClick={() => window.location.href = '/approve-participants'}
+                >
+                  <UserCheck className='w-4 h-4 mr-2' />
+                  Aprovar Participantes
+                </Button>
               </CardContent>
             </Card>
 
@@ -1880,7 +1884,7 @@ export default function OwnerDashboard() {
                     onCheckedChange={toggleHomeDisplay}
                   />
                 </div>
-                
+
                 <div className='flex items-center justify-between'>
                   <Label htmlFor="show-dashboard" className='text-sm font-medium'>
                     Exibir no Dashboard
@@ -1891,10 +1895,10 @@ export default function OwnerDashboard() {
                     onCheckedChange={toggleDashboardDisplay}
                   />
                 </div>
-                
+
                 <div className='border-t pt-3 space-y-3'>
                   <h4 className='text-sm font-medium text-muted-foreground'>Cards Disponíveis</h4>
-                  
+
                   <div className='flex items-center justify-between'>
                     <Label htmlFor="help-artist" className='text-sm font-medium flex items-center gap-2'>
                       <Heart className='w-4 h-4' />
@@ -1906,7 +1910,7 @@ export default function OwnerDashboard() {
                       onCheckedChange={toggleHelpArtistCard}
                     />
                   </div>
-                  
+
                   <div className='flex items-center justify-between'>
                     <Label htmlFor="coffee-dev" className='text-sm font-medium flex items-center gap-2'>
                       <Coffee className='w-4 h-4' />
@@ -1919,11 +1923,11 @@ export default function OwnerDashboard() {
                     />
                   </div>
                 </div>
-                
+
                 <div className='border-t pt-3'>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={resetToDefaults}
                     className='w-full'
                   >
@@ -1972,7 +1976,7 @@ export default function OwnerDashboard() {
               Faça as alterações necessárias nos dados do jogo.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="date" className="text-right dark:text-zinc-300">
@@ -1987,7 +1991,7 @@ export default function OwnerDashboard() {
                 />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="time" className="text-right dark:text-zinc-300">
                 Horário
@@ -2001,7 +2005,7 @@ export default function OwnerDashboard() {
                 />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="location" className="text-right dark:text-zinc-300">
                 Local
@@ -2014,7 +2018,7 @@ export default function OwnerDashboard() {
                 className="col-span-3 dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100 dark:placeholder-zinc-400"
               />
             </div>
-            
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="maxPlayers" className="text-right dark:text-zinc-300">
                 Vagas
@@ -2030,7 +2034,7 @@ export default function OwnerDashboard() {
               />
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={closeEditModal} className="dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700">
               <X className="w-4 h-4 mr-2" />
@@ -2056,7 +2060,7 @@ export default function OwnerDashboard() {
               Tem certeza que deseja excluir esta partida? Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
-          
+
           {matchToDelete && (
             <div className="py-4">
               <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -2068,7 +2072,7 @@ export default function OwnerDashboard() {
               </div>
             </div>
           )}
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={closeDeleteModal} className="dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700">
               <X className="w-4 h-4 mr-2" />
@@ -2094,7 +2098,7 @@ export default function OwnerDashboard() {
               Preencha os dados para criar uma nova partida.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -2116,7 +2120,7 @@ export default function OwnerDashboard() {
                 />
               </div>
             </div>
-            
+
             <div>
               <Label htmlFor="create-location" className="dark:text-zinc-300">Local (Endereço)</Label>
               <Input
@@ -2130,7 +2134,7 @@ export default function OwnerDashboard() {
                 💡 Cole aqui o endereço completo do Google Maps para facilitar a navegação
               </p>
             </div>
-            
+
             <div>
               <Label htmlFor="create-maxPlayers" className="dark:text-zinc-300">Número de Vagas</Label>
               <Input
@@ -2144,7 +2148,7 @@ export default function OwnerDashboard() {
               />
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={closeCreateModal} className="dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700">
               <X className="w-4 h-4 mr-2" />
@@ -2170,7 +2174,7 @@ export default function OwnerDashboard() {
               Informações completas sobre a partida selecionada.
             </DialogDescription>
           </DialogHeader>
-          
+
           {viewingMatch && (
             <div className="space-y-6">
               {/* Informações Básicas */}
@@ -2231,10 +2235,10 @@ export default function OwnerDashboard() {
                   </span>
                 </div>
                 <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-2">
-                  <div 
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
-                    style={{ 
-                      width: `${(viewingMatch.confirmedPlayers / viewingMatch.maxPlayers) * 100}%` 
+                  <div
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                    style={{
+                      width: `${(viewingMatch.confirmedPlayers / viewingMatch.maxPlayers) * 100}%`
                     }}
                   ></div>
                 </div>
@@ -2249,8 +2253,8 @@ export default function OwnerDashboard() {
                       Informações Importantes
                     </p>
                     <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-                      • Chegue 15 minutos antes do horário marcado<br/>
-                      • Traga água e equipamentos necessários<br/>
+                      • Chegue 15 minutos antes do horário marcado<br />
+                      • Traga água e equipamentos necessários<br />
                       • Em caso de chuva, verifique o grupo para atualizações
                     </p>
                   </div>
@@ -2258,7 +2262,7 @@ export default function OwnerDashboard() {
               </div>
             </div>
           )}
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={closeViewModal}>
               Fechar
@@ -2279,36 +2283,36 @@ export default function OwnerDashboard() {
               Seu apoio ajuda a manter e melhorar o Maestros FC. Escolha um valor que considera justo para contribuir com o projeto.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             {/* Valores Sugeridos */}
-             <div>
-               <Label className="text-sm font-medium text-zinc-700">Valores Sugeridos</Label>
-               <div className="grid grid-cols-3 gap-2 mt-2">
-                 {[2, 5, 10].map((amount) => (
-                   <Button
-                     key={amount}
-                     variant={selectedDonationAmount === amount ? "default" : "outline"}
-                     className={`h-12 ${selectedDonationAmount === amount ? 'bg-pink-500 hover:bg-pink-600' : 'hover:bg-pink-50'}`}
-                     onClick={() => handleDonationAmountSelect(amount)}
-                   >
-                     R$ {amount}
-                   </Button>
-                 ))}
-               </div>
-               <div className="grid grid-cols-3 gap-2 mt-2">
-                 {[15, 20, 30].map((amount) => (
-                   <Button
-                     key={amount}
-                     variant={selectedDonationAmount === amount ? "default" : "outline"}
-                     className={`h-12 ${selectedDonationAmount === amount ? 'bg-pink-500 hover:bg-pink-600' : 'hover:bg-pink-50'}`}
-                     onClick={() => handleDonationAmountSelect(amount)}
-                   >
-                     R$ {amount}
-                   </Button>
-                 ))}
-               </div>
-             </div>
+            <div>
+              <Label className="text-sm font-medium text-zinc-700">Valores Sugeridos</Label>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {[2, 5, 10].map((amount) => (
+                  <Button
+                    key={amount}
+                    variant={selectedDonationAmount === amount ? "default" : "outline"}
+                    className={`h-12 ${selectedDonationAmount === amount ? 'bg-pink-500 hover:bg-pink-600' : 'hover:bg-pink-50'}`}
+                    onClick={() => handleDonationAmountSelect(amount)}
+                  >
+                    R$ {amount}
+                  </Button>
+                ))}
+              </div>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {[15, 20, 30].map((amount) => (
+                  <Button
+                    key={amount}
+                    variant={selectedDonationAmount === amount ? "default" : "outline"}
+                    className={`h-12 ${selectedDonationAmount === amount ? 'bg-pink-500 hover:bg-pink-600' : 'hover:bg-pink-50'}`}
+                    onClick={() => handleDonationAmountSelect(amount)}
+                  >
+                    R$ {amount}
+                  </Button>
+                ))}
+              </div>
+            </div>
 
             {/* Valor Personalizado */}
             <div>
@@ -2361,7 +2365,7 @@ export default function OwnerDashboard() {
             <Button variant="outline" onClick={closeDonationModal}>
               Cancelar
             </Button>
-            <Button 
+            <Button
               onClick={processDonation}
               className="bg-pink-500 hover:bg-pink-600"
               disabled={!selectedDonationAmount && !customAmount}
@@ -2374,9 +2378,9 @@ export default function OwnerDashboard() {
       </Dialog>
 
       {/* Modal Completo de Convites */}
-      <CompleteInviteModal 
-        open={inviteModalOpen} 
-        onOpenChange={setInviteModalOpen} 
+      <CompleteInviteModal
+        open={inviteModalOpen}
+        onOpenChange={setInviteModalOpen}
       />
 
       {/* ============ MODAIS DE GERENCIAMENTO DE JOGADORES ============ */}
@@ -2393,7 +2397,7 @@ export default function OwnerDashboard() {
               Preencha as informações do jogador para adicioná-lo ao sistema.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             {/* Nome - Layout Mobile Optimizado */}
             <div className="space-y-2">
@@ -2470,22 +2474,20 @@ export default function OwnerDashboard() {
                 <button
                   type="button"
                   onClick={() => setPlayerForm(prev => ({ ...prev, shirt_size: 'G' }))}
-                  className={`p-3 border rounded-lg text-sm transition-colors ${
-                    playerForm.shirt_size === 'G' 
-                      ? 'bg-blue-500 text-white border-blue-500' 
+                  className={`p-3 border rounded-lg text-sm transition-colors ${playerForm.shirt_size === 'G'
+                      ? 'bg-blue-500 text-white border-blue-500'
                       : 'border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-600'
-                  }`}
+                    }`}
                 >
                   G
                 </button>
                 <button
                   type="button"
                   onClick={() => setPlayerForm(prev => ({ ...prev, shirt_size: 'GG' }))}
-                  className={`p-3 border rounded-lg text-sm transition-colors ${
-                    playerForm.shirt_size === 'GG' 
-                      ? 'bg-blue-500 text-white border-blue-500' 
+                  className={`p-3 border rounded-lg text-sm transition-colors ${playerForm.shirt_size === 'GG'
+                      ? 'bg-blue-500 text-white border-blue-500'
                       : 'border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-600'
-                  }`}
+                    }`}
                 >
                   GG
                 </button>
@@ -2497,7 +2499,7 @@ export default function OwnerDashboard() {
               <Label htmlFor="player-stars" className="text-sm font-medium block">
                 Nível de Habilidade
               </Label>
-              
+
               {/* Container das estrelas otimizado para mobile */}
               <div className="bg-zinc-50 dark:bg-zinc-700/50 rounded-lg p-3 space-y-3">
                 <div className="flex items-center justify-center gap-1 flex-wrap">
@@ -2506,25 +2508,24 @@ export default function OwnerDashboard() {
                       key={index}
                       type="button"
                       onClick={() => setPlayerForm(prev => ({ ...prev, stars: index + 1 }))}
-                      className={`p-2 transition-colors touch-manipulation rounded-lg ${
-                        index < playerForm.stars 
-                          ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' 
+                      className={`p-2 transition-colors touch-manipulation rounded-lg ${index < playerForm.stars
+                          ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20'
                           : 'text-zinc-300 dark:text-zinc-600 hover:text-yellow-400 hover:bg-zinc-100 dark:hover:bg-zinc-600'
-                      }`}
+                        }`}
                     >
-                      <Star 
-                        className={`w-4 h-4 sm:w-5 sm:h-5 ${index < playerForm.stars ? 'fill-current' : ''}`} 
+                      <Star
+                        className={`w-4 h-4 sm:w-5 sm:h-5 ${index < playerForm.stars ? 'fill-current' : ''}`}
                       />
                     </button>
                   ))}
                 </div>
-                
+
                 {/* Informações do nível */}
                 <div className="space-y-2 text-center">
                   <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                     Avaliação: <span className="text-yellow-600 dark:text-yellow-400 font-bold">{playerForm.stars}/10</span>
                   </div>
-                  
+
                   {/* Indicador visual para a faixa de avaliação */}
                   <div className="text-xs">
                     {(playerForm.stars <= 3) && (
@@ -2552,17 +2553,17 @@ export default function OwnerDashboard() {
               </div>
             </div>
           </div>
-          
+
           <DialogFooter className="gap-2 flex-col sm:flex-row">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowAddPlayerModal(false)}
               className="w-full sm:w-auto order-2 sm:order-1"
             >
               <X className="w-4 h-4 mr-2" />
               Cancelar
             </Button>
-            <Button 
+            <Button
               onClick={handleAddPlayer}
               className="w-full sm:w-auto order-1 sm:order-2"
             >
@@ -2585,7 +2586,7 @@ export default function OwnerDashboard() {
               Atualize as informações do jogador selecionado.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             {/* Nome - Layout Mobile Optimizado */}
             <div className="space-y-2">
@@ -2662,22 +2663,20 @@ export default function OwnerDashboard() {
                 <button
                   type="button"
                   onClick={() => setPlayerForm(prev => ({ ...prev, shirt_size: 'G' }))}
-                  className={`p-3 border rounded-lg text-sm transition-colors ${
-                    playerForm.shirt_size === 'G' 
-                      ? 'bg-blue-500 text-white border-blue-500' 
+                  className={`p-3 border rounded-lg text-sm transition-colors ${playerForm.shirt_size === 'G'
+                      ? 'bg-blue-500 text-white border-blue-500'
                       : 'border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-600'
-                  }`}
+                    }`}
                 >
                   G
                 </button>
                 <button
                   type="button"
                   onClick={() => setPlayerForm(prev => ({ ...prev, shirt_size: 'GG' }))}
-                  className={`p-3 border rounded-lg text-sm transition-colors ${
-                    playerForm.shirt_size === 'GG' 
-                      ? 'bg-blue-500 text-white border-blue-500' 
+                  className={`p-3 border rounded-lg text-sm transition-colors ${playerForm.shirt_size === 'GG'
+                      ? 'bg-blue-500 text-white border-blue-500'
                       : 'border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-600'
-                  }`}
+                    }`}
                 >
                   GG
                 </button>
@@ -2689,7 +2688,7 @@ export default function OwnerDashboard() {
               <Label htmlFor="edit-player-stars" className="text-sm font-medium block">
                 Nível de Habilidade
               </Label>
-              
+
               {/* Container das estrelas otimizado para mobile */}
               <div className="bg-zinc-50 dark:bg-zinc-700/50 rounded-lg p-3 space-y-3">
                 <div className="flex items-center justify-center gap-1 flex-wrap">
@@ -2698,25 +2697,24 @@ export default function OwnerDashboard() {
                       key={index}
                       type="button"
                       onClick={() => setPlayerForm(prev => ({ ...prev, stars: index + 1 }))}
-                      className={`p-2 transition-colors touch-manipulation rounded-lg ${
-                        index < playerForm.stars 
-                          ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' 
+                      className={`p-2 transition-colors touch-manipulation rounded-lg ${index < playerForm.stars
+                          ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20'
                           : 'text-zinc-300 dark:text-zinc-600 hover:text-yellow-400 hover:bg-zinc-100 dark:hover:bg-zinc-600'
-                      }`}
+                        }`}
                     >
-                      <Star 
-                        className={`w-4 h-4 sm:w-5 sm:h-5 ${index < playerForm.stars ? 'fill-current' : ''}`} 
+                      <Star
+                        className={`w-4 h-4 sm:w-5 sm:h-5 ${index < playerForm.stars ? 'fill-current' : ''}`}
                       />
                     </button>
                   ))}
                 </div>
-                
+
                 {/* Informações do nível */}
                 <div className="space-y-2 text-center">
                   <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                     Avaliação: <span className="text-yellow-600 dark:text-yellow-400 font-bold">{playerForm.stars}/10</span>
                   </div>
-                  
+
                   {/* Indicador visual para a faixa de avaliação */}
                   <div className="text-xs">
                     {(playerForm.stars <= 3) && (
@@ -2744,18 +2742,18 @@ export default function OwnerDashboard() {
               </div>
             </div>
           </div>
-          
+
           {/* Footer otimizado para mobile */}
           <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowEditPlayerModal(false)}
               className="w-full sm:w-auto order-2 sm:order-1"
             >
               <X className="w-4 h-4 mr-2" />
               Cancelar
             </Button>
-            <Button 
+            <Button
               onClick={handleEditPlayer}
               className="w-full sm:w-auto order-1 sm:order-2"
             >
@@ -2778,35 +2776,34 @@ export default function OwnerDashboard() {
               Tem certeza que deseja excluir este jogador? Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
-          
+
           {playerToDelete && (
             <div className="py-4">
               <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                 <h3 className="font-semibold text-red-900 dark:text-red-300">{playerToDelete.name}</h3>
                 <p className="text-sm text-red-700 dark:text-red-400">{playerToDelete.email}</p>
                 <div className="flex items-center gap-2 mt-2">
-                  <Badge 
+                  <Badge
                     variant="outline"
-                    className={`text-xs ${
-                      playerToDelete.role === 'owner' ? 'bg-purple-100 text-purple-800' :
-                      playerToDelete.role === 'admin' ? 'bg-blue-100 text-blue-800' :
-                      playerToDelete.role === 'aux' ? 'bg-green-100 text-green-800' :
-                      playerToDelete.role === 'mensalista' ? 'bg-orange-100 text-orange-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}
+                    className={`text-xs ${playerToDelete.role === 'owner' ? 'bg-purple-100 text-purple-800' :
+                        playerToDelete.role === 'admin' ? 'bg-blue-100 text-blue-800' :
+                          playerToDelete.role === 'aux' ? 'bg-green-100 text-green-800' :
+                            playerToDelete.role === 'mensalista' ? 'bg-orange-100 text-orange-800' :
+                              'bg-yellow-100 text-yellow-800'
+                      }`}
                   >
                     {playerToDelete.role === 'owner' ? '👑 Owner' :
-                     playerToDelete.role === 'admin' ? '🛡️ Admin' :
-                     playerToDelete.role === 'aux' ? '⚡ Auxiliar' :
-                     playerToDelete.role === 'mensalista' ? '⭐ Mensalista' : 
-                     '🔹 Diarista'}
+                      playerToDelete.role === 'admin' ? '🛡️ Admin' :
+                        playerToDelete.role === 'aux' ? '⚡ Auxiliar' :
+                          playerToDelete.role === 'mensalista' ? '⭐ Mensalista' :
+                            '🔹 Diarista'}
                   </Badge>
                   <span className="text-xs text-red-600 dark:text-red-400">{playerToDelete.position}</span>
                 </div>
               </div>
             </div>
           )}
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeletePlayerModal(false)}>
               <X className="w-4 h-4 mr-2" />
@@ -2832,7 +2829,7 @@ export default function OwnerDashboard() {
               Esta ação irá remover permanentemente todos os jogadores do sistema.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="py-4 space-y-4">
             {/* Estatísticas dos jogadores */}
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4">
