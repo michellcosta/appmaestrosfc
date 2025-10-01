@@ -1,158 +1,234 @@
+import React from 'react';
 import { useAuth } from '@/auth/OfflineAuthProvider';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-    BarChart3,
-    Crown,
-    Settings,
-    Shield,
-    Trophy,
-    Users
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Users, 
+  Trophy, 
+  DollarSign, 
+  Settings, 
+  Crown,
+  UserCheck,
+  BarChart3,
+  Calendar,
+  Shield
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function OwnerDashboardSimple() {
-    const { user } = useAuth();
-    const navigate = useNavigate();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-    return (
-        <div className="min-h-screen bg-background p-6">
-            <div className="max-w-7xl mx-auto space-y-6">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-foreground">
-                            Dashboard do Proprietário
-                        </h1>
-                        <p className="text-muted-foreground mt-2">
-                            Bem-vindo, {user?.user_metadata?.full_name || 'Proprietário'}!
-                        </p>
-                    </div>
-                    <Badge variant="secondary" className="flex items-center gap-2">
-                        <Crown className="h-4 w-4" />
-                        Proprietário
-                    </Badge>
-                </div>
+  const handleNavigation = (path: string) => {
+    navigate(path);
+  };
 
-                {/* Quick Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/manage-players')}>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Gerenciar Jogadores</CardTitle>
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-xs text-muted-foreground">
-                                Adicionar, editar e gerenciar jogadores
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                     <Card className="cursor-pointer hover:shadow-md transition-shadow opacity-50" onClick={() => alert('Sistema de Jogo em desenvolvimento com Convex')}>
-                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                             <CardTitle className="text-sm font-medium">Sistema de Jogo</CardTitle>
-                             <Trophy className="h-4 w-4 text-muted-foreground" />
-                         </CardHeader>
-                         <CardContent>
-                             <p className="text-xs text-muted-foreground">
-                                 Nexus Play - Em desenvolvimento (Convex)
-                             </p>
-                         </CardContent>
-                     </Card>
-
-                    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/list-users')}>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Listar Usuários</CardTitle>
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-xs text-muted-foreground">
-                                Ver todos os usuários do sistema
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/ranking')}>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Ranking</CardTitle>
-                            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-xs text-muted-foreground">
-                                Ver ranking de jogadores
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* System Status */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Shield className="h-5 w-5" />
-                            Status do Sistema
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-green-600">Online</div>
-                                <div className="text-sm text-muted-foreground">Sistema</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-blue-600">Ativo</div>
-                                <div className="text-sm text-muted-foreground">Convex</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-purple-600">Funcionando</div>
-                                <div className="text-sm text-muted-foreground">Nexus Play</div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Quick Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Jogadores Ativos</CardTitle>
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">0</div>
-                            <p className="text-xs text-muted-foreground">
-                                +0 desde ontem
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Partidas</CardTitle>
-                            <Trophy className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">0</div>
-                            <p className="text-xs text-muted-foreground">
-                                +0 esta semana
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Sistema</CardTitle>
-                            <Settings className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-green-600">100%</div>
-                            <p className="text-xs text-muted-foreground">
-                                Funcionando perfeitamente
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Bem-vindo, {user?.user_metadata?.full_name || 'Owner'}!
+              </h1>
+              <p className="text-gray-600 mt-2">
+                Dashboard do proprietário - Maestros FC
+              </p>
             </div>
+            <div className="flex items-center gap-2">
+              <Crown className="h-6 w-6 text-yellow-500" />
+              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                Owner
+              </Badge>
+            </div>
+          </div>
         </div>
-    );
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-white shadow-sm border-0">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Jogadores</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">
+                Total de jogadores
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white shadow-sm border-0">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Partidas</CardTitle>
+              <Trophy className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">
+                Partidas realizadas
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white shadow-sm border-0">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Finanças</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">R$ 0,00</div>
+              <p className="text-xs text-muted-foreground">
+                Saldo atual
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white shadow-sm border-0">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ranking</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">
+                Pontos totais
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Gerenciar Jogadores */}
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Gerenciar Jogadores</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground mb-4">
+                Adicionar, editar e gerenciar jogadores do time
+              </p>
+              <Button 
+                onClick={() => handleNavigation('/manage-players')}
+                className="w-full"
+              >
+                Acessar
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Sistema de Jogo */}
+          <Card className="cursor-pointer hover:shadow-md transition-shadow opacity-50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Sistema de Jogo</CardTitle>
+              <Trophy className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground mb-4">
+                Nexus Play - Em desenvolvimento
+              </p>
+              <Button 
+                disabled
+                className="w-full"
+              >
+                Em breve
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Finanças */}
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Finanças</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground mb-4">
+                Gerenciar receitas e despesas do time
+              </p>
+              <Button 
+                onClick={() => handleNavigation('/finance')}
+                className="w-full"
+              >
+                Acessar
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Convites */}
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Convites</CardTitle>
+              <UserCheck className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground mb-4">
+                Gerenciar convites e aprovações
+              </p>
+              <Button 
+                onClick={() => handleNavigation('/invites')}
+                className="w-full"
+              >
+                Acessar
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Configurações */}
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Configurações</CardTitle>
+              <Settings className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground mb-4">
+                Configurar sistema e permissões
+              </p>
+              <Button 
+                onClick={() => handleNavigation('/settings')}
+                className="w-full"
+              >
+                Acessar
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Administradores */}
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Administradores</CardTitle>
+              <Shield className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground mb-4">
+                Gerenciar administradores do sistema
+              </p>
+              <Button 
+                onClick={() => handleNavigation('/manage-admins')}
+                className="w-full"
+              >
+                Acessar
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Status */}
+        <div className="mt-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-sm text-green-800">
+              Sistema funcionando corretamente
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
