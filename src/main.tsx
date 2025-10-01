@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import AppRouter from './AppRouter'
-import { ConvexClientProvider } from './ConvexProvider'
+// import { ConvexClientProvider } from './ConvexProvider'
 import './index.css'
 
 // Sentry desabilitado temporariamente para evitar tela branca
@@ -12,9 +12,9 @@ import './index.css'
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <ConvexClientProvider>
+      {/* <ConvexClientProvider> */}
         <AppRouter />
-      </ConvexClientProvider>
+      {/* </ConvexClientProvider> */}
     </BrowserRouter>
   </React.StrictMode>,
 )
