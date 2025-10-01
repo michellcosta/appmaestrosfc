@@ -6,29 +6,43 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { supabase } from '@/lib/supabase';
 import {
     BarChart3,
+    Calendar,
+    Clock,
     Crown,
     DollarSign,
+    LogOut,
+    MapPin,
+    Plus,
     Settings,
     Shield,
     UserCheck,
-    Users,
-    Plus,
-    LogOut
+    Users
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { useGamesStore } from '@/store/gamesStore';
 
 export default function OwnerDashboardSimple() {
     const { user, signOut } = useAuth();
     const navigate = useNavigate();
+    const { addMatch } = useGamesStore();
     const [players, setPlayers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteRole, setInviteRole] = useState('player');
+    
+    // Estados para criação de jogos
+    const [showCreateGameModal, setShowCreateGameModal] = useState(false);
+    const [createForm, setCreateForm] = useState({
+        date: '',
+        time: '',
+        location: '',
+        maxPlayers: 22
+    });
 
     useEffect(() => {
         loadPlayers();
@@ -73,6 +87,58 @@ export default function OwnerDashboardSimple() {
             setInviteRole('player');
         } catch (error) {
             console.error('Erro ao criar convite:', error);
+        }
+    };
+
+    // Funções para criação de jogos
+    const openCreateGameModal = () => {
+        // Definir data padrão para hoje
+        const today = new Date();
+        const day = today.getDate().toString().padStart(2, '0');
+        const month = (today.getMonth() + 1).toString().padStart(2, '0');
+        const year = today.getFullYear();
+        const defaultDate = `${day}/${month}/${year}`;
+        
+        setCreateForm({
+            date: defaultDate,
+            time: '20:00',
+            location: 'R. Renato Bazin, 705-751 - Laranjal, São Gonçalo - RJ',
+            maxPlayers: 22
+        });
+        setShowCreateGameModal(true);
+    };
+
+    const closeCreateGameModal = () => {
+        setShowCreateGameModal(false);
+        setCreateForm({
+            date: '',
+            time: '',
+            location: '',
+            maxPlayers: 22
+        });
+    };
+
+    const handleCreateGame = () => {
+        try {
+            // Validar campos obrigatórios
+            if (!createForm.date || !createForm.time || !createForm.location) {
+                alert('Por favor, preencha todos os campos obrigatórios.');
+                return;
+            }
+
+            // Criar o jogo
+            addMatch({
+                date: createForm.date,
+                time: createForm.time,
+                location: createForm.location,
+                maxPlayers: createForm.maxPlayers
+            });
+
+            closeCreateGameModal();
+            alert('Jogo criado com sucesso!');
+        } catch (error) {
+            console.error('Erro ao criar jogo:', error);
+            alert('Erro ao criar jogo. Tente novamente.');
         }
     };
 
@@ -195,6 +261,26 @@ export default function OwnerDashboardSimple() {
                         </CardContent>
                     </Card>
 
+                    {/* Criar Jogo */}
+                    <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Criar Jogo</CardTitle>
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-xs text-muted-foreground mb-4">
+                                Criar nova partida para o time
+                            </p>
+                            <Button
+                                onClick={openCreateGameModal}
+                                className="w-full"
+                            >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Criar Jogo
+                            </Button>
+                        </CardContent>
+                    </Card>
+
 
                     {/* Finanças */}
                     <Card className="cursor-pointer hover:shadow-md transition-shadow">
@@ -313,6 +399,77 @@ export default function OwnerDashboardSimple() {
                             </Button>
                             <Button onClick={handleCreateInvite}>
                                 Enviar Convite
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Modal de Criação de Jogo */}
+                <Dialog open={showCreateGameModal} onOpenChange={setShowCreateGameModal}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <Calendar className="w-5 h-5" />
+                                Criar Nova Partida
+                            </DialogTitle>
+                            <DialogDescription>
+                                Preencha os dados da nova partida.
+                            </DialogDescription>
+                        </DialogHeader>
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <Label htmlFor="date">Data *</Label>
+                                <Input
+                                    id="date"
+                                    type="text"
+                                    placeholder="DD/MM/AAAA"
+                                    value={createForm.date}
+                                    onChange={(e) => setCreateForm(prev => ({ ...prev, date: e.target.value }))}
+                                />
+                            </div>
+                            
+                            <div>
+                                <Label htmlFor="time">Horário *</Label>
+                                <Input
+                                    id="time"
+                                    type="time"
+                                    value={createForm.time}
+                                    onChange={(e) => setCreateForm(prev => ({ ...prev, time: e.target.value }))}
+                                />
+                            </div>
+                            
+                            <div>
+                                <Label htmlFor="location">Local *</Label>
+                                <Input
+                                    id="location"
+                                    type="text"
+                                    placeholder="Endereço da partida"
+                                    value={createForm.location}
+                                    onChange={(e) => setCreateForm(prev => ({ ...prev, location: e.target.value }))}
+                                />
+                            </div>
+                            
+                            <div>
+                                <Label htmlFor="maxPlayers">Máximo de Jogadores</Label>
+                                <Input
+                                    id="maxPlayers"
+                                    type="number"
+                                    min="10"
+                                    max="30"
+                                    value={createForm.maxPlayers}
+                                    onChange={(e) => setCreateForm(prev => ({ ...prev, maxPlayers: parseInt(e.target.value) || 22 }))}
+                                />
+                            </div>
+                        </div>
+                        
+                        <DialogFooter>
+                            <Button variant="outline" onClick={closeCreateGameModal}>
+                                Cancelar
+                            </Button>
+                            <Button onClick={handleCreateGame}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Criar Partida
                             </Button>
                         </DialogFooter>
                     </DialogContent>
