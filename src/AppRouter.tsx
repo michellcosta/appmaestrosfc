@@ -37,7 +37,7 @@ const ConfigureAccess = React.lazy(() => import(/* webpackChunkName: "pages-admi
 const ApproveParticipants = React.lazy(() => import(/* webpackChunkName: "pages-admin-approve" */ '@/pages/ApproveParticipants'));
 const ManagePlayers = React.lazy(() => import(/* webpackChunkName: "pages-manage-players" */ '@/pages/ManagePlayersSimple'));
 const ListUsers = React.lazy(() => import(/* webpackChunkName: "pages-list-users" */ '@/pages/ListUsers'));
-const Jogo = React.lazy(() => import(/* webpackChunkName: "pages-jogo" */ '@/pages/Jogo'));
+const Jogo = React.lazy(() => import(/* webpackChunkName: "pages-jogo" */ '@/pages/JogoWorking'));
 
 export default function AppRouter() {
   // Initialize performance monitoring

@@ -4,6 +4,9 @@ import { api } from "../../convex/_generated/api";
 
 const USER = "owner";
 
+// Debug da URL do Convex
+console.log("VITE_CONVEX_URL =", import.meta.env.VITE_CONVEX_URL);
+
 export default function Jogo() {
     const players = useQuery(api.players.listActive, {}) ?? [];
     const create = useMutation(api.matches.create);
