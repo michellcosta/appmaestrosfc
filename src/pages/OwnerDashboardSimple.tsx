@@ -7,23 +7,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/lib/supabase';
+import { useGamesStore } from '@/store/gamesStore';
 import {
     BarChart3,
     Calendar,
-    Clock,
     Crown,
     DollarSign,
     LogOut,
-    MapPin,
     Plus,
     Settings,
     Shield,
+    Trophy,
     UserCheck,
     Users
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useGamesStore } from '@/store/gamesStore';
 
 export default function OwnerDashboardSimple() {
     const { user, signOut } = useAuth();
@@ -34,7 +33,7 @@ export default function OwnerDashboardSimple() {
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteRole, setInviteRole] = useState('player');
-    
+
     // Estados para criação de jogos
     const [showCreateGameModal, setShowCreateGameModal] = useState(false);
     const [createForm, setCreateForm] = useState({
@@ -98,7 +97,7 @@ export default function OwnerDashboardSimple() {
         const month = (today.getMonth() + 1).toString().padStart(2, '0');
         const year = today.getFullYear();
         const defaultDate = `${day}/${month}/${year}`;
-        
+
         setCreateForm({
             date: defaultDate,
             time: '20:00',
@@ -416,7 +415,7 @@ export default function OwnerDashboardSimple() {
                                 Preencha os dados da nova partida.
                             </DialogDescription>
                         </DialogHeader>
-                        
+
                         <div className="space-y-4">
                             <div>
                                 <Label htmlFor="date">Data *</Label>
@@ -428,7 +427,7 @@ export default function OwnerDashboardSimple() {
                                     onChange={(e) => setCreateForm(prev => ({ ...prev, date: e.target.value }))}
                                 />
                             </div>
-                            
+
                             <div>
                                 <Label htmlFor="time">Horário *</Label>
                                 <Input
@@ -438,7 +437,7 @@ export default function OwnerDashboardSimple() {
                                     onChange={(e) => setCreateForm(prev => ({ ...prev, time: e.target.value }))}
                                 />
                             </div>
-                            
+
                             <div>
                                 <Label htmlFor="location">Local *</Label>
                                 <Input
@@ -449,7 +448,7 @@ export default function OwnerDashboardSimple() {
                                     onChange={(e) => setCreateForm(prev => ({ ...prev, location: e.target.value }))}
                                 />
                             </div>
-                            
+
                             <div>
                                 <Label htmlFor="maxPlayers">Máximo de Jogadores</Label>
                                 <Input
@@ -462,7 +461,7 @@ export default function OwnerDashboardSimple() {
                                 />
                             </div>
                         </div>
-                        
+
                         <DialogFooter>
                             <Button variant="outline" onClick={closeCreateGameModal}>
                                 Cancelar
