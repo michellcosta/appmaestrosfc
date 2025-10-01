@@ -1,13 +1,31 @@
-# NEXUS PLAY — TASKPACK (Convex, Vite/React)
-# Objetivo: cadastrar jogadores → sortear times → partida ao vivo (gols/assistências) → ranking, sem SQL.
-# IMPORTANTE: Explique qualquer erro e proponha correção antes de prosseguir.
+# NEXUS PLAY — TASKPACK COMPLETO (Convex, Vite/React)
+# Funções: Jogadores → Sorteio de times → Partida ao vivo (gols) → Ranking
+# Inclui correção da tela branca (CONFIGURAR CONVEX).
 
 ====================================================
-= 0) CONTEXTO DO PROJETO (verificado no repo)      =
+= 0) PROBLEMA COMUM: TELA BRANCA                   =
 ====================================================
-- Este projeto é Vite/React (existe vite.config.ts).
-- Deploy existente na Vercel (existe vercel.json). 
-- NÃO mexer em Supabase/SQL neste taskpack.
+Causa: variável de ambiente VITE_CONVEX_URL não configurada.
+
+### Solução rápida:
+1) Rodar: npx convex dev
+   -> Copiar URL gerada (ex.: https://xxxx.convex.cloud)
+
+2) Criar/atualizar arquivo .env na raiz:
+----------------------------------------------------
+# Convex
+VITE_CONVEX_URL=https://xxxx.convex.cloud
+
+# Supabase (já existente no projeto)
+VITE_SUPABASE_URL=https://autxxmhtadimwvprfsov.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+----------------------------------------------------
+
+3) Reiniciar servidor: npm run dev
+
+Resultado esperado:
+- Tela branca resolvida
+- Página /jogo acessível
 
 ====================================================
 = 1) DEPENDÊNCIA & DEV SERVER DO CONVEX            =
@@ -15,25 +33,19 @@
 1) Instalar Convex:
    npm i convex
 
-2) Em um terminal SEPARADO, iniciar o dev do Convex:
+2) Em terminal separado:
    npx convex dev
-   -> Copie a URL exibida (ex.: https://xxxx.convex.cloud)
 
-3) Variáveis de ambiente:
-   - Em .env (Vite/CRA):
-     VITE_CONVEX_URL=<URL_DO_CONVEX>
-   Se não existir .env, CRIAR.
+3) Variáveis de ambiente já ajustadas conforme seção 0.
 
 ====================================================
 = 2) PROVIDER DO CONVEX (src/ConvexProvider.tsx)   =
 ====================================================
-Criar arquivo: src/ConvexProvider.tsx (se não existir) com:
-
 --- src/ConvexProvider.tsx ---
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 
 const url = (import.meta as any)?.env?.VITE_CONVEX_URL;
-if (!url) console.warn("⚠ VITE_CONVEX_URL não configurada no .env");
+if (!url) console.warn("⚠️ VITE_CONVEX_URL não configurada (.env)");
 
 const client = new ConvexReactClient(String(url || ""));
 
@@ -42,14 +54,12 @@ export default function Provider({ children }: { children: React.ReactNode }) {
 }
 --- end ---
 
-Envolver a aplicação com este Provider:
-- Em src/main.tsx (ou equivalente): importe o Provider e envolva <App /> com <Provider>.
+Integrar em src/main.tsx:
+envolver <App /> com <Provider>.
 
 ====================================================
-= 3) BACKEND (CONVEX) — CRIAR PASTA E ARQUIVOS     =
+= 3) BACKEND (CONVEX) — ARQUIVOS EM /convex        =
 ====================================================
-Criar/atualizar os arquivos abaixo em /convex.
-
 --- convex/schema.ts ---
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
@@ -63,7 +73,7 @@ export default defineSchema({
   }).index("by_active", ["active"]),
 
   matches: defineTable({
-    status: v.string(), // "pending" | "live" | "ended"
+    status: v.string(),
     createdBy: v.string(),
     createdAt: v.number(),
     startedAt: v.optional(v.number()),
@@ -73,16 +83,16 @@ export default defineSchema({
   matchPlayers: defineTable({
     matchId: v.id("matches"),
     playerId: v.id("players"),
-    team: v.string(), // "A" | "B"
+    team: v.string(),
   }).index("by_match", ["matchId"])
     .index("by_team", ["matchId","team"]),
 
   events: defineTable({
     matchId: v.id("matches"),
-    type: v.string(), // "goal"
+    type: v.string(),
     scorerId: v.id("players"),
     assistId: v.optional(v.id("players")),
-    team: v.string(), // "A" | "B"
+    team: v.string(),
     at: v.number(),
     createdBy: v.string(),
   }).index("by_match", ["matchId"]),
@@ -193,20 +203,9 @@ export const rankingTop = query({
 });
 --- end ---
 
-Após criar os arquivos acima, CONFIRMAR que o terminal de npx convex dev não mostra erros. Se mostrar, corrigir antes de seguir.
-
 ====================================================
-= 4) PÁGINA /jogo (UI mínima)                      =
+= 4) PÁGINA /jogo (src/pages/Jogo.tsx)             =
 ====================================================
-Criar página Jogo. Detecte se há React Router:
-- Se existir src/main.tsx com BrowserRouter/Router: 
-  - Criar src/pages/Jogo.tsx (conteúdo abaixo) e registrar rota /jogo.
-- Se NÃO houver router:
-  - Criar src/pages/Jogo.tsx e *modificar* src/main.tsx para:
-    - Importar Jogo e, se window.location.pathname === "/jogo", renderizar <Jogo/>; senão renderizar <App/>.
-    - (Explicar no commit o ajuste simples de routing.)
-
-Conteúdo de src/pages/Jogo.tsx:
 --- src/pages/Jogo.tsx ---
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
@@ -234,7 +233,7 @@ export default function Jogo() {
   const onStart = async () => {
     if (players.length < 2) return alert("Adicione pelo menos 2 jogadores");
     const id = await create({ userId: USER });
-    await draw({ matchId: id, playerIds: players.map(p => (p as any)._id) });
+    await draw({ matchId: id, playerIds: players.map((p:any) => p._id) });
     await start({ matchId: id });
     setMatchId(id);
   };
@@ -273,64 +272,4 @@ export default function Jogo() {
   );
 }
 
-function Team({ live, team, matchId, addGoal }: any) {
-  const roster = live.roster.filter((r:any)=>r.team===team);
-  return (
-    <div>
-      <h4>Time {team}</h4>
-      {roster.map((r:any)=>(
-        <button key={r._id} onClick={()=>addGoal({ matchId, scorerId: r.playerId, team, userId: "owner" })}>
-          Gol — #{r.playerId.id}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function Ranking() {
-  const list = useQuery(api.events.rankingTop, { limit: 100 }) ?? [];
-  return (
-    <section style={card}>
-      <h3>Ranking</h3>
-      <ol>{list.map((r:any)=> <li key={r.id.id}>{r.name} — {r.goals} G • {r.assists} A</li>)}</ol>
-    </section>
-  );
-}
-
-const card: React.CSSProperties = { margin:"16px 0", padding:12, border:"1px solid #eee", borderRadius:12 };
---- end ---
-
-Integração do Provider (se ainda não estiver ativo):
-- Em src/main.tsx: importar Provider de "src/ConvexProvider" e envolver <App /> com <Provider>.
-
-====================================================
-= 5) BUILD LOCAL                                   =
-====================================================
-- Executar: npm run build
-- Se der erro de caminho do api gerado pelo Convex, ajustar o import relativo em Jogo.tsx:
-  - "../../convex/_generated/api" → subir/baixar níveis conforme estrutura real.
-
-====================================================
-= 6) GIT & PULL REQUEST                            =
-====================================================
-- Criar branch se estiver em main/dev:
-  git checkout -b feature/nexus-jogo
-- Commit:
-  git add -A
-  git commit -m "feat(nexus): jogadores/sorteio/ao-vivo/ranking (Convex)"
-- Push:
-  git push -u origin feature/nexus-jogo
-- Abrir PR para a branch dev com descrição:
-  - Jogadores (add/list)
-  - Sorteio times
-  - Partida ao vivo (placar)
-  - Ranking (gols/assist)
-
-====================================================
-= 7) TESTE MANUAL                                  =
-====================================================
-- Abrir /jogo
-- Adicionar 8–20 jogadores
-- Sortear & iniciar (cria match)
-- Clicar "Gol" e ver placar ao vivo
-- Conferir Ranking refletindo gols/assist
+function Team({ live, team
