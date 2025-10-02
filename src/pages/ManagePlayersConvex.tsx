@@ -173,6 +173,14 @@ export default function ManagePlayersConvex() {
         players: players.slice(0, 2) // Mostrar apenas os 2 primeiros para debug
     });
 
+    // Debug: Log quando a lista de jogadores muda
+    useEffect(() => {
+        console.log('🎯 Lista de jogadores atualizada:', players.length, 'jogadores');
+        if (players.length > 0) {
+            console.log('👥 Primeiro jogador:', players[0]);
+        }
+    }, [players]);
+
     // Estados para UI
     const [searchTerm, setSearchTerm] = useState('');
     const [filterRole, setFilterRole] = useState('all');
@@ -528,15 +536,39 @@ export default function ManagePlayersConvex() {
                                         {searchTerm ? 'Tente ajustar os filtros de busca.' : 'Comece criando seu primeiro jogador.'}
                                     </p>
                                     {!searchTerm && (
-                                        <Button onClick={openCreateModal} className="bg-green-600 hover:bg-green-700">
-                                            <Plus className="h-4 w-4 mr-2" />
-                                            Criar Primeiro Jogador
-                                        </Button>
+                                        <div className="space-y-2">
+                                            <Button onClick={openCreateModal} className="bg-green-600 hover:bg-green-700 w-full">
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Criar Primeiro Jogador
+                                            </Button>
+                                            
+                                            {/* Botão de teste */}
+                                            <Button 
+                                                onClick={() => {
+                                                    console.log('🧪 BOTÃO DE TESTE CLICADO!');
+                                                    alert('Botão de teste funcionando!');
+                                                }}
+                                                className="bg-blue-600 hover:bg-blue-700 w-full"
+                                            >
+                                                🧪 Teste de Clique
+                                            </Button>
+                                        </div>
                                     )}
                                 </CardContent>
                             </Card>
                         ) : (
                             <div className="space-y-3">
+                                {/* Botão de teste quando há jogadores */}
+                                <Button 
+                                    onClick={() => {
+                                        console.log('🧪 BOTÃO DE TESTE (COM JOGADORES) CLICADO!');
+                                        alert('Botão de teste funcionando!');
+                                    }}
+                                    className="bg-purple-600 hover:bg-purple-700 w-full mb-4"
+                                >
+                                    🧪 Teste de Clique (Com Jogadores)
+                                </Button>
+                                
                                 {filteredPlayers.map((player) => (
                                     <Card key={player._id} className="bg-white shadow-sm">
                                         <CardContent className="p-4">
