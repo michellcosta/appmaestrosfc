@@ -433,20 +433,30 @@ export default function HomePage() {
 
   // Função para executar o sorteio dentro do modal
   const performTeamDraw = async () => {
-    if (!currentDrawMatchId) return;
+    console.log('🎲 DEBUG: performTeamDraw chamada!');
+    console.log('currentDrawMatchId:', currentDrawMatchId);
+    console.log('playersPerTeam:', playersPerTeam);
+    
+    if (!currentDrawMatchId) {
+      console.log('❌ DEBUG: currentDrawMatchId não definido');
+      return;
+    }
 
     // Inicia o efeito de piscar
     setIsBlinking(prev => ({ ...prev, [currentDrawMatchId]: true }));
 
     try {
+      console.log('🔄 DEBUG: Chamando executeTeamDraw...');
       // Simular delay para melhor experiência visual
       await new Promise(resolve => setTimeout(resolve, 1500));
       await executeTeamDraw(currentDrawMatchId, playersPerTeam);
+      console.log('✅ DEBUG: executeTeamDraw concluído com sucesso');
       setTeamDrawCompleted(prev => ({ ...prev, [currentDrawMatchId]: true }));
 
       // Para o efeito de piscar após completar
       setIsBlinking(prev => ({ ...prev, [currentDrawMatchId]: false }));
     } catch (err: any) {
+      console.error('❌ DEBUG: Erro no performTeamDraw:', err);
       error(err.message || 'Erro ao sortear times');
       // Para o efeito de piscar em caso de erro
       setIsBlinking(prev => ({ ...prev, [currentDrawMatchId]: false }));
