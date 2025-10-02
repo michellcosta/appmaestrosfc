@@ -315,6 +315,7 @@ export default function ManagePlayersConvex() {
 
     // Funções para visualização
     const openViewModal = (player: Player) => {
+        console.log('🔍 Abrindo modal de visualização para:', player);
         setSelectedPlayer(player);
         setShowViewModal(true);
     };
@@ -327,7 +328,7 @@ export default function ManagePlayersConvex() {
     // Função para alternar aprovação
     const toggleApproval = async (player: Player) => {
         try {
-
+            console.log('🔄 Alternando aprovação para:', player);
             await togglePlayerApproval({ id: player._id });
             alert(`✅ Jogador ${!player.approved ? 'aprovado' : 'desaprovado'} com sucesso!`);
         } catch (error: any) {
@@ -338,6 +339,7 @@ export default function ManagePlayersConvex() {
 
     // Funções para exclusão
     const openDeleteModal = (player: Player) => {
+        console.log('🗑️ Abrindo modal de exclusão para:', player);
         setSelectedPlayer(player);
         setShowDeleteModal(true);
     };
