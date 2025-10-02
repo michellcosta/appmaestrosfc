@@ -165,21 +165,6 @@ export default function ManagePlayersConvex() {
     // Hook personalizado para Convex com fallback
     const { convexReady, players, loading, createPlayer, updatePlayer, removePlayer, togglePlayerApproval } = useConvexSafe();
 
-    // Debug: Log do estado atual
-    console.log('📊 Estado atual:', {
-        playersCount: players.length,
-        loading,
-        convexReady,
-        players: players.slice(0, 2) // Mostrar apenas os 2 primeiros para debug
-    });
-
-    // Debug: Log quando a lista de jogadores muda
-    useEffect(() => {
-        console.log('🎯 Lista de jogadores atualizada:', players.length, 'jogadores');
-        if (players.length > 0) {
-            console.log('👥 Primeiro jogador:', players[0]);
-        }
-    }, [players]);
 
     // Estados para UI
     const [searchTerm, setSearchTerm] = useState('');
@@ -331,7 +316,6 @@ export default function ManagePlayersConvex() {
 
     // Funções para visualização
     const openViewModal = (player: Player) => {
-        console.log('🔍 Abrindo modal de visualização para:', player);
         setSelectedPlayer(player);
         setShowViewModal(true);
     };
@@ -344,7 +328,6 @@ export default function ManagePlayersConvex() {
     // Função para alternar aprovação
     const toggleApproval = async (player: Player) => {
         try {
-            console.log('🔄 Alternando aprovação para:', player);
             await togglePlayerApproval({ id: player._id });
             alert(`✅ Jogador ${!player.approved ? 'aprovado' : 'desaprovado'} com sucesso!`);
         } catch (error: any) {
@@ -355,7 +338,6 @@ export default function ManagePlayersConvex() {
 
     // Funções para exclusão
     const openDeleteModal = (player: Player) => {
-        console.log('🗑️ Abrindo modal de exclusão para:', player);
         setSelectedPlayer(player);
         setShowDeleteModal(true);
     };
@@ -429,22 +411,6 @@ export default function ManagePlayersConvex() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* BOTÃO DE TESTE GLOBAL */}
-            <div className="bg-red-500 text-white p-4 text-center">
-                <button
-                    onClick={() => {
-                        console.log('🚨 BOTÃO DE TESTE GLOBAL CLICADO!');
-                        alert('BOTÃO GLOBAL FUNCIONANDO!');
-                    }}
-                    className="bg-yellow-500 text-black px-4 py-2 rounded font-bold"
-                >
-                    🚨 TESTE GLOBAL - CLIQUE AQUI
-                </button>
-                <div className="mt-2 text-sm">
-                    <p>Se você não vê este botão vermelho no topo, há um problema de cache!</p>
-                    <p>Pressione Ctrl+F5 para recarregar completamente!</p>
-                </div>
-            </div>
 
             {/* Header */}
             <div className="bg-white shadow-sm border-b border-gray-200">
@@ -553,39 +519,15 @@ export default function ManagePlayersConvex() {
                                         {searchTerm ? 'Tente ajustar os filtros de busca.' : 'Comece criando seu primeiro jogador.'}
                                     </p>
                                     {!searchTerm && (
-                                        <div className="space-y-2">
-                                            <Button onClick={openCreateModal} className="bg-green-600 hover:bg-green-700 w-full">
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Criar Primeiro Jogador
-                                            </Button>
-                                            
-                                            {/* Botão de teste */}
-                                            <Button 
-                                                onClick={() => {
-                                                    console.log('🧪 BOTÃO DE TESTE CLICADO!');
-                                                    alert('Botão de teste funcionando!');
-                                                }}
-                                                className="bg-blue-600 hover:bg-blue-700 w-full"
-                                            >
-                                                🧪 Teste de Clique
-                                            </Button>
-                                        </div>
+                                        <Button onClick={openCreateModal} className="bg-green-600 hover:bg-green-700 w-full">
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            Criar Primeiro Jogador
+                                        </Button>
                                     )}
                                 </CardContent>
                             </Card>
                         ) : (
                             <div className="space-y-3">
-                                {/* Botão de teste quando há jogadores */}
-                                <Button 
-                                    onClick={() => {
-                                        console.log('🧪 BOTÃO DE TESTE (COM JOGADORES) CLICADO!');
-                                        alert('Botão de teste funcionando!');
-                                    }}
-                                    className="bg-purple-600 hover:bg-purple-700 w-full mb-4"
-                                >
-                                    🧪 Teste de Clique (Com Jogadores)
-                                </Button>
-                                
                                 {filteredPlayers.map((player) => (
                                     <Card key={player._id} className="bg-white shadow-sm">
                                         <CardContent className="p-4">
@@ -626,57 +568,45 @@ export default function ManagePlayersConvex() {
                                                 </div>
                                             </div>
 
-                                            {/* TESTE ULTRA SIMPLES */}
-                                            <div className="pt-3 border-t border-gray-100 space-y-2">
+                                            {/* Ações */}
+                                            <div className="flex gap-2 pt-3 border-t border-gray-100">
                                                 <button
-                                                    onClick={() => {
-                                                        console.log('🔥 BOTÃO DO CARD CLICADO!', player.name);
-                                                        alert(`Botão do jogador ${player.name} clicado!`);
-                                                    }}
-                                                    className="w-full h-10 bg-purple-600 text-white rounded font-bold hover:bg-purple-700"
+                                                    onClick={() => openViewModal(player)}
+                                                    className="flex-1 h-8 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 flex items-center justify-center gap-1"
                                                 >
-                                                    🔥 TESTE - {player.name.toUpperCase()}
+                                                    <Eye className="h-3 w-3" />
+                                                    Ver
                                                 </button>
-                                                
-                                                {/* Botões separados para teste */}
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <button
-                                                        onClick={() => {
-                                                            console.log('👁️ BOTÃO VER SIMPLES!');
-                                                            alert('Botão Ver funcionando!');
-                                                        }}
-                                                        className="h-8 bg-blue-500 text-white rounded text-sm"
-                                                    >
-                                                        👁️ Ver
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            console.log('✏️ BOTÃO EDITAR SIMPLES!');
-                                                            alert('Botão Editar funcionando!');
-                                                        }}
-                                                        className="h-8 bg-green-500 text-white rounded text-sm"
-                                                    >
-                                                        ✏️ Editar
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            console.log('🗑️ BOTÃO EXCLUIR SIMPLES!');
-                                                            alert('Botão Excluir funcionando!');
-                                                        }}
-                                                        className="h-8 bg-red-500 text-white rounded text-sm"
-                                                    >
-                                                        🗑️ Excluir
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            console.log('✅ BOTÃO APROVAR SIMPLES!');
-                                                            alert('Botão Aprovar funcionando!');
-                                                        }}
-                                                        className="h-8 bg-yellow-500 text-white rounded text-sm"
-                                                    >
-                                                        ✅ Aprovar
-                                                    </button>
-                                                </div>
+                                                <button
+                                                    onClick={() => openEditModal(player)}
+                                                    className="flex-1 h-8 bg-green-500 text-white rounded text-sm hover:bg-green-600 flex items-center justify-center gap-1"
+                                                >
+                                                    <Edit className="h-3 w-3" />
+                                                    Editar
+                                                </button>
+                                                <button
+                                                    onClick={() => toggleApproval(player)}
+                                                    className="flex-1 h-8 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 flex items-center justify-center gap-1"
+                                                >
+                                                    {player.approved ? (
+                                                        <>
+                                                            <UserMinus className="h-3 w-3" />
+                                                            Desaprovar
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <UserCheck className="h-3 w-3" />
+                                                            Aprovar
+                                                        </>
+                                                    )}
+                                                </button>
+                                                <button
+                                                    onClick={() => openDeleteModal(player)}
+                                                    className="flex-1 h-8 bg-red-500 text-white rounded text-sm hover:bg-red-600 flex items-center justify-center gap-1"
+                                                >
+                                                    <Trash2 className="h-3 w-3" />
+                                                    Excluir
+                                                </button>
                                             </div>
                                         </CardContent>
                                     </Card>
