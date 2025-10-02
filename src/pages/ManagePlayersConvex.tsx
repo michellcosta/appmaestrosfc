@@ -67,10 +67,10 @@ function useConvexSafe() {
             try {
                 // Aguardar um pouco para o Convex inicializar
                 await new Promise(resolve => setTimeout(resolve, 2000));
-                
+
                 const { useQuery, useMutation } = await import('convex/react');
                 const { api } = await import('../../convex/_generated/api');
-                
+
                 // Verificar se a API está disponível
                 if (api && api.managedPlayers) {
                     console.log('✅ Convex conectado com sucesso!');
@@ -122,14 +122,14 @@ function useConvexSafe() {
 
     const updatePlayer = async (updateData: any) => {
         const { id, ...data } = updateData;
-        
+
         // Verificar email duplicado (exceto o próprio jogador)
         if (data.email && players.some(p => p.email === data.email && p._id !== id)) {
             throw new Error('Email já está cadastrado. Use outro email.');
         }
 
-        setPlayers(prev => prev.map(player => 
-            player._id === id 
+        setPlayers(prev => prev.map(player =>
+            player._id === id
                 ? { ...player, ...data, updated_at: Date.now() }
                 : player
         ));
@@ -140,8 +140,8 @@ function useConvexSafe() {
     };
 
     const togglePlayerApproval = async ({ id }: { id: string }) => {
-        setPlayers(prev => prev.map(player => 
-            player._id === id 
+        setPlayers(prev => prev.map(player =>
+            player._id === id
                 ? { ...player, approved: !player.approved, updated_at: Date.now() }
                 : player
         ));
@@ -164,6 +164,14 @@ export default function ManagePlayersConvex() {
 
     // Hook personalizado para Convex com fallback
     const { convexReady, players, loading, createPlayer, updatePlayer, removePlayer, togglePlayerApproval } = useConvexSafe();
+
+    // Debug: Log do estado atual
+    console.log('📊 Estado atual:', {
+        playersCount: players.length,
+        loading,
+        convexReady,
+        players: players.slice(0, 2) // Mostrar apenas os 2 primeiros para debug
+    });
 
     // Estados para UI
     const [searchTerm, setSearchTerm] = useState('');
@@ -572,28 +580,46 @@ export default function ManagePlayersConvex() {
                                             {/* Ações */}
                                             <div className="flex gap-2 pt-3 border-t border-gray-100">
                                                 <Button
-                                                    onClick={() => openViewModal(player)}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        console.log('🔍 BOTÃO VER CLICADO!', player);
+                                                        openViewModal(player);
+                                                    }}
                                                     variant="outline"
                                                     size="sm"
                                                     className="flex-1 h-8"
+                                                    type="button"
                                                 >
                                                     <Eye className="h-3 w-3 mr-1" />
                                                     Ver
                                                 </Button>
                                                 <Button
-                                                    onClick={() => openEditModal(player)}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        console.log('✏️ BOTÃO EDITAR CLICADO!', player);
+                                                        openEditModal(player);
+                                                    }}
                                                     variant="outline"
                                                     size="sm"
                                                     className="flex-1 h-8"
+                                                    type="button"
                                                 >
                                                     <Edit className="h-3 w-3 mr-1" />
                                                     Editar
                                                 </Button>
                                                 <Button
-                                                    onClick={() => toggleApproval(player)}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        console.log('🔄 BOTÃO APROVAÇÃO CLICADO!', player);
+                                                        toggleApproval(player);
+                                                    }}
                                                     variant="outline"
                                                     size="sm"
                                                     className="flex-1 h-8"
+                                                    type="button"
                                                 >
                                                     {player.approved ? (
                                                         <>
@@ -608,10 +634,16 @@ export default function ManagePlayersConvex() {
                                                     )}
                                                 </Button>
                                                 <Button
-                                                    onClick={() => openDeleteModal(player)}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        console.log('🗑️ BOTÃO EXCLUIR CLICADO!', player);
+                                                        openDeleteModal(player);
+                                                    }}
                                                     variant="outline"
                                                     size="sm"
                                                     className="flex-1 h-8 text-red-600 hover:text-red-700"
+                                                    type="button"
                                                 >
                                                     <Trash2 className="h-3 w-3 mr-1" />
                                                     Excluir
