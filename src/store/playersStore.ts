@@ -140,6 +140,7 @@ export const usePlayersStore = create<PlayersStore>()(
           // Buscar jogadores reais do localStorage
           const offlinePlayers = [];
           const possibleStorageKeys = [
+            'convex_players', // Jogadores do ManagePlayersConvex
             'offline_players',
             'local_players', 
             'players-store',
