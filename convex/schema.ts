@@ -14,15 +14,24 @@ export default defineSchema({
         .index("by_role", ["role"])
         .index("by_active", ["active"]),
 
-    // Tabela de jogadores
+    // Tabela de jogadores (atualizada para gerenciamento completo)
     players: defineTable({
         name: v.string(),
-        email: v.optional(v.string()),
-        position: v.optional(v.string()),
-        created_by: v.string(),
+        email: v.string(),
+        role: v.union(v.literal("owner"), v.literal("admin"), v.literal("aux"), v.literal("player")),
+        membership: v.optional(v.union(v.literal("mensalista"), v.literal("diarista"))),
+        position: v.optional(v.union(v.literal("Goleiro"), v.literal("Zagueiro"), v.literal("Meia"), v.literal("Atacante"))),
+        stars: v.optional(v.number()),
+        approved: v.boolean(),
+        notifications_enabled: v.boolean(),
+        created_by: v.optional(v.string()),
         created_at: v.number(),
+        updated_at: v.number(),
         active: v.boolean(),
-    }).index("by_active", ["active"])
+    }).index("by_email", ["email"])
+        .index("by_role", ["role"])
+        .index("by_approved", ["approved"])
+        .index("by_active", ["active"])
         .index("by_created_by", ["created_by"]),
 
     // Tabela de partidas

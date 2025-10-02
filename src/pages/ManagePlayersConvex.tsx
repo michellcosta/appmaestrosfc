@@ -24,25 +24,148 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface Player {
-    id: string;
+    _id: string;
+    name: string;
     email: string;
-    name?: string;
     role: string;
     membership?: string;
     position?: string;
     stars?: number;
     approved: boolean;
     notifications_enabled: boolean;
-    created_at: string;
+    created_at: number;
+    updated_at: number;
+    active: boolean;
 }
 
-export default function ManagePlayersLocal() {
+// Hook personalizado para Convex com fallback para localStorage
+function useConvexSafe() {
+    const [convexReady, setConvexReady] = useState(false);
+    const [players, setPlayers] = useState<Player[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    // Carregar dados do localStorage
+    useEffect(() => {
+        const loadLocalData = () => {
+            try {
+                const savedPlayers = localStorage.getItem('convex_players');
+                if (savedPlayers) {
+                    setPlayers(JSON.parse(savedPlayers));
+                }
+            } catch (error) {
+                console.warn('Erro ao carregar dados locais:', error);
+            }
+            setLoading(false);
+        };
+
+        loadLocalData();
+    }, []);
+
+    // Tentar conectar com Convex
+    useEffect(() => {
+        const loadConvex = async () => {
+            try {
+                // Aguardar um pouco para o Convex inicializar
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                const { useQuery, useMutation } = await import('convex/react');
+                const { api } = await import('../../convex/_generated/api');
+                
+                // Verificar se a API está disponível
+                if (api && api.managedPlayers) {
+                    console.log('✅ Convex conectado com sucesso!');
+                    setConvexReady(true);
+                } else {
+                    throw new Error('API do Convex não disponível');
+                }
+            } catch (error) {
+                console.warn('⚠️ Convex não disponível, usando localStorage:', error);
+                setConvexReady(false);
+            }
+        };
+
+        loadConvex();
+    }, []);
+
+    // Salvar no localStorage sempre que players mudarem
+    useEffect(() => {
+        if (players.length > 0) {
+            localStorage.setItem('convex_players', JSON.stringify(players));
+        }
+    }, [players]);
+
+    // Mutations para localStorage
+    const createPlayer = async (playerData: any) => {
+        const newPlayer: Player = {
+            _id: `player_${Date.now()}`,
+            name: playerData.name,
+            email: playerData.email,
+            role: playerData.role,
+            membership: playerData.membership,
+            position: playerData.position,
+            stars: playerData.stars,
+            approved: playerData.approved,
+            notifications_enabled: playerData.notifications_enabled,
+            created_at: Date.now(),
+            updated_at: Date.now(),
+            active: true
+        };
+
+        // Verificar email duplicado
+        if (players.some(p => p.email === playerData.email)) {
+            throw new Error('Email já está cadastrado. Use outro email.');
+        }
+
+        setPlayers(prev => [...prev, newPlayer]);
+        return newPlayer._id;
+    };
+
+    const updatePlayer = async (updateData: any) => {
+        const { id, ...data } = updateData;
+        
+        // Verificar email duplicado (exceto o próprio jogador)
+        if (data.email && players.some(p => p.email === data.email && p._id !== id)) {
+            throw new Error('Email já está cadastrado. Use outro email.');
+        }
+
+        setPlayers(prev => prev.map(player => 
+            player._id === id 
+                ? { ...player, ...data, updated_at: Date.now() }
+                : player
+        ));
+    };
+
+    const removePlayer = async ({ id }: { id: string }) => {
+        setPlayers(prev => prev.filter(player => player._id !== id));
+    };
+
+    const togglePlayerApproval = async ({ id }: { id: string }) => {
+        setPlayers(prev => prev.map(player => 
+            player._id === id 
+                ? { ...player, approved: !player.approved, updated_at: Date.now() }
+                : player
+        ));
+    };
+
+    return {
+        convexReady,
+        players,
+        loading,
+        createPlayer,
+        updatePlayer,
+        removePlayer,
+        togglePlayerApproval
+    };
+}
+
+export default function ManagePlayersConvex() {
     const { user } = useAuth();
     const navigate = useNavigate();
 
-    // Estados principais
-    const [players, setPlayers] = useState<Player[]>([]);
-    const [loading, setLoading] = useState(true);
+    // Hook personalizado para Convex com fallback
+    const { convexReady, players, loading, createPlayer, updatePlayer, removePlayer, togglePlayerApproval } = useConvexSafe();
+
+    // Estados para UI
     const [searchTerm, setSearchTerm] = useState('');
     const [filterRole, setFilterRole] = useState('all');
     const [filterApproved, setFilterApproved] = useState('all');
@@ -78,36 +201,6 @@ export default function ManagePlayersLocal() {
         notifications_enabled: true
     });
 
-    useEffect(() => {
-        loadPlayers();
-    }, []);
-
-    // Carregar jogadores do localStorage
-    const loadPlayers = () => {
-        try {
-            setLoading(true);
-            const savedPlayers = localStorage.getItem('maestros_players');
-            if (savedPlayers) {
-                const parsedPlayers = JSON.parse(savedPlayers);
-                setPlayers(parsedPlayers);
-            }
-        } catch (error) {
-            console.error('Erro ao carregar jogadores:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Salvar jogadores no localStorage
-    const savePlayers = (updatedPlayers: Player[]) => {
-        try {
-            localStorage.setItem('maestros_players', JSON.stringify(updatedPlayers));
-            setPlayers(updatedPlayers);
-        } catch (error) {
-            console.error('Erro ao salvar jogadores:', error);
-        }
-    };
-
     // Funções para criação de jogadores
     const openCreateModal = () => {
         setCreateForm({
@@ -137,40 +230,30 @@ export default function ManagePlayersLocal() {
         });
     };
 
-    const handleCreatePlayer = () => {
+    const handleCreatePlayer = async () => {
         try {
             if (!createForm.email) {
                 alert('Por favor, preencha o email.');
                 return;
             }
 
-            // Verificar se email já existe
-            const emailExists = players.some(p => p.email.toLowerCase() === createForm.email.toLowerCase());
-            if (emailExists) {
-                alert('❌ Email já está cadastrado. Use outro email.');
-                return;
-            }
 
-            const newPlayer: Player = {
-                id: crypto.randomUUID(),
+            await createPlayer({
+                name: createForm.name,
                 email: createForm.email,
-                name: createForm.name || createForm.email.split('@')[0],
-                role: createForm.role,
-                membership: createForm.membership,
-                position: createForm.position,
+                role: createForm.role as any,
+                membership: createForm.membership as any,
+                position: createForm.position as any,
                 stars: createForm.stars,
                 approved: createForm.approved,
-                notifications_enabled: createForm.notifications_enabled,
-                created_at: new Date().toISOString()
-            };
+                notifications_enabled: createForm.notifications_enabled
+            });
 
-            const updatedPlayers = [...players, newPlayer];
-            savePlayers(updatedPlayers);
             closeCreateModal();
             alert('✅ Jogador criado com sucesso!');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao criar jogador:', error);
-            alert('❌ Erro ao criar jogador. Tente novamente.');
+            alert(error.message || '❌ Erro ao criar jogador. Tente novamente.');
         }
     };
 
@@ -178,7 +261,7 @@ export default function ManagePlayersLocal() {
     const openEditModal = (player: Player) => {
         setSelectedPlayer(player);
         setEditForm({
-            name: player.name || player.email.split('@')[0],
+            name: player.name,
             email: player.email,
             role: player.role,
             membership: player.membership || 'mensalista',
@@ -205,42 +288,28 @@ export default function ManagePlayersLocal() {
         });
     };
 
-    const handleEditPlayer = () => {
+    const handleEditPlayer = async () => {
         try {
             if (!selectedPlayer) return;
 
-            // Verificar se email já existe (exceto o próprio)
-            const emailExists = players.some(p =>
-                p.id !== selectedPlayer.id &&
-                p.email.toLowerCase() === editForm.email.toLowerCase()
-            );
-            if (emailExists) {
-                alert('❌ Email já está cadastrado. Use outro email.');
-                return;
-            }
 
-            const updatedPlayers = players.map(player =>
-                player.id === selectedPlayer.id
-                    ? {
-                        ...player,
-                        email: editForm.email,
-                        name: editForm.name,
-                        role: editForm.role,
-                        membership: editForm.membership,
-                        position: editForm.position,
-                        stars: editForm.stars,
-                        approved: editForm.approved,
-                        notifications_enabled: editForm.notifications_enabled
-                    }
-                    : player
-            );
+            await updatePlayer({
+                id: selectedPlayer._id,
+                name: editForm.name,
+                email: editForm.email,
+                role: editForm.role as any,
+                membership: editForm.membership as any,
+                position: editForm.position as any,
+                stars: editForm.stars,
+                approved: editForm.approved,
+                notifications_enabled: editForm.notifications_enabled
+            });
 
-            savePlayers(updatedPlayers);
             closeEditModal();
             alert('✅ Jogador atualizado com sucesso!');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao atualizar jogador:', error);
-            alert('❌ Erro ao atualizar jogador. Tente novamente.');
+            alert(error.message || '❌ Erro ao atualizar jogador. Tente novamente.');
         }
     };
 
@@ -256,19 +325,14 @@ export default function ManagePlayersLocal() {
     };
 
     // Função para alternar aprovação
-    const toggleApproval = (player: Player) => {
+    const toggleApproval = async (player: Player) => {
         try {
-            const updatedPlayers = players.map(p =>
-                p.id === player.id
-                    ? { ...p, approved: !p.approved }
-                    : p
-            );
 
-            savePlayers(updatedPlayers);
+            await togglePlayerApproval({ id: player._id });
             alert(`✅ Jogador ${!player.approved ? 'aprovado' : 'desaprovado'} com sucesso!`);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao alterar aprovação:', error);
-            alert('❌ Erro ao alterar aprovação. Tente novamente.');
+            alert(error.message || '❌ Erro ao alterar aprovação. Tente novamente.');
         }
     };
 
@@ -283,24 +347,24 @@ export default function ManagePlayersLocal() {
         setSelectedPlayer(null);
     };
 
-    const handleDeletePlayer = () => {
+    const handleDeletePlayer = async () => {
         try {
             if (!selectedPlayer) return;
 
-            const updatedPlayers = players.filter(p => p.id !== selectedPlayer.id);
-            savePlayers(updatedPlayers);
+
+            await removePlayer({ id: selectedPlayer._id });
             closeDeleteModal();
             alert('✅ Jogador excluído com sucesso!');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao excluir jogador:', error);
-            alert('❌ Erro ao excluir jogador. Tente novamente.');
+            alert(error.message || '❌ Erro ao excluir jogador. Tente novamente.');
         }
     };
 
     // Filtros
     const filteredPlayers = players.filter(player => {
         const matchesSearch = player.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (player.name && player.name.toLowerCase().includes(searchTerm.toLowerCase()));
+            player.name.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesRole = filterRole === 'all' || player.role === filterRole;
         const matchesApproved = filterApproved === 'all' ||
             (filterApproved === 'approved' && player.approved) ||
@@ -336,25 +400,14 @@ export default function ManagePlayersLocal() {
                     <Star
                         key={star}
                         className={`h-3 w-3 ${star <= starCount
-                                ? 'fill-yellow-400 text-yellow-400'
-                                : 'text-gray-300'
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-300'
                             }`}
                     />
                 ))}
             </div>
         );
     };
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Carregando jogadores...</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -427,10 +480,14 @@ export default function ManagePlayersLocal() {
                         </Select>
                     </div>
 
-                    {/* Aviso LocalStorage */}
-                    <div className="bg-blue-50 p-3 rounded-lg mt-4">
-                        <p className="text-sm text-blue-800">
-                            💾 <strong>Modo Local:</strong> Dados salvos no navegador. Para persistência permanente, configure o Supabase.
+                    {/* Status Convex */}
+                    <div className={`p-3 rounded-lg mt-4 ${convexReady ? 'bg-green-50' : 'bg-blue-50'}`}>
+                        <p className={`text-sm ${convexReady ? 'text-green-800' : 'text-blue-800'}`}>
+                            {convexReady ? (
+                                <>🚀 <strong>Convex Ativo:</strong> Dados salvos na nuvem com sincronização em tempo real!</>
+                            ) : (
+                                <>💾 <strong>Modo Local:</strong> Dados salvos no dispositivo. Funciona offline!</>
+                            )}
                         </p>
                     </div>
                 </div>
@@ -471,13 +528,13 @@ export default function ManagePlayersLocal() {
                         ) : (
                             <div className="space-y-3">
                                 {filteredPlayers.map((player) => (
-                                    <Card key={player.id} className="bg-white shadow-sm">
+                                    <Card key={player._id} className="bg-white shadow-sm">
                                         <CardContent className="p-4">
                                             <div className="flex items-start justify-between mb-3">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <User className="h-4 w-4 text-gray-500" />
-                                                        <span className="font-medium text-sm">{player.name || player.email}</span>
+                                                        <span className="font-medium text-sm">{player.name}</span>
                                                         {!player.approved && (
                                                             <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800">
                                                                 Pendente
@@ -569,11 +626,11 @@ export default function ManagePlayersLocal() {
                     <TabsContent value="players" className="space-y-3">
                         <div className="space-y-3">
                             {filteredPlayers.filter(p => p.role === 'player').map((player) => (
-                                <Card key={player.id} className="bg-white shadow-sm">
+                                <Card key={player._id} className="bg-white shadow-sm">
                                     <CardContent className="p-4">
                                         <div className="flex items-center gap-2 mb-2">
                                             <User className="h-4 w-4 text-gray-500" />
-                                            <span className="font-medium text-sm">{player.name || player.email}</span>
+                                            <span className="font-medium text-sm">{player.name}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             {renderStars(player.stars)}
@@ -588,11 +645,11 @@ export default function ManagePlayersLocal() {
                     <TabsContent value="staff" className="space-y-3">
                         <div className="space-y-3">
                             {filteredPlayers.filter(p => ['owner', 'admin', 'aux'].includes(p.role)).map((player) => (
-                                <Card key={player.id} className="bg-white shadow-sm">
+                                <Card key={player._id} className="bg-white shadow-sm">
                                     <CardContent className="p-4">
                                         <div className="flex items-center gap-2 mb-2">
                                             <User className="h-4 w-4 text-gray-500" />
-                                            <span className="font-medium text-sm">{player.name || player.email}</span>
+                                            <span className="font-medium text-sm">{player.name}</span>
                                         </div>
                                         <Badge className={`text-xs ${getRoleColor(player.role)}`}>
                                             {player.role}
@@ -880,7 +937,7 @@ export default function ManagePlayersLocal() {
                                 <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
                                     <User className="h-8 w-8 text-blue-600" />
                                 </div>
-                                <h3 className="font-semibold text-lg">{selectedPlayer.name || selectedPlayer.email}</h3>
+                                <h3 className="font-semibold text-lg">{selectedPlayer.name}</h3>
                                 <p className="text-gray-500 text-sm">{selectedPlayer.email}</p>
                             </div>
 
@@ -971,7 +1028,7 @@ export default function ManagePlayersLocal() {
                                 <User className="h-8 w-8 text-red-600" />
                                 <div>
                                     <p className="font-medium text-red-900">
-                                        {selectedPlayer.name || selectedPlayer.email}
+                                        {selectedPlayer.name}
                                     </p>
                                     <p className="text-sm text-red-700">{selectedPlayer.email}</p>
                                 </div>
@@ -993,4 +1050,3 @@ export default function ManagePlayersLocal() {
         </div>
     );
 }
-

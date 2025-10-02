@@ -35,7 +35,7 @@ const RestrictedAccess = React.lazy(() => import(/* webpackChunkName: "pages-adm
 const ManageAdmins = React.lazy(() => import(/* webpackChunkName: "pages-admin-manage" */ '@/pages/ManageAdmins'));
 const ConfigureAccess = React.lazy(() => import(/* webpackChunkName: "pages-admin-configure" */ '@/pages/ConfigureAccess'));
 const ApproveParticipants = React.lazy(() => import(/* webpackChunkName: "pages-admin-approve" */ '@/pages/ApproveParticipants'));
-const ManagePlayers = React.lazy(() => import(/* webpackChunkName: "pages-manage-players" */ '@/pages/ManagePlayersLocal'));
+const ManagePlayers = React.lazy(() => import(/* webpackChunkName: "pages-manage-players" */ '@/pages/ManagePlayersSimple'));
 const TeamDrawMobile = React.lazy(() => import(/* webpackChunkName: "pages-team-draw" */ '@/pages/TeamDrawMobile'));
 const ListUsers = React.lazy(() => import(/* webpackChunkName: "pages-list-users" */ '@/pages/ListUsers'));
 
