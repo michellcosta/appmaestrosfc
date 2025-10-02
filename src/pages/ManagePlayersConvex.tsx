@@ -440,6 +440,10 @@ export default function ManagePlayersConvex() {
                 >
                     🚨 TESTE GLOBAL - CLIQUE AQUI
                 </button>
+                <div className="mt-2 text-sm">
+                    <p>Se você não vê este botão vermelho no topo, há um problema de cache!</p>
+                    <p>Pressione Ctrl+F5 para recarregar completamente!</p>
+                </div>
             </div>
 
             {/* Header */}
@@ -623,7 +627,7 @@ export default function ManagePlayersConvex() {
                                             </div>
 
                                             {/* TESTE ULTRA SIMPLES */}
-                                            <div className="pt-3 border-t border-gray-100">
+                                            <div className="pt-3 border-t border-gray-100 space-y-2">
                                                 <button
                                                     onClick={() => {
                                                         console.log('🔥 BOTÃO DO CARD CLICADO!', player.name);
@@ -633,6 +637,46 @@ export default function ManagePlayersConvex() {
                                                 >
                                                     🔥 TESTE - {player.name.toUpperCase()}
                                                 </button>
+                                                
+                                                {/* Botões separados para teste */}
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            console.log('👁️ BOTÃO VER SIMPLES!');
+                                                            alert('Botão Ver funcionando!');
+                                                        }}
+                                                        className="h-8 bg-blue-500 text-white rounded text-sm"
+                                                    >
+                                                        👁️ Ver
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            console.log('✏️ BOTÃO EDITAR SIMPLES!');
+                                                            alert('Botão Editar funcionando!');
+                                                        }}
+                                                        className="h-8 bg-green-500 text-white rounded text-sm"
+                                                    >
+                                                        ✏️ Editar
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            console.log('🗑️ BOTÃO EXCLUIR SIMPLES!');
+                                                            alert('Botão Excluir funcionando!');
+                                                        }}
+                                                        className="h-8 bg-red-500 text-white rounded text-sm"
+                                                    >
+                                                        🗑️ Excluir
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            console.log('✅ BOTÃO APROVAR SIMPLES!');
+                                                            alert('Botão Aprovar funcionando!');
+                                                        }}
+                                                        className="h-8 bg-yellow-500 text-white rounded text-sm"
+                                                    >
+                                                        ✅ Aprovar
+                                                    </button>
+                                                </div>
                                             </div>
                                         </CardContent>
                                     </Card>
