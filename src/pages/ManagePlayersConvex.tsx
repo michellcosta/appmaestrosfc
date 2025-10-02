@@ -572,21 +572,21 @@ export default function ManagePlayersConvex() {
                                             <div className="flex gap-2 pt-3 border-t border-gray-100">
                                                 <button
                                                     onClick={() => openViewModal(player)}
-                                                    className="flex-1 h-8 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 flex items-center justify-center gap-1"
+                                                    className="flex-1 h-8 border border-gray-200 bg-white hover:bg-gray-50 rounded text-sm flex items-center justify-center gap-1 text-gray-700 hover:text-gray-900"
                                                 >
                                                     <Eye className="h-3 w-3" />
                                                     Ver
                                                 </button>
                                                 <button
                                                     onClick={() => openEditModal(player)}
-                                                    className="flex-1 h-8 bg-green-500 text-white rounded text-sm hover:bg-green-600 flex items-center justify-center gap-1"
+                                                    className="flex-1 h-8 border border-gray-200 bg-white hover:bg-gray-50 rounded text-sm flex items-center justify-center gap-1 text-gray-700 hover:text-gray-900"
                                                 >
                                                     <Edit className="h-3 w-3" />
                                                     Editar
                                                 </button>
                                                 <button
                                                     onClick={() => toggleApproval(player)}
-                                                    className="flex-1 h-8 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 flex items-center justify-center gap-1"
+                                                    className="flex-1 h-8 border border-gray-200 bg-white hover:bg-gray-50 rounded text-sm flex items-center justify-center gap-1 text-gray-700 hover:text-gray-900"
                                                 >
                                                     {player.approved ? (
                                                         <>
@@ -602,7 +602,7 @@ export default function ManagePlayersConvex() {
                                                 </button>
                                                 <button
                                                     onClick={() => openDeleteModal(player)}
-                                                    className="flex-1 h-8 bg-red-500 text-white rounded text-sm hover:bg-red-600 flex items-center justify-center gap-1"
+                                                    className="flex-1 h-8 border border-gray-200 bg-white hover:bg-red-50 rounded text-sm flex items-center justify-center gap-1 text-red-600 hover:text-red-700 hover:border-red-300"
                                                 >
                                                     <Trash2 className="h-3 w-3" />
                                                     Excluir
