@@ -429,6 +429,19 @@ export default function ManagePlayersConvex() {
 
     return (
         <div className="min-h-screen bg-gray-50">
+            {/* BOTÃO DE TESTE GLOBAL */}
+            <div className="bg-red-500 text-white p-4 text-center">
+                <button
+                    onClick={() => {
+                        console.log('🚨 BOTÃO DE TESTE GLOBAL CLICADO!');
+                        alert('BOTÃO GLOBAL FUNCIONANDO!');
+                    }}
+                    className="bg-yellow-500 text-black px-4 py-2 rounded font-bold"
+                >
+                    🚨 TESTE GLOBAL - CLIQUE AQUI
+                </button>
+            </div>
+
             {/* Header */}
             <div className="bg-white shadow-sm border-b border-gray-200">
                 <div className="px-4 py-4">
@@ -609,59 +622,16 @@ export default function ManagePlayersConvex() {
                                                 </div>
                                             </div>
 
-                                            {/* Ações - Versão Simplificada para Debug */}
-                                            <div className="flex gap-2 pt-3 border-t border-gray-100">
+                                            {/* TESTE ULTRA SIMPLES */}
+                                            <div className="pt-3 border-t border-gray-100">
                                                 <button
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        console.log('🔍 BOTÃO VER CLICADO!', player);
-                                                        alert('Botão Ver clicado!');
-                                                        openViewModal(player);
+                                                    onClick={() => {
+                                                        console.log('🔥 BOTÃO DO CARD CLICADO!', player.name);
+                                                        alert(`Botão do jogador ${player.name} clicado!`);
                                                     }}
-                                                    className="flex-1 h-8 bg-blue-500 text-white rounded px-2 text-sm hover:bg-blue-600"
-                                                    type="button"
+                                                    className="w-full h-10 bg-purple-600 text-white rounded font-bold hover:bg-purple-700"
                                                 >
-                                                    Ver
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        console.log('✏️ BOTÃO EDITAR CLICADO!', player);
-                                                        alert('Botão Editar clicado!');
-                                                        openEditModal(player);
-                                                    }}
-                                                    className="flex-1 h-8 bg-green-500 text-white rounded px-2 text-sm hover:bg-green-600"
-                                                    type="button"
-                                                >
-                                                    Editar
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        console.log('🔄 BOTÃO APROVAÇÃO CLICADO!', player);
-                                                        alert('Botão Aprovação clicado!');
-                                                        toggleApproval(player);
-                                                    }}
-                                                    className="flex-1 h-8 bg-yellow-500 text-white rounded px-2 text-sm hover:bg-yellow-600"
-                                                    type="button"
-                                                >
-                                                    {player.approved ? 'Desaprovar' : 'Aprovar'}
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        console.log('🗑️ BOTÃO EXCLUIR CLICADO!', player);
-                                                        alert('Botão Excluir clicado!');
-                                                        openDeleteModal(player);
-                                                    }}
-                                                    className="flex-1 h-8 bg-red-500 text-white rounded px-2 text-sm hover:bg-red-600"
-                                                    type="button"
-                                                >
-                                                    Excluir
+                                                    🔥 TESTE - {player.name.toUpperCase()}
                                                 </button>
                                             </div>
                                         </CardContent>
