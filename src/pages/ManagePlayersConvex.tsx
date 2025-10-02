@@ -609,77 +609,60 @@ export default function ManagePlayersConvex() {
                                                 </div>
                                             </div>
 
-                                            {/* Ações */}
+                                            {/* Ações - Versão Simplificada para Debug */}
                                             <div className="flex gap-2 pt-3 border-t border-gray-100">
-                                                <Button
+                                                <button
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         e.stopPropagation();
                                                         console.log('🔍 BOTÃO VER CLICADO!', player);
+                                                        alert('Botão Ver clicado!');
                                                         openViewModal(player);
                                                     }}
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="flex-1 h-8"
+                                                    className="flex-1 h-8 bg-blue-500 text-white rounded px-2 text-sm hover:bg-blue-600"
                                                     type="button"
                                                 >
-                                                    <Eye className="h-3 w-3 mr-1" />
                                                     Ver
-                                                </Button>
-                                                <Button
+                                                </button>
+                                                <button
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         e.stopPropagation();
                                                         console.log('✏️ BOTÃO EDITAR CLICADO!', player);
+                                                        alert('Botão Editar clicado!');
                                                         openEditModal(player);
                                                     }}
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="flex-1 h-8"
+                                                    className="flex-1 h-8 bg-green-500 text-white rounded px-2 text-sm hover:bg-green-600"
                                                     type="button"
                                                 >
-                                                    <Edit className="h-3 w-3 mr-1" />
                                                     Editar
-                                                </Button>
-                                                <Button
+                                                </button>
+                                                <button
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         e.stopPropagation();
                                                         console.log('🔄 BOTÃO APROVAÇÃO CLICADO!', player);
+                                                        alert('Botão Aprovação clicado!');
                                                         toggleApproval(player);
                                                     }}
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="flex-1 h-8"
+                                                    className="flex-1 h-8 bg-yellow-500 text-white rounded px-2 text-sm hover:bg-yellow-600"
                                                     type="button"
                                                 >
-                                                    {player.approved ? (
-                                                        <>
-                                                            <UserMinus className="h-3 w-3 mr-1" />
-                                                            Desaprovar
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <UserCheck className="h-3 w-3 mr-1" />
-                                                            Aprovar
-                                                        </>
-                                                    )}
-                                                </Button>
-                                                <Button
+                                                    {player.approved ? 'Desaprovar' : 'Aprovar'}
+                                                </button>
+                                                <button
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         e.stopPropagation();
                                                         console.log('🗑️ BOTÃO EXCLUIR CLICADO!', player);
+                                                        alert('Botão Excluir clicado!');
                                                         openDeleteModal(player);
                                                     }}
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="flex-1 h-8 text-red-600 hover:text-red-700"
+                                                    className="flex-1 h-8 bg-red-500 text-white rounded px-2 text-sm hover:bg-red-600"
                                                     type="button"
                                                 >
-                                                    <Trash2 className="h-3 w-3 mr-1" />
                                                     Excluir
-                                                </Button>
+                                                </button>
                                             </div>
                                         </CardContent>
                                     </Card>
