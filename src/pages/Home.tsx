@@ -451,6 +451,11 @@ export default function HomePage() {
       await new Promise(resolve => setTimeout(resolve, 1500));
       await executeTeamDraw(currentDrawMatchId, playersPerTeam);
       console.log('✅ DEBUG: executeTeamDraw concluído com sucesso');
+      
+      // Debug: Verificar se os times foram criados
+      const teamDrawData = getPlayersByTeam('Preto');
+      console.log('🔍 DEBUG: Times criados - Time Preto:', teamDrawData);
+      
       setTeamDrawCompleted(prev => ({ ...prev, [currentDrawMatchId]: true }));
 
       // Para o efeito de piscar após completar
