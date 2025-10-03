@@ -976,9 +976,9 @@ export default function OwnerDashboard() {
   }
 
   return (
-    <div className='p-4 sm:p-6 space-y-6'>
+    <div className='p-4 sm:p-6 space-y-6 dashboard-container'>
       {/* Header */}
-      <header className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 shadow-sm rounded-lg mb-4">
+      <header className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 shadow-sm rounded-lg mb-4 dashboard-header">
         <div className="p-4">
           <div className='flex items-center justify-between'>
             <div className="flex items-center space-x-3">
@@ -1023,8 +1023,8 @@ export default function OwnerDashboard() {
       </header>
 
       {/* Cards de Resumo */}
-      <div className='grid grid-cols-2 gap-4'>
-        <Card className="dark:bg-zinc-800 dark:border-zinc-700">
+      <div className='grid grid-cols-2 gap-4 grid'>
+        <Card className="dark:bg-zinc-800 dark:border-zinc-700 stats-card">
           <CardContent className='p-4'>
             <div className='flex items-center justify-between'>
               <div>
@@ -1036,7 +1036,7 @@ export default function OwnerDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="dark:bg-zinc-800 dark:border-zinc-700">
+        <Card className="dark:bg-zinc-800 dark:border-zinc-700 stats-card">
           <CardContent className='p-4'>
             <div className='flex items-center justify-between'>
               <div>
@@ -1048,7 +1048,7 @@ export default function OwnerDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="dark:bg-zinc-800 dark:border-zinc-700">
+        <Card className="dark:bg-zinc-800 dark:border-zinc-700 stats-card">
           <CardContent className='p-4'>
             <div className='flex items-center justify-between'>
               <div>
@@ -1060,7 +1060,7 @@ export default function OwnerDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="dark:bg-zinc-800 dark:border-zinc-700">
+        <Card className="dark:bg-zinc-800 dark:border-zinc-700 stats-card">
           <CardContent className='p-4'>
             <div className='flex items-center justify-between'>
               <div>
@@ -1111,7 +1111,7 @@ export default function OwnerDashboard() {
 
       {/* Tabs de Navegação */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full dark:bg-zinc-800 dark:border-zinc-700 flex items-center justify-center">
+        <TabsList className="w-full dark:bg-zinc-800 dark:border-zinc-700 flex items-center justify-center tabs-list">
           <TabsTrigger value="overview" className="flex-1 flex items-center gap-1 sm:gap-2 dark:data-[state=active]:bg-zinc-700 dark:text-zinc-300 dark:data-[state=active]:text-zinc-100">
             <BarChart3 className="w-4 h-4" />
             <span className="hidden sm:inline">Visão Geral</span>
@@ -2387,7 +2387,7 @@ export default function OwnerDashboard() {
 
       {/* Modal Adicionar Jogador - Otimizado para Mobile */}
       <Dialog open={showAddPlayerModal} onOpenChange={setShowAddPlayerModal}>
-        <DialogContent className="w-[95%] mx-auto max-w-[500px] max-h-[95vh] overflow-y-auto dark:bg-zinc-800 dark:border-zinc-700">
+        <DialogContent className="w-[95%] mx-auto max-w-[500px] max-h-[95vh] overflow-y-auto dark:bg-zinc-800 dark:border-zinc-700 dialog-content">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 dark:text-zinc-100 text-lg sm:text-xl">
               <Users className="w-4 h-4 sm:w-5 sm:h-5" />

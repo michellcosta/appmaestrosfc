@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Importar correções para tema escuro */
+@import './styles/dark-theme-fixes.css';
+
 /* Custom CSS Variables for App Maestros FC */
 :root {
   /* Primary Colors */
