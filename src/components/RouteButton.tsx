@@ -271,7 +271,7 @@ export const RouteButton: React.FC<RouteButtonProps> = ({ address, className = '
   return (
     <div ref={componentRef} className="relative">
       {/* Estilos CSS para animações customizadas */}
-      <style jsx>{`
+      <style>{`
         @keyframes slideUpFromBottom {
           from {
             transform: translateY(100%);
