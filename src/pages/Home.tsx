@@ -37,7 +37,7 @@ export default function HomePage() {
   const { success, error } = useToastHelpers();
   const { user } = useAuth();
   const { canRequestToPlay, canDrawTeams } = usePermissions();
-  const { drawTeams: executeTeamDraw, hasTeamDraw, isTeamDrawComplete, getPlayersByTeam } = useTeamDraw();
+  const { drawTeams: executeTeamDraw, hasTeamDraw, isTeamDrawComplete, getPlayersByTeam } = useTeamDraw(currentDrawMatchId);
 
   // Estado para controlar se o sorteio foi realizado
   const [teamDrawCompleted, setTeamDrawCompleted] = useState<{ [matchId: string]: boolean }>({});

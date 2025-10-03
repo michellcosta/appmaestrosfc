@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Navigation, MapPin, ExternalLink } from 'lucide-react';
+import { ExternalLink, MapPin, Navigation } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface RouteButtonProps {
   address: string;
@@ -15,11 +15,11 @@ export const RouteButton: React.FC<RouteButtonProps> = ({ address, className = '
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [tooltipTimeout, setTooltipTimeout] = useState<NodeJS.Timeout | null>(null);
-  
+
   // Estados para morphing animation
   const [morphState, setMorphState] = useState<'idle' | 'hover' | 'loading' | 'success'>('idle');
   const [morphTimeout, setMorphTimeout] = useState<NodeJS.Timeout | null>(null);
-  
+
   // Ref para detectar cliques fora do componente
   const componentRef = useRef<HTMLDivElement>(null);
 
@@ -58,7 +58,7 @@ export const RouteButton: React.FC<RouteButtonProps> = ({ address, className = '
   const handleButtonClick = () => {
     setIsClicked(true);
     setIsExpanded(!isExpanded);
-    
+
     // Reset do estado visual após um tempo
     setTimeout(() => {
       setIsClicked(false);
@@ -69,7 +69,7 @@ export const RouteButton: React.FC<RouteButtonProps> = ({ address, className = '
     setIsExpanded(false);
     setShowTooltip(false);
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const url = isMobile 
+    const url = isMobile
       ? `https://maps.google.com/maps?q=${encodeURIComponent(address)}`
       : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
     window.open(url, '_blank');
@@ -85,7 +85,7 @@ export const RouteButton: React.FC<RouteButtonProps> = ({ address, className = '
   const toggleFloating = () => {
     setIsClicked(true);
     setIsExpanded(!isExpanded);
-    
+
     // Reset do estado visual após um tempo
     setTimeout(() => {
       setIsClicked(false);
@@ -103,25 +103,25 @@ export const RouteButton: React.FC<RouteButtonProps> = ({ address, className = '
   // Funções do Tooltip
   const handleMouseEnter = (event: React.MouseEvent) => {
     if (isMobile || isExpanded) return; // Não mostra tooltip em mobile ou quando expandido
-    
+
     // Limpa timeout anterior se existir
     if (tooltipTimeout) {
       clearTimeout(tooltipTimeout);
     }
-    
+
     const rect = event.currentTarget.getBoundingClientRect();
     const tooltipX = rect.left + rect.width / 2;
     const tooltipY = rect.top - 10; // 10px acima do botão
-    
+
     setTooltipPosition({ x: tooltipX, y: tooltipY });
-    
+
     // Delay para evitar tooltips acidentais
     const timeout = setTimeout(() => {
       if (!isExpanded) { // Verifica novamente se não está expandido
         setShowTooltip(true);
       }
     }, 800);
-    
+
     setTooltipTimeout(timeout);
   };
 
@@ -149,20 +149,20 @@ export const RouteButton: React.FC<RouteButtonProps> = ({ address, className = '
   const handleMorphClick = () => {
     if (morphState === 'hover' || morphState === 'idle') {
       setMorphState('loading');
-      
+
       // Simula processo de carregamento
       const timeout = setTimeout(() => {
         setMorphState('success');
-        
+
         // Abre o Waze automaticamente após mostrar sucesso
         const successTimeout = setTimeout(() => {
           openWaze();
           setMorphState('idle');
         }, 1200);
-        
+
         setMorphTimeout(successTimeout);
       }, 1500);
-      
+
       setMorphTimeout(timeout);
     }
   };
@@ -398,42 +398,41 @@ export const RouteButton: React.FC<RouteButtonProps> = ({ address, className = '
           animation: morphPulse 0.6s ease-in-out, morphGlow 2s ease-in-out infinite;
         }
       `}</style>
-      
+
       {/* Overlay para fechar ao clicar fora */}
       {isExpanded && (
-        <div 
-          className={`fixed inset-0 z-40 ${
-            isMobile 
-              ? 'bg-black bg-opacity-50 animate-in fade-in-0 duration-300' 
+        <div
+          className={`fixed inset-0 z-40 ${isMobile
+              ? 'bg-black bg-opacity-50 animate-in fade-in-0 duration-300'
               : 'bg-transparent'
-          }`}
+            }`}
           onClick={() => setIsExpanded(false)}
           style={{
-            animation: isMobile && isExpanded 
-              ? 'fadeInBackdrop 0.3s ease-out both' 
+            animation: isMobile && isExpanded
+              ? 'fadeInBackdrop 0.3s ease-out both'
               : undefined
           }}
         />
       )}
 
       {/* Botão Principal */}
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={mode === 'floating' ? toggleFloating : 
-                 mode === 'horizontal' ? toggleExpansion : 
-                 mode === 'mobile' ? (isMobile ? openBottomSheet : openWaze) :
-                 mode === 'tooltip' ? openWaze :
-                 mode === 'morphing' ? handleMorphClick : handleButtonClick}
-        onMouseEnter={mode === 'tooltip' && !isMobile ? handleMouseEnter : 
-                      mode === 'morphing' && !isMobile ? handleMorphMouseEnter : handleMouseEnter}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={mode === 'floating' ? toggleFloating :
+          mode === 'horizontal' ? toggleExpansion :
+            mode === 'mobile' ? (isMobile ? openBottomSheet : openWaze) :
+              mode === 'tooltip' ? openWaze :
+                mode === 'morphing' ? handleMorphClick : handleButtonClick}
+        onMouseEnter={mode === 'tooltip' && !isMobile ? handleMouseEnter :
+          mode === 'morphing' && !isMobile ? handleMorphMouseEnter : handleMouseEnter}
         onMouseLeave={mode === 'tooltip' && !isMobile ? handleMouseLeave :
-                      mode === 'morphing' && !isMobile ? handleMorphMouseLeave : handleMouseLeave}
+          mode === 'morphing' && !isMobile ? handleMorphMouseLeave : handleMouseLeave}
         className={`
           flex items-center gap-2 transition-all duration-200 relative z-50
           ${mode === 'morphing' ? getMorphingStyles() : `
-            ${isClicked 
-              ? 'bg-maestros-green text-white border-maestros-green' 
+            ${isClicked
+              ? 'bg-maestros-green text-white border-maestros-green'
               : 'bg-white text-maestros-green border-maestros-green hover:bg-maestros-green hover:text-white'
             }
           `} 
@@ -446,7 +445,7 @@ export const RouteButton: React.FC<RouteButtonProps> = ({ address, className = '
 
       {/* Tooltip Interativo */}
       {showTooltip && !isMobile && (
-        <div 
+        <div
           className="fixed z-[100] pointer-events-none"
           style={{
             left: tooltipPosition.x,
@@ -524,11 +523,11 @@ export const RouteButton: React.FC<RouteButtonProps> = ({ address, className = '
       {/* Desktop: Container Expansível Horizontal */}
       {!isMobile && isExpanded && (
         <div className="absolute top-0 left-0 z-50 flex items-center gap-0 rounded-lg border-2 border-maestros-green bg-white overflow-hidden shadow-lg">
-          
+
           {/* Botão Principal (repetido para layout) */}
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleButtonClick}
             className="flex items-center gap-2 transition-all duration-300 border-0 rounded-r-none bg-white text-maestros-green hover:bg-maestros-green hover:text-white border-r border-maestros-green/20"
           >
@@ -573,7 +572,7 @@ export const RouteButton: React.FC<RouteButtonProps> = ({ address, className = '
 
       {/* Mobile: Bottom Sheet */}
       {isMobile && isExpanded && (
-        <div 
+        <div
           className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl border-t border-gray-200"
           style={{
             animation: 'slideUpFromBottom 0.4s ease-out both'
