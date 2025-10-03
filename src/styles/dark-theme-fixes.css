@@ -1,99 +1,64 @@
-/* Correções para contrastes e cores no tema escuro */
+/* Correções para contrastes e cores no tema escuro - Versão Conservadora */
 
 /* ===== CORES DE FUNDO E CONTRASTES ===== */
 
-/* Fundo principal mais escuro para melhor contraste */
+/* Apenas melhorar o contraste do fundo principal */
 .dark {
-  background-color: #0f172a !important; /* slate-900 mais escuro */
-  color: #f1f5f9 !important; /* slate-100 mais claro */
+  background-color: #111827 !important; /* gray-900 ligeiramente mais escuro */
 }
 
-/* Cards com melhor contraste */
-.dark .card,
-.dark [class*="bg-white"] {
-  background-color: #1e293b !important; /* slate-800 */
-  border-color: #334155 !important; /* slate-700 */
-  color: #f1f5f9 !important; /* slate-100 */
-}
-
-/* Cards de estatísticas com contraste aprimorado */
-.dark .stats-card {
-  background-color: #1e293b !important; /* slate-800 */
-  border: 1px solid #334155 !important; /* slate-700 */
-  color: #f1f5f9 !important;
+/* Cards com melhor contraste mas mantendo estrutura */
+.dark .card {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #374151 !important; /* gray-700 */
 }
 
 /* ===== TEXTOS E LEGIBILIDADE ===== */
 
-/* Títulos principais */
-.dark h1,
-.dark h2,
-.dark h3,
-.dark [class*="text-lg"],
-.dark [class*="text-xl"],
-.dark [class*="text-2xl"] {
-  color: #ffffff !important; /* branco puro para títulos */
-  font-weight: 600;
+/* Melhorar contraste de textos sem quebrar layout */
+.dark [class*="text-gray-600"] {
+  color: #d1d5db !important; /* gray-300 - mais claro */
 }
 
-/* Textos secundários com melhor contraste */
-.dark [class*="text-gray-600"],
-.dark [class*="text-zinc-600"],
-.dark [class*="text-slate-600"] {
-  color: #cbd5e1 !important; /* slate-300 */
+.dark [class*="text-zinc-600"] {
+  color: #d1d5db !important; /* gray-300 - mais claro */
 }
 
-/* Textos terciários */
-.dark [class*="text-gray-500"],
-.dark [class*="text-zinc-500"],
-.dark [class*="text-slate-500"] {
-  color: #94a3b8 !important; /* slate-400 */
+.dark [class*="text-gray-500"] {
+  color: #9ca3af !important; /* gray-400 - mais claro */
+}
+
+.dark [class*="text-zinc-500"] {
+  color: #9ca3af !important; /* gray-400 - mais claro */
 }
 
 /* ===== BOTÕES E ELEMENTOS INTERATIVOS ===== */
 
-/* Botões primários */
-.dark .bg-blue-600,
-.dark [class*="bg-blue-"] {
-  background-color: #2563eb !important; /* blue-600 */
-  color: #ffffff !important;
-  border-color: #1d4ed8 !important; /* blue-700 */
+/* Melhorar contraste de botões sem quebrar funcionalidade */
+.dark .bg-gray-100 {
+  background-color: #374151 !important; /* gray-700 */
+  color: #f9fafb !important; /* gray-50 */
 }
 
-.dark .bg-blue-600:hover,
-.dark [class*="bg-blue-"]:hover {
-  background-color: #1d4ed8 !important; /* blue-700 */
-}
-
-/* Botões secundários */
-.dark .bg-gray-100,
 .dark .bg-zinc-100 {
-  background-color: #334155 !important; /* slate-700 */
-  color: #f1f5f9 !important; /* slate-100 */
-  border-color: #475569 !important; /* slate-600 */
+  background-color: #374151 !important; /* gray-700 */
+  color: #f9fafb !important; /* gray-50 */
 }
 
 .dark .bg-gray-100:hover,
 .dark .bg-zinc-100:hover {
-  background-color: #475569 !important; /* slate-600 */
-}
-
-/* Botões de outline */
-.dark [class*="border-"],
-.dark [class*="outline"] {
-  border-color: #475569 !important; /* slate-600 */
-  color: #f1f5f9 !important; /* slate-100 */
+  background-color: #4b5563 !important; /* gray-600 */
 }
 
 /* ===== INPUTS E FORMULÁRIOS ===== */
 
-/* Inputs com melhor contraste */
+/* Melhorar visibilidade de inputs */
 .dark input,
 .dark textarea,
 .dark select {
-  background-color: #1e293b !important; /* slate-800 */
-  border-color: #475569 !important; /* slate-600 */
-  color: #f1f5f9 !important; /* slate-100 */
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #374151 !important; /* gray-700 */
+  color: #f9fafb !important; /* gray-50 */
 }
 
 .dark input:focus,
@@ -105,77 +70,64 @@
 
 .dark input::placeholder,
 .dark textarea::placeholder {
-  color: #94a3b8 !important; /* slate-400 */
+  color: #9ca3af !important; /* gray-400 */
 }
 
 /* ===== BADGES E LABELS ===== */
 
-/* Badges com cores mais vibrantes */
-.dark .bg-purple-100,
+/* Melhorar contraste de badges específicos */
+.dark .bg-purple-100 {
+  background-color: #6b21a8 !important; /* purple-800 */
+  color: #e9d5ff !important; /* purple-200 */
+}
+
 .dark .bg-purple-900\/30 {
-  background-color: #5b21b6 !important; /* violet-700 */
-  color: #e9d5ff !important; /* violet-200 */
-  border-color: #7c3aed !important; /* violet-600 */
-}
-
-.dark .bg-green-100,
-.dark .bg-green-900\/20 {
-  background-color: #059669 !important; /* emerald-600 */
-  color: #d1fae5 !important; /* emerald-100 */
-}
-
-.dark .bg-red-100,
-.dark .bg-red-900\/20 {
-  background-color: #dc2626 !important; /* red-600 */
-  color: #fecaca !important; /* red-200 */
+  background-color: #6b21a8 !important; /* purple-800 */
+  color: #e9d5ff !important; /* purple-200 */
 }
 
 /* ===== MODAIS E DIALOGS ===== */
 
-/* Modais com fundo mais escuro */
+/* Melhorar contraste de modais */
 .dark .dialog-content {
-  background-color: #1e293b !important; /* slate-800 */
-  border-color: #334155 !important; /* slate-700 */
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #374151 !important; /* gray-700 */
 }
 
 /* ===== NAVEGAÇÃO E TABS ===== */
 
-/* Tabs com melhor contraste */
+/* Melhorar contraste de tabs */
 .dark .tabs-list {
-  background-color: #1e293b !important; /* slate-800 */
-  border-color: #334155 !important; /* slate-700 */
-}
-
-.dark .tabs-trigger {
-  color: #94a3b8 !important; /* slate-400 */
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #374151 !important; /* gray-700 */
 }
 
 .dark .tabs-trigger[data-state="active"] {
-  background-color: #334155 !important; /* slate-700 */
+  background-color: #374151 !important; /* gray-700 */
   color: #ffffff !important;
 }
 
 /* ===== ÍCONES E ELEMENTOS VISUAIS ===== */
 
-/* Ícones com cores mais vibrantes */
+/* Melhorar contraste de ícones específicos */
 .dark .text-blue-500 {
-  color: #3b82f6 !important; /* blue-500 */
+  color: #60a5fa !important; /* blue-400 - mais claro */
 }
 
 .dark .text-green-500 {
-  color: #10b981 !important; /* emerald-500 */
+  color: #4ade80 !important; /* green-400 - mais claro */
 }
 
 .dark .text-red-500 {
-  color: #ef4444 !important; /* red-500 */
+  color: #f87171 !important; /* red-400 - mais claro */
 }
 
 .dark .text-yellow-500 {
-  color: #f59e0b !important; /* amber-500 */
+  color: #facc15 !important; /* yellow-400 - mais claro */
 }
 
 .dark .text-purple-500 {
-  color: #8b5cf6 !important; /* violet-500 */
+  color: #a78bfa !important; /* purple-400 - mais claro */
 }
 
 /* ===== SCROLLBARS CUSTOMIZADAS ===== */
@@ -186,27 +138,16 @@
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: #1f2937;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #475569;
+  background: #374151;
   border-radius: 4px;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
-}
-
-/* ===== HOVER STATES ===== */
-
-/* Estados de hover mais visíveis */
-.dark .hover\:bg-gray-50:hover {
-  background-color: #334155 !important; /* slate-700 */
-}
-
-.dark .hover\:bg-zinc-50:hover {
-  background-color: #334155 !important; /* slate-700 */
+  background: #4b5563;
 }
 
 /* ===== RESPONSIVIDADE ===== */
@@ -214,10 +155,6 @@
 @media (max-width: 768px) {
   .dark .dashboard-container {
     padding: 0.5rem;
-  }
-  
-  .dark .stats-card {
-    min-height: 100px;
   }
 }
 
