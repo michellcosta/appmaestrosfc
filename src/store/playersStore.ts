@@ -165,6 +165,17 @@ export const usePlayersStore = create<PlayersStore>()(
                 
                 if (Array.isArray(parsed)) {
                   console.log(`✅ Encontrados ${parsed.length} jogadores em ${key}`);
+                  // Verificar estrutura dos jogadores
+                  if (parsed.length > 0) {
+                    const firstPlayer = parsed[0];
+                    console.log('📋 Estrutura do primeiro jogador:', {
+                      id: firstPlayer._id || firstPlayer.id,
+                      name: firstPlayer.name,
+                      email: firstPlayer.email,
+                      approved: firstPlayer.approved,
+                      campos: Object.keys(firstPlayer)
+                    });
+                  }
                   offlinePlayers.push(...parsed);
                 } else if (parsed.players && Array.isArray(parsed.players)) {
                   console.log(`✅ Encontrados ${parsed.players.length} jogadores em ${key}.players`);
@@ -174,6 +185,7 @@ export const usePlayersStore = create<PlayersStore>()(
                   offlinePlayers.push(...parsed.state.players);
                 } else {
                   console.log('❌ Formato não reconhecido em', key);
+                  console.log('Estrutura encontrada:', Object.keys(parsed));
                 }
               } catch (e) {
                 console.warn(`❌ Erro ao parse dados da chave ${key}:`, e);
@@ -201,9 +213,18 @@ export const usePlayersStore = create<PlayersStore>()(
           const teams: TeamColor[] = ['Preto', 'Verde', 'Cinza', 'Vermelho'];
 
           // Filtrar jogadores válidos e embaralhar
+          console.log('\n🎯 Filtrando jogadores válidos...');
           const validPlayers = offlinePlayers
-            .filter(player => player && player.name)
+            .filter(player => {
+              const isValid = player && player.name;
+              if (!isValid) {
+                console.log(`❌ Jogador inválido:`, player);
+              }
+              return isValid;
+            })
             .sort(() => Math.random() - 0.5);
+          
+          console.log(`✅ ${validPlayers.length} jogadores válidos para sorteio:`, validPlayers.map(p => p.name));
 
           const teamPlayers: PlayerWithTeam[] = [];
           let playerIndex = 0;
