@@ -37,7 +37,6 @@ export default function HomePage() {
   const { success, error } = useToastHelpers();
   const { user } = useAuth();
   const { canRequestToPlay, canDrawTeams } = usePermissions();
-  const { drawTeams: executeTeamDraw, hasTeamDraw, isTeamDrawComplete, getPlayersByTeam } = useTeamDraw(currentDrawMatchId);
 
   // Estado para controlar se o sorteio foi realizado
   const [teamDrawCompleted, setTeamDrawCompleted] = useState<{ [matchId: string]: boolean }>({});
@@ -49,6 +48,9 @@ export default function HomePage() {
   const [showTeamDrawModal, setShowTeamDrawModal] = useState(false);
   const [currentDrawMatchId, setCurrentDrawMatchId] = useState<string>('');
   const [playersPerTeam, setPlayersPerTeam] = useState<5 | 6>(5);
+
+  // Hook para gerenciar sorteio de times (após declaração dos estados)
+  const { drawTeams: executeTeamDraw, hasTeamDraw, isTeamDrawComplete, getPlayersByTeam } = useTeamDraw(currentDrawMatchId);
 
   // Store de participantes
   const {
