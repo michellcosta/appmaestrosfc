@@ -96,13 +96,55 @@
 
 /* ===== NAVEGAÇÃO E TABS ===== */
 
-/* Melhorar contraste de tabs */
+/* Garantir que as tabs sejam sempre visíveis */
+.tabs-list {
+  display: flex !important;
+  width: 100% !important;
+  background-color: #f9fafb !important; /* gray-50 */
+  border: 1px solid #e5e7eb !important; /* gray-200 */
+}
+
+.tabs-trigger {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0.5rem 1rem !important;
+  color: #6b7280 !important; /* gray-500 */
+  background-color: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.tabs-trigger[data-state="active"] {
+  background-color: #ffffff !important;
+  color: #111827 !important; /* gray-900 */
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1) !important;
+}
+
+.tabs-trigger:hover {
+  background-color: #f3f4f6 !important; /* gray-100 */
+  color: #374151 !important; /* gray-700 */
+}
+
+/* Tema escuro específico */
 .dark .tabs-list {
   background-color: #1f2937 !important; /* gray-800 */
   border-color: #374151 !important; /* gray-700 */
 }
 
+.dark .tabs-trigger {
+  color: #9ca3af !important; /* gray-400 */
+  background-color: transparent !important;
+}
+
 .dark .tabs-trigger[data-state="active"] {
+  background-color: #374151 !important; /* gray-700 */
+  color: #ffffff !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .tabs-trigger:hover {
   background-color: #374151 !important; /* gray-700 */
   color: #ffffff !important;
 }
