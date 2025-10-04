@@ -89,15 +89,6 @@ export default function HomePage() {
 
   // Sistema completamente baseado em dados reais - sem dados de exemplo
 
-  // Função para alternar role do usuário (apenas para testes)
-  const changeUserRole = (newRole: 'owner' | 'admin' | 'aux' | 'mensalista' | 'diarista') => {
-    if (user) {
-      const updatedUser = { ...user, role: newRole };
-      localStorage.setItem('offline_user', JSON.stringify(updatedUser));
-      window.location.reload();
-    }
-  };
-
   // Função para sincronizar dados entre dispositivos
   const handleSyncData = async () => {
     if (isSyncing) return;
@@ -438,7 +429,7 @@ export default function HomePage() {
     console.log('🎲 DEBUG: performTeamDraw chamada!');
     console.log('currentDrawMatchId:', currentDrawMatchId);
     console.log('playersPerTeam:', playersPerTeam);
-    
+
     if (!currentDrawMatchId) {
       console.log('❌ DEBUG: currentDrawMatchId não definido');
       return;
@@ -453,11 +444,11 @@ export default function HomePage() {
       await new Promise(resolve => setTimeout(resolve, 1500));
       await executeTeamDraw(currentDrawMatchId, playersPerTeam);
       console.log('✅ DEBUG: executeTeamDraw concluído com sucesso');
-      
+
       // Debug: Verificar se os times foram criados
       const teamDrawData = getPlayersByTeam('Preto');
       console.log('🔍 DEBUG: Times criados - Time Preto:', teamDrawData);
-      
+
       setTeamDrawCompleted(prev => ({ ...prev, [currentDrawMatchId]: true }));
 
       // Para o efeito de piscar após completar
@@ -706,113 +697,6 @@ export default function HomePage() {
             </CardContent>
           </Card>
         )}
-
-        {/* Seção de Testes - Apenas para desenvolvimento */}
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold">🧪 Páginas de Teste</h2>
-          <Card className="rounded-2xl">
-            <CardContent className="p-4 space-y-2">
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/test-page')}
-                  className="text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
-                >
-                  Teste Simples
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/offline-auth')}
-                  className="text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
-                >
-                  Login Offline
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/test-auth')}
-                  className="text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
-                >
-                  Teste Auth
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/debug-auth')}
-                  className="text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
-                >
-                  Debug Auth
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/create-owner-google')}
-                  className="col-span-2 text-purple-600 border-purple-300 hover:bg-purple-50 hover:border-purple-400"
-                >
-                  👑 Criar Owner com Google
-                </Button>
-              </div>
-
-              {/* Botão de Sincronização */}
-              <div className="pt-2 border-t border-zinc-200 space-y-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSyncData}
-                  disabled={isSyncing}
-                  className="w-full !bg-maestros-green !text-white !border-maestros-green hover:!bg-maestros-green/90 disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-                  {isSyncing ? 'Sincronizando...' : 'Sincronizar Dados'}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    localStorage.removeItem('maestrosfc_games');
-                    window.location.reload();
-                  }}
-                  className="w-full text-red-600 hover:bg-red-50 hover:text-red-700"
-                >
-                  Limpar Cache de Jogos
-                </Button>
-                <p className="text-xs text-zinc-500 mt-1 text-center">
-                  Sincroniza dados entre mobile e desktop
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Seletor de Role para Testes */}
-        <Card className="p-4 bg-yellow-50 border-yellow-200">
-          <div className="flex items-center gap-4">
-            <Settings className="w-5 h-5 text-yellow-600" />
-            <div className="flex-1">
-              <h3 className="font-medium text-yellow-800">Teste de Permissões</h3>
-              <p className="text-sm text-yellow-600">Role atual: <strong>{user?.role}</strong></p>
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => changeUserRole('owner')} className="text-xs">
-                Owner
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => changeUserRole('admin')} className="text-xs">
-                Admin
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => changeUserRole('aux')} className="text-xs">
-                Aux
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => changeUserRole('mensalista')} className="text-xs">
-                Mensalista
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => changeUserRole('diarista')} className="text-xs">
-                Diarista
-              </Button>
-            </div>
-          </div>
-        </Card>
       </div>
 
       {/* Modal de Doação */}

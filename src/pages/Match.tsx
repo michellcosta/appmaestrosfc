@@ -24,7 +24,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useMatchStore, GoalEvent, TeamColor } from "@/store/matchStore";
 import { usePlayersStore } from "@/store/playersStore";
-// Removido: usePlayerStatsStore não é mais usado
+import { usePlayerStatsStore } from "@/store/playerStatsStore";
 import { useGamesStore } from "@/store/gamesStore";
 import { useAuth } from '@/auth/OfflineAuthProvider';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -80,10 +80,14 @@ const Match: React.FC = () => {
     resetToInitialState,
     recomputeScores,
   } = useMatchStore();
-  const { 
-    players, 
+
+  // Store de estatísticas dos jogadores
+  const { addGoal: addGoalToStats, addAssist: addAssistToStats } = usePlayerStatsStore();
+
+  const {
+    players,
     currentMatchId,
-    loadPlayersFromTeamDraw, 
+    loadPlayersFromTeamDraw,
     getPlayersByTeam,
     getActivePlayersByTeam,
     substitutePlayer,
@@ -423,6 +427,12 @@ const Match: React.FC = () => {
         editGoal(goalEditId, { author: goalAuthor, assist: assistVal ?? null });
       } else {
         addGoal({ team: goalTeam, author: goalAuthor, assist: assistVal ?? null });
+
+        // Registrar estatísticas do ranking
+        addGoalToStats(goalAuthor);
+        if (assistVal) {
+          addAssistToStats(assistVal);
+        }
       }
       setGoalOpen(false);
       setGoalEditId(null);

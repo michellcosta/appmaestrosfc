@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/auth/OfflineAuthProvider';
+import { useSimpleInvites } from '@/hooks/useSimpleInvites';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,12 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { 
-  UserPlus, 
-  Copy, 
-  CheckCircle, 
-  Clock, 
-  Users, 
+import { useToastHelpers } from '@/components/ui/toast';
+import {
+  UserPlus,
+  Copy,
+  CheckCircle,
+  Clock,
+  Users,
   Mail,
   Calendar,
   Shield,
