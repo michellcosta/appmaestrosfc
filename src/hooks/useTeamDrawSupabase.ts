@@ -159,11 +159,34 @@ export const useTeamDrawSupabase = (matchId?: string): UseTeamDrawSupabaseReturn
             setPlayers(playersWithTeams);
             setCurrentMatchId(targetMatchId);
 
-            // Salvar no localStorage
+            // Salvar no localStorage (fallback)
             localStorage.setItem(`teamDraw_${targetMatchId}`, JSON.stringify({
                 teamDraw: newTeamDraw,
                 players: playersWithTeams
             }));
+
+            // 🔥 NOVO: Persistir no Supabase
+            try {
+                const { createMatchWithTeams } = await import('@/lib/db');
+
+                // Calcular número de times
+                const teamCount = selectedColors.length;
+
+                // Criar partida no Supabase
+                await createMatchWithTeams({
+                    teamCount,
+                    players: shuffledPlayers.map(p => ({
+                        id: p.id,
+                        name: p.email.split('@')[0] || p.email
+                    })),
+                    playersPerTeam
+                });
+
+                console.log('✅ Sorteio salvo no Supabase com sucesso');
+            } catch (supabaseError) {
+                console.warn('⚠️ Falha ao salvar no Supabase, usando apenas localStorage:', supabaseError);
+                // Não jogar erro, permite continuar com localStorage
+            }
 
         } catch (err) {
             console.error('Erro ao sortear times:', err);

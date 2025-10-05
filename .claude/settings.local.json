@@ -5,7 +5,10 @@
       "Bash(mv:*)",
       "Bash(rmdir:*)",
       "Bash(npm run build:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []
