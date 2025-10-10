@@ -10,7 +10,7 @@ export function useMenuByRole(profile: Profile | null) {
     const baseMensalista: MenuItem[] = [
       { label: 'Jogos', href: '/' },
       { label: 'Partida', href: '/match' },
-      { label: 'Financeiro', href: '/finance' },
+      // { label: 'Financeiro', href: '/finance' }, // DESABILITADO - Sistema financeiro removido
       { label: 'Ranking', href: '/ranking' },
       { label: 'Perfil', href: '/perfil' },
     ];
@@ -22,7 +22,7 @@ export function useMenuByRole(profile: Profile | null) {
 
     const diaristaAprovado: MenuItem[] = [
       { label: 'Jogos', href: '/' },
-      { label: 'Financeiro', href: '/finance' },
+      // { label: 'Financeiro', href: '/finance' }, // DESABILITADO - Sistema financeiro removido
       { label: 'Perfil', href: '/perfil' },
     ];
 

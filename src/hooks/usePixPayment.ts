@@ -1,5 +1,4 @@
-import { useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
 export interface PixTransaction {
@@ -409,9 +408,9 @@ export function usePixPayment() {
     try {
       const { createPixProvider } = await import('@/utils/pixProviders');
       const provider = createPixProvider(config);
-      
+
       const result = await provider.createPixTransaction(transaction);
-      
+
       return {
         qr_code: result.qr_code,
         qr_code_image: result.qr_code_image,
@@ -429,9 +428,9 @@ export function usePixPayment() {
     try {
       const { createPixProvider } = await import('@/utils/pixProviders');
       const provider = createPixProvider(config);
-      
+
       const result = await provider.createPixTransaction(transaction);
-      
+
       return {
         status: result.status,
         provider_response: result.provider_response,
@@ -452,20 +451,20 @@ export function usePixPayment() {
     paymentHistory,
     loading,
     error,
-    
+
     // Ações
     createPixTransaction,
     generatePixQrCode,
     processPixPayment,
     addUserPixKey,
     processWebhook,
-    
+
     // Utilitários
     getTransactionById,
     getTransactionsByStatus,
     getTransactionsByType,
     isTransactionExpired,
-    
+
     // Refresh
     fetchTransactions,
     fetchConfigurations,

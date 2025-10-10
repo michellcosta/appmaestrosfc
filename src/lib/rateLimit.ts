@@ -1,4 +1,4 @@
-import { supabase } from '@/config/supabase';
+
 
 export interface RateLimitOptions {
   windowMs: number;
@@ -22,22 +22,22 @@ export async function checkRateLimit(
   options: RateLimitOptions
 ): Promise<boolean> {
   const { windowMs, maxRequests } = options;
-  
+
   try {
     // Usar advisory lock para evitar race conditions
     const lockKey = `rate_limit_${key}`;
-    
+
     // Verificar contadores ativos
     const { data: counters } = await supabase
       .from('rate_limit_counters')
       .select('*')
       .eq('key', key)
       .gte('created_at', new Date(Date.now() - windowMs).toISOString());
-    
+
     if (counters && counters.length >= maxRequests) {
       throw new RateLimitError(`Rate limit exceeded for key: ${key}`);
     }
-    
+
     // Registrar nova requisição
     await supabase
       .from('rate_limit_counters')
@@ -45,13 +45,13 @@ export async function checkRateLimit(
         key,
         created_at: new Date().toISOString()
       });
-    
+
     // Limpar contadores antigos (cleanup)
     await supabase
       .from('rate_limit_counters')
       .delete()
       .lt('created_at', new Date(Date.now() - windowMs).toISOString());
-    
+
     return true;
   } catch (error) {
     if (error instanceof RateLimitError) {

@@ -1,22 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { Card, CardContent } from '@/components/ui/card';
+import { useAuth } from '@/auth/OfflineAuthProvider';
+import { PixPaymentModal } from '@/components/PixPaymentModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { DollarSign, CreditCard, TrendingUp, CheckCircle, Clock, XCircle, Crown, Shield, Star, Zap, User, Calendar, Copy, QrCode } from 'lucide-react';
-import { useAuth } from '@/auth/OfflineAuthProvider';
+import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useDigitalWalletOffline } from '@/hooks/useDigitalWalletOffline';
-import { PixPaymentModal } from '@/components/PixPaymentModal';
+import { Calendar, Copy, Crown, QrCode, Shield, Star, User, Zap } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 type Charge = {
   id: string;
-  type: 'mensalista'|'diarista';
+  type: 'mensalista' | 'diarista';
   amount: number;
-  status: 'pendente'|'pago'|'cancelado';
-  period: string|null;
+  status: 'pendente' | 'pago' | 'cancelado';
+  period: string | null;
   created_at: string;
 };
 
@@ -25,7 +24,7 @@ type MonthlyPayment = {
   month: string;
   year: number;
   amount: number;
-  status: 'pendente'|'pago'|'vencido';
+  status: 'pendente' | 'pago' | 'vencido';
   due_date: string;
   paid_at?: string;
 };
@@ -75,13 +74,13 @@ export default function FinancePage() {
   const generateLocalCharges = () => {
     const currentDate = new Date();
     const charges = [];
-    
+
     // Gerar algumas cobranças de exemplo para demonstração
     for (let i = 0; i < 5; i++) {
       const date = new Date(currentDate.getTime() - (i * 24 * 60 * 60 * 1000)); // Últimos 5 dias
       const types = ['mensalidade', 'taxa_extra', 'multa', 'reembolso'];
       const statuses = ['paid', 'pending', 'overdue'];
-      
+
       charges.push({
         id: `charge_${i + 1}`,
         type: types[i % types.length],
@@ -91,7 +90,7 @@ export default function FinancePage() {
         created_at: date.toISOString()
       });
     }
-    
+
     return charges;
   };
 
@@ -99,19 +98,19 @@ export default function FinancePage() {
   const generateMonthlyPayments = () => {
     const currentDate = new Date();
     const payments: MonthlyPayment[] = [];
-    
+
     // Gerar apenas: mês anterior, atual e próximo
     for (let i = -1; i <= 1; i++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
       const monthName = date.toLocaleDateString('pt-BR', { month: 'long' });
       const year = date.getFullYear();
       const dueDate = new Date(year, date.getMonth(), 5); // Vencimento dia 5
-      
+
       const paymentType = getUserPaymentType();
       const amount = PAYMENT_CONFIG[paymentType];
-      
+
       // Status baseado na data
-      let status: 'pendente'|'pago'|'vencido' = 'pendente';
+      let status: 'pendente' | 'pago' | 'vencido' = 'pendente';
       if (i === -1) {
         // Mês anterior: pode estar pago ou vencido
         status = Math.random() > 0.3 ? 'pago' : 'vencido';
@@ -122,7 +121,7 @@ export default function FinancePage() {
         // Próximo mês: sempre pendente
         status = 'pendente';
       }
-      
+
       payments.push({
         id: `${year}-${date.getMonth() + 1}`,
         month: monthName.charAt(0).toUpperCase() + monthName.slice(1),
@@ -133,7 +132,7 @@ export default function FinancePage() {
         paid_at: status === 'pago' ? new Date(dueDate.getTime() - Math.random() * 5 * 24 * 60 * 60 * 1000).toISOString() : undefined
       });
     }
-    
+
     return payments.sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
   };
 
@@ -155,22 +154,22 @@ export default function FinancePage() {
   // Função para confirmar pagamento PIX
   const confirmPixPayment = async () => {
     if (!selectedPayment) return;
-    
+
     setPaymentLoading(true);
-    
+
     try {
       // Simular confirmação de pagamento PIX
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // Atualizar o status do pagamento
-      setMonthlyPayments(prev => 
-        prev.map(p => 
-          p.id === selectedPayment.id 
+      setMonthlyPayments(prev =>
+        prev.map(p =>
+          p.id === selectedPayment.id
             ? { ...p, status: 'pago' as const, paid_at: new Date().toISOString() }
             : p
         )
       );
-      
+
       alert(`Mensalidade de ${selectedPayment.month}/${selectedPayment.year} paga com sucesso via PIX!`);
       setPixModalOpen(false);
       setSelectedPayment(null);
@@ -190,7 +189,7 @@ export default function FinancePage() {
       //   .select('id,type,amount,status,period,created_at')
       //   .order('created_at', { ascending: false });
       // if (!error) setRows((data as any) ?? []);
-      
+
       // Usar dados locais em vez da consulta Supabase
       const localData = generateLocalCharges();
       setRows(localData);
@@ -214,29 +213,29 @@ export default function FinancePage() {
             <h1 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Financeiro</h1>
             <p className="text-sm text-gray-600 dark:text-zinc-400">Controle de pagamentos e mensalidades</p>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             {user?.role === 'owner' && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/owner-dashboard')}
-              className="p-2 hover:bg-purple-100 hover:text-purple-700 transition-colors"
-              title="Acesso rápido ao Dashboard do Owner"
-            >
-              <Crown className="w-4 h-4 text-purple-600" />
-            </Button>
-          )}
-            
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/owner-dashboard')}
+                className="p-2 hover:bg-purple-100 hover:text-purple-700 transition-colors"
+                title="Acesso rápido ao Dashboard do Owner"
+              >
+                <Crown className="w-4 h-4 text-purple-600" />
+              </Button>
+            )}
+
             {user?.role && user.role !== 'owner' && (
               <div className="flex items-center space-x-1 text-sm text-maestros-green">
                 {getRoleIcon(user.role)}
                 <span className="hidden sm:inline font-medium">
-                  {user.role === 'admin' ? 'Admin' : 
-                   user.role === 'aux' ? 'Auxiliar' : 
-                   user.role === 'mensalista' ? 'Mensalista' : 
-                   user.role === 'diarista' ? 'Diarista' : 
-                   'Usuário'}
+                  {user.role === 'admin' ? 'Admin' :
+                    user.role === 'aux' ? 'Auxiliar' :
+                      user.role === 'mensalista' ? 'Mensalista' :
+                        user.role === 'diarista' ? 'Diarista' :
+                          'Usuário'}
                 </span>
               </div>
             )}
@@ -256,7 +255,7 @@ export default function FinancePage() {
                   Plano {getUserPaymentType() === 'diarista' ? 'Diarista' : 'Mensalista'}
                 </h3>
                 <p className="text-sm text-purple-600">
-                  {getUserPaymentType() === 'diarista' 
+                  {getUserPaymentType() === 'diarista'
                     ? `R$ ${PAYMENT_CONFIG.diarista.toFixed(2)} por partida`
                     : `R$ ${PAYMENT_CONFIG.mensalista.toFixed(2)} por mês`
                   }
@@ -275,7 +274,7 @@ export default function FinancePage() {
                 {getUserPaymentType() === 'diarista' ? 'Pagamentos por Partida' : 'Mensalidades'}
               </h3>
               <p className="text-sm text-gray-600">
-                {getUserPaymentType() === 'diarista' 
+                {getUserPaymentType() === 'diarista'
                   ? 'Histórico de pagamentos por partida jogada'
                   : 'Mensalidades que vão vencer, vencidas e pagas'
                 }
@@ -288,10 +287,9 @@ export default function FinancePage() {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${
-                          payment.status === 'pago' ? 'bg-green-500' :
+                        <div className={`w-3 h-3 rounded-full ${payment.status === 'pago' ? 'bg-green-500' :
                           payment.status === 'vencido' ? 'bg-red-500' : 'bg-yellow-500'
-                        }`} />
+                          }`} />
                         <div>
                           <div className="font-medium">
                             {getUserPaymentType() === 'diarista' ? `Partida - ${payment.month}` : `${payment.month} ${payment.year}`}
@@ -313,15 +311,15 @@ export default function FinancePage() {
                         <div className="font-semibold">
                           {formatCurrency ? formatCurrency(payment.amount) : `R$ ${payment.amount.toFixed(2)}`}
                         </div>
-                        <Badge 
+                        <Badge
                           variant={
                             payment.status === 'pago' ? 'default' :
-                            payment.status === 'vencido' ? 'destructive' : 'secondary'
+                              payment.status === 'vencido' ? 'destructive' : 'secondary'
                           }
                           className="text-xs"
                         >
                           {payment.status === 'pago' ? 'Pago' :
-                           payment.status === 'vencido' ? 'Vencido' : 'Pendente'}
+                            payment.status === 'vencido' ? 'Vencido' : 'Pendente'}
                         </Badge>
                       </div>
 
@@ -450,7 +448,7 @@ export default function FinancePage() {
               <p className="text-gray-600 mb-4">
                 Teste o novo sistema PIX com integração real, QR codes dinâmicos e webhooks automáticos
               </p>
-              <Button 
+              <Button
                 onClick={() => setAdvancedPixModalOpen(true)}
                 className="bg-purple-600 hover:bg-purple-700"
               >

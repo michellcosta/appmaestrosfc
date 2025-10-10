@@ -1,24 +1,22 @@
-import React, { useState } from 'react';
 import { useAuth } from '@/auth/OfflineAuthProvider';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { 
-  UserPlus, 
-  Copy, 
-  CheckCircle, 
-  Clock, 
-  Users, 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useInvitesConvex } from '@/hooks/useInvitesConvex';
+import {
+  Copy,
   Mail,
-  Calendar,
   Shield,
   Star,
+  UserPlus,
+  Users,
   Zap
 } from 'lucide-react';
+import React, { useState } from 'react';
 
 type Invite = {
   id: string;
@@ -37,7 +35,7 @@ export default function CreateInvite() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [invites, setInvites] = useState<Invite[]>([]);
+  const { invites, createInvite: createInviteConvex, revokeInvite, isLoading: invitesLoading } = useInvitesConvex();
   const [newInvite, setNewInvite] = useState({
     type: 'mensalista' as 'mensalista' | 'diarista',
     email: '',
@@ -73,29 +71,15 @@ export default function CreateInvite() {
         return;
       }
 
-      const token = generateInviteToken();
-      const expiresIn = parseInt(newInvite.expiresIn) * 24 * 60 * 60 * 1000; // converter para ms
-      const expiresAt = new Date(Date.now() + expiresIn).toISOString();
-
-      const invite: Invite = {
-        id: `invite-${Date.now()}`,
-        type: newInvite.type,
+      // Usar Convex para criar convite
+      await createInviteConvex({
         email: newInvite.email,
-        token: token,
-        createdBy: user.name || 'Usuário',
-        createdAt: new Date().toISOString(),
-        expiresAt: expiresAt,
-        used: false
-      };
+        role: 'player',
+        membership: newInvite.type,
+      });
 
-      // Salvar no localStorage (simulação)
-      const existingInvites = JSON.parse(localStorage.getItem('invites') || '[]');
-      existingInvites.push(invite);
-      localStorage.setItem('invites', JSON.stringify(existingInvites));
-
-      setInvites(existingInvites);
       setMessage(`Convite ${newInvite.type} criado com sucesso!`);
-      
+
       // Resetar formulário
       setNewInvite({
         type: 'mensalista',
@@ -118,12 +102,12 @@ export default function CreateInvite() {
 
   const getInviteStatus = (invite: Invite) => {
     if (invite.used) return { text: 'Usado', color: 'bg-green-100 text-green-800' };
-    
+
     const now = new Date();
     const expires = new Date(invite.expiresAt);
-    
+
     if (now > expires) return { text: 'Expirado', color: 'bg-red-100 text-red-800' };
-    
+
     return { text: 'Ativo', color: 'bg-blue-100 text-blue-800' };
   };
 
@@ -168,9 +152,9 @@ export default function CreateInvite() {
             <CardContent className='space-y-4'>
               <div className='space-y-2'>
                 <Label htmlFor="type">Tipo de Convite</Label>
-                <Select 
-                  value={newInvite.type} 
-                  onValueChange={(value: 'mensalista' | 'diarista') => 
+                <Select
+                  value={newInvite.type}
+                  onValueChange={(value: 'mensalista' | 'diarista') =>
                     setNewInvite({ ...newInvite, type: value })
                   }
                 >
@@ -207,9 +191,9 @@ export default function CreateInvite() {
 
               <div className='space-y-2'>
                 <Label htmlFor="expires">Validade (dias)</Label>
-                <Select 
-                  value={newInvite.expiresIn} 
-                  onValueChange={(value) => 
+                <Select
+                  value={newInvite.expiresIn}
+                  onValueChange={(value) =>
                     setNewInvite({ ...newInvite, expiresIn: value })
                   }
                 >
@@ -224,8 +208,8 @@ export default function CreateInvite() {
                 </Select>
               </div>
 
-              <Button 
-                onClick={createInvite} 
+              <Button
+                onClick={createInvite}
                 disabled={loading}
                 className='w-full'
               >

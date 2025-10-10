@@ -1,27 +1,28 @@
-// Supabase Client (Front)
-import { createClient } from '@supabase/supabase-js';
+// Arquivo temporário para compatibilidade - Supabase removido
+// Este arquivo será removido após migração completa
 
-// Configuração do Supabase
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+console.warn('⚠️ Supabase foi removido. Migrando para Convex...');
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-console.log('🔍 Supabase configurado:');
-console.log('URL:', supabaseUrl);
-console.log('Key:', supabaseAnonKey ? '✅ Definida' : '❌ Não definida');
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10
+// Mock do cliente Supabase para evitar erros
+export const supabase = {
+    from: (table: string) => ({
+        select: () => ({
+            eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) })
+        }),
+        insert: () => Promise.resolve({ data: null, error: null }),
+        update: () => ({
+            eq: () => Promise.resolve({ data: null, error: null })
+        }),
+        delete: () => ({
+            eq: () => Promise.resolve({ data: null, error: null })
+        })
+    }),
+    auth: {
+        getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+        signInWithOAuth: () => Promise.resolve({ data: null, error: null }),
+        signOut: () => Promise.resolve({ error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => { } } } })
     }
-  }
-});
+};
+
+export default supabase;

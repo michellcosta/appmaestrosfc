@@ -1,57 +1,43 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
 
 export type Profile = {
   id: string;
   email: string;
-  role: 'owner'|'admin'|'aux'|'player';
-  membership: 'mensalista'|'diarista'|null;
+  role: 'owner' | 'admin' | 'aux' | 'player';
+  membership: 'mensalista' | 'diarista' | null;
   notifications_enabled?: boolean;
   approved?: boolean;
 };
 
 export function useSessionProfile() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Sempre false para dados offline
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let active = true;
-    (async () => {
+    // Carregar dados do usuário offline
+    const offlineUser = localStorage.getItem('offline_user');
+    if (offlineUser) {
       try {
-        setLoading(true);
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!active) return;
-        setSession(session);
-
-        if (session?.user?.id) {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('id,email,role,membership,notifications_enabled,approved')
-            .eq('id', session.user.id)
-            .single();
-          if (error) setError(error.message);
-          setProfile((data as any) ?? null);
-        } else {
-          setProfile(null);
-        }
-      } catch (e: any) {
-        if (!active) return;
-        setError(e?.message || 'Erro ao carregar sessão');
-        setProfile(null);
-      } finally {
-        if (active) setLoading(false);
+        const userData = JSON.parse(offlineUser);
+        setProfile({
+          id: userData.id,
+          email: userData.email,
+          role: userData.role,
+          membership: userData.membership || null,
+          notifications_enabled: userData.notifications_enabled || true,
+          approved: userData.approved || true
+        });
+        setSession({ user: userData });
+      } catch (error) {
+        console.error('Erro ao carregar usuário offline:', error);
+        setError('Erro ao carregar perfil');
       }
-    })();
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSession(s);
-      // recarrega perfil quando logar/deslogar
-      if (!s?.user) setProfile(null);
-    });
-
-    return () => { active = false; sub.subscription.unsubscribe(); };
+    } else {
+      setProfile(null);
+      setSession(null);
+    }
   }, []);
 
   return { loading, session, profile, error };

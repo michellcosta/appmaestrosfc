@@ -1,5 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 export interface AdvancedInvite {
@@ -164,7 +163,7 @@ export function useAdvancedInvites() {
         return acc;
       }, {} as Record<string, number>) || {};
 
-      const conversion_rate = stats.total > 0 
+      const conversion_rate = stats.total > 0
         ? Number(((stats.accepted || 0) / stats.total * 100).toFixed(2))
         : 0;
 
@@ -326,7 +325,7 @@ export function useAdvancedInvites() {
 
       // Gerar link WhatsApp
       const whatsappLink = generateWhatsAppLink(invite);
-      
+
       await fetchInvites();
       toast.success('Convite enviado via WhatsApp!');
       return { invite: data, whatsappLink };
@@ -437,7 +436,7 @@ export function useAdvancedInvites() {
   // Gerar mensagem WhatsApp
   const generateWhatsAppMessage = useCallback((template: InviteTemplate, invite: AdvancedInvite): string => {
     let message = template.content;
-    
+
     // Substituir variáveis
     const variables = {
       invite_link: `${window.location.origin}/accept-invite?code=${invite.code}`,
@@ -457,7 +456,7 @@ export function useAdvancedInvites() {
   const generateWhatsAppLink = useCallback((invite: AdvancedInvite): string => {
     const phone = invite.phone?.replace(/\D/g, '') || '';
     const message = invite.whatsapp_message || `Convite para o Maestros FC!\n\nLink: ${window.location.origin}/accept-invite?code=${invite.code}`;
-    
+
     return `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
   }, []);
 
@@ -479,20 +478,20 @@ export function useAdvancedInvites() {
     stats,
     loading,
     error,
-    
+
     // Ações
     createInvite,
     createBulkInvites,
     sendWhatsAppInvite,
     acceptInvite,
     cancelInvite,
-    
+
     // Utilitários
     getInvitesByStatus,
     getInviteByCode,
     generateWhatsAppLink,
     generateWhatsAppMessage,
-    
+
     // Refresh
     fetchInvites,
     fetchTemplates,

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
 
 export interface PlayerStats {
   name: string
@@ -13,7 +13,10 @@ interface PlayerStatsStore {
   lastResetDate: string | null // Data da última partida que zerou as estatísticas
   addGoal: (playerName: string) => void
   addAssist: (playerName: string) => void
+  removeGoal: (playerName: string) => void
+  removeAssist: (playerName: string) => void
   resetStats: (nextMatchDate: string) => void
+  clearStats: () => void
   getStats: () => PlayerStats[]
   shouldResetStats: (nextMatchDate: string) => boolean
 }
@@ -27,11 +30,11 @@ export const usePlayerStatsStore = create<PlayerStatsStore>()(
       addGoal: (playerName: string) => {
         set((state) => {
           const existingPlayer = state.stats.find(p => p.name === playerName)
-          
+
           if (existingPlayer) {
             return {
-              stats: state.stats.map(p => 
-                p.name === playerName 
+              stats: state.stats.map(p =>
+                p.name === playerName
                   ? { ...p, goals: p.goals + 1, lastUpdated: Date.now() }
                   : p
               )
@@ -52,11 +55,11 @@ export const usePlayerStatsStore = create<PlayerStatsStore>()(
       addAssist: (playerName: string) => {
         set((state) => {
           const existingPlayer = state.stats.find(p => p.name === playerName)
-          
+
           if (existingPlayer) {
             return {
-              stats: state.stats.map(p => 
-                p.name === playerName 
+              stats: state.stats.map(p =>
+                p.name === playerName
                   ? { ...p, assists: p.assists + 1, lastUpdated: Date.now() }
                   : p
               )
@@ -74,6 +77,40 @@ export const usePlayerStatsStore = create<PlayerStatsStore>()(
         })
       },
 
+      removeGoal: (playerName: string) => {
+        set((state) => {
+          const existingPlayer = state.stats.find(p => p.name === playerName)
+
+          if (existingPlayer && existingPlayer.goals > 0) {
+            return {
+              stats: state.stats.map(p =>
+                p.name === playerName
+                  ? { ...p, goals: Math.max(0, p.goals - 1), lastUpdated: Date.now() }
+                  : p
+              )
+            }
+          }
+          return state
+        })
+      },
+
+      removeAssist: (playerName: string) => {
+        set((state) => {
+          const existingPlayer = state.stats.find(p => p.name === playerName)
+
+          if (existingPlayer && existingPlayer.assists > 0) {
+            return {
+              stats: state.stats.map(p =>
+                p.name === playerName
+                  ? { ...p, assists: Math.max(0, p.assists - 1), lastUpdated: Date.now() }
+                  : p
+              )
+            }
+          }
+          return state
+        })
+      },
+
       resetStats: (nextMatchDate: string) => {
         set({
           stats: [],
@@ -81,17 +118,25 @@ export const usePlayerStatsStore = create<PlayerStatsStore>()(
         })
       },
 
+      clearStats: () => {
+        set({
+          stats: [],
+          lastResetDate: null
+        })
+      },
+
       getStats: () => {
         const { stats } = get()
         return stats
+          .filter(p => p.goals > 0 || p.assists > 0) // Filtrar jogadores com pelo menos 1 gol ou 1 assistência
           .sort((a, b) => b.goals - a.goals || b.assists - a.assists || a.name.localeCompare(b.name))
       },
 
       shouldResetStats: (nextMatchDate: string) => {
         const { lastResetDate } = get()
-        
+
         if (!lastResetDate) return false
-        
+
         // Se a próxima partida é diferente da última que resetou, deve resetar
         return nextMatchDate !== lastResetDate
       }

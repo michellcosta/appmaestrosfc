@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trophy } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
 
 type AwardRow = {
   month_key: string;
@@ -117,7 +116,7 @@ export default function MonthlyAwards({
 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {[0,1,2,3].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
+          {[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
         </div>
       ) : err ? (
         <div className="text-sm text-rose-600">{err}</div>

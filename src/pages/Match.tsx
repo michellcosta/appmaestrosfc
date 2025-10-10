@@ -1,9 +1,11 @@
+// import jsPDF from 'jspdf'; // TEMPORARIAMENTE DESABILITADO
+import { useAutoSync } from '@/hooks/useAutoSync';
+import { AlertTriangle, Crown, Database, History, Pencil, RotateCcw, Shield, Sparkles, Star, Trash2, Trophy, User, Zap, Zap as ZapIcon } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Trash2, Trophy, Crown, Shield, Star, Zap, User, RotateCcw, Database, History, AlertTriangle, Sparkles, Zap as ZapIcon, FileText, Download, Calendar } from "lucide-react";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -22,12 +24,15 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { useMatchStore, GoalEvent, TeamColor } from "@/store/matchStore";
-import { usePlayersStore } from "@/store/playersStore";
-// Removido: usePlayerStatsStore não é mais usado
-import { useGamesStore } from "@/store/gamesStore";
 import { useAuth } from '@/auth/OfflineAuthProvider';
+import { useMatchesConvex } from '@/hooks/useMatchesConvex';
 import { usePermissions } from '@/hooks/usePermissions';
+import { usePlayersConvex } from '@/hooks/usePlayersConvex';
+import { useTeamDrawConvex } from '@/hooks/useTeamDrawConvex';
+import { useGamesStore } from "@/store/gamesStore";
+import { GoalEvent, TeamColor, useMatchStore } from "@/store/matchStore";
+import { usePlayerStatsStore } from "@/store/playerStatsStore";
+import { usePlayersStore } from "@/store/playersStore";
 
 type FilterRange = "week" | "month" | "all";
 
@@ -59,7 +64,7 @@ const TeamBadge: React.FC<{ color: TeamColor; className?: string }> = ({
 // Sistema de jogadores completamente baseado em dados reais
 
 const Match: React.FC = () => {
-  const { 
+  const {
     round,
     durationMin,
     events,
@@ -80,31 +85,76 @@ const Match: React.FC = () => {
     resetToInitialState,
     recomputeScores,
   } = useMatchStore();
-  const { 
-    players, 
+
+  // Store de estatísticas dos jogadores
+  const {
+    addGoal: addGoalToStats,
+    addAssist: addAssistToStats,
+    removeGoal: removeGoalFromStats,
+    removeAssist: removeAssistFromStats
+  } = usePlayerStatsStore();
+
+  // Hooks Convex
+  const { createMatch, addGoal: addGoalConvex, addCard: addCardConvex } = useMatchesConvex();
+  const { players: convexPlayers } = usePlayersConvex();
+
+  const {
+    players,
     currentMatchId,
-    loadPlayersFromTeamDraw, 
-    getPlayersByTeam,
+    setCurrentMatch,
+    loadPlayersFromTeamDraw,
+    getPlayersByTeam: getPlayersByTeamStore,
     getActivePlayersByTeam,
     substitutePlayer,
     addSubstitution,
     getPlayerByName,
   } = usePlayersStore();
+
+  // Hook para sorteio de times - USAR ESTE
+  const { getPlayersByTeam, loadTeamDraw } = useTeamDrawConvex(currentMatchId);
+
   // Removido: estatísticas persistentes não são mais usadas
   const { getUpcomingMatches } = useGamesStore();
+
+  // Definir matchId da primeira partida disponível
+  useEffect(() => {
+    const upcomingMatches = getUpcomingMatches();
+    if (upcomingMatches.length > 0) {
+      const firstMatchId = upcomingMatches[0].id.toString();
+      console.log('🔧 DEBUG: Usando matchId da primeira partida:', firstMatchId);
+      setCurrentMatch(firstMatchId);
+    } else {
+      const defaultMatchId = '1'; // ID padrão para teste
+      console.log('🔧 DEBUG: Nenhuma partida encontrada, usando ID padrão:', defaultMatchId);
+      setCurrentMatch(defaultMatchId);
+    }
+  }, [setCurrentMatch, getUpcomingMatches]);
+
+  // Carregar sorteio de times quando currentMatchId mudar
+  useEffect(() => {
+    if (!currentMatchId) return;
+
+    loadTeamDraw(currentMatchId).catch((error) => {
+      console.error('Erro ao carregar sorteio:', error);
+    });
+  }, [currentMatchId, loadTeamDraw]);
+
   const { canControlMatch } = usePermissions();
+
+  // Hook de sincronização automática
+  const { isOnline, isSyncing } = useAutoSync();
 
   // Função para obter times disponíveis
   const getAvailableTeams = () => {
     const teams: TeamColor[] = [];
     const teamColors: TeamColor[] = ['Preto', 'Verde', 'Cinza', 'Vermelho'];
-    
+
     teamColors.forEach(color => {
       if (getPlayersByTeam(color).length > 0) {
         teams.push(color);
       }
     });
-    
+
     return teams;
   };
   const { user } = useAuth();
@@ -126,11 +176,11 @@ const Match: React.FC = () => {
     round && Array.isArray(round.inPlay) && (round.inPlay as any[]).length === 2
       ? round
       : {
-          inPlay: ["Preto", "Verde"] as TeamColor[],
-          scores: {} as Record<TeamColor, number>,
-          number: round?.number ?? 1,
-          running: !!round?.running,
-        };
+        inPlay: ["Preto", "Verde"] as TeamColor[],
+        scores: {} as Record<TeamColor, number>,
+        number: round?.number ?? 1,
+        running: !!round?.running,
+      };
 
   const eventsSafe: GoalEvent[] = Array.isArray(events) ? events : [];
   const historySafe = Array.isArray(history) ? history : [];
@@ -154,12 +204,12 @@ const Match: React.FC = () => {
     if (exceeded && !roundSafe.running) {
       a.loop = true;
       a.volume = 0.5;
-      a.play().catch(() => {});
+      a.play().catch(() => { });
     } else {
       try {
         a.pause();
         a.currentTime = 0;
-      } catch {}
+      } catch { }
     }
   }, [exceeded, roundSafe.running]);
 
@@ -176,6 +226,7 @@ const Match: React.FC = () => {
 
   /* Modais: Gol / Deletar / Encerrar */
   const [goalOpen, setGoalOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [goalEditId, setGoalEditId] = useState<string | null>(null);
   const [goalTeam, setGoalTeam] = useState<TeamColor>("Preto");
   const [goalAuthor, setGoalAuthor] = useState<string>("");
@@ -188,9 +239,11 @@ const Match: React.FC = () => {
   useEffect(() => {
     const loadTeamData = async () => {
       try {
-        // Aqui você pode passar o matchId real quando disponível
-        // Por enquanto, vamos tentar carregar dados existentes
-        await loadPlayersFromTeamDraw('');
+        // Usar o matchId atual ou um ID padrão para carregar dados do sorteio
+        console.log('🔧 DEBUG: currentMatchId atual:', currentMatchId);
+        const targetMatchId = currentMatchId || 'default_match';
+        console.log('🔧 DEBUG: targetMatchId usado:', targetMatchId);
+        await loadPlayersFromTeamDraw(targetMatchId);
       } catch (error) {
         console.warn('Erro ao carregar dados do sorteio:', error);
         // Sistema continua sem dados mock
@@ -198,7 +251,7 @@ const Match: React.FC = () => {
     };
 
     loadTeamData();
-  }, [loadPlayersFromTeamDraw]);
+  }, [loadPlayersFromTeamDraw, currentMatchId]);
 
   // Removido: verificação de reset de estatísticas persistentes não é mais necessária
 
@@ -254,10 +307,10 @@ const Match: React.FC = () => {
 
     // Limpar estados anteriores
     clearTieStates();
-    
+
     setIsAnimating(true);
     setTieAnimationOpen(true);
-    
+
     // Animação de 3 segundos com as cores dos times
     const timeout = setTimeout(() => {
       // Sorteio justo entre os dois times
@@ -266,7 +319,7 @@ const Match: React.FC = () => {
       setIsAnimating(false);
       setTieTimeout(null);
     }, 3000);
-    
+
     setTieTimeout(timeout);
   };
 
@@ -280,14 +333,14 @@ const Match: React.FC = () => {
     try {
       // Salvar o vencedor do empate para usar no modal de encerrar rodada
       setSavedTieWinner(tieWinner);
-      
+
       console.log('🏆 Empate - Vencedor salvo:', tieWinner);
-      
+
       // Fechar modal de empate e abrir modal de encerrar rodada
       setTieAnimationOpen(false);
       setTieWinner(null);
       setIsAnimating(false);
-      
+
       // Abrir modal de encerrar rodada para escolher próximo adversário
       setEndOpen(true);
     } catch (error) {
@@ -313,16 +366,18 @@ const Match: React.FC = () => {
   const playerOptions = (team: TeamColor) => {
     // Primeiro tenta buscar TODOS os jogadores do time (incluindo substitutos)
     const teamPlayers = getPlayersByTeam(team);
-    console.log(`Jogadores do time ${team}:`, teamPlayers);
-    
+    console.log(`🔍 DEBUG: Jogadores do time ${team}:`, teamPlayers);
+    console.log(`🔍 DEBUG: currentMatchId:`, currentMatchId);
+    console.log(`🔍 DEBUG: localStorage teamDraw_${currentMatchId}:`, localStorage.getItem(`teamDraw_${currentMatchId}`));
+
     if (teamPlayers.length > 0) {
       const playerNames = teamPlayers.map(p => p.name);
-      console.log(`Nomes dos jogadores do time ${team}:`, playerNames);
+      console.log(`✅ Nomes dos jogadores do time ${team}:`, playerNames);
       return playerNames;
     }
-    
+
     // Sistema baseado apenas em jogadores reais
-    console.log(`Nenhum jogador encontrado para o time ${team}`);
+    console.log(`❌ Nenhum jogador encontrado para o time ${team}`);
     return [];
   };
 
@@ -359,7 +414,7 @@ const Match: React.FC = () => {
     recomputeScores();
   }, [recomputeScores]);
 
-  const saveGoal = () => {
+  const saveGoal = async () => {
     if (!goalAuthor) {
       alert("Selecione o autor do gol");
       return;
@@ -367,62 +422,67 @@ const Match: React.FC = () => {
 
     const assistVal = goalAssist === "none" ? null : goalAssist;
 
-    // Validações avançadas quando há dados reais do sorteio
-    if (getAvailableTeams().length > 0) {
-      try {
-        const authorPlayer = getPlayerByName(goalAuthor);
-        
-        if (!authorPlayer) {
-          alert(`Jogador "${goalAuthor}" não encontrado no sorteio`);
-          return;
-        }
-
-        if (authorPlayer.team_color !== goalTeam) {
-          alert(`Jogador "${goalAuthor}" não pertence ao time ${goalTeam}`);
-          return;
-        }
-
-        if (authorPlayer.is_substitute) {
-          alert(`Jogador "${goalAuthor}" está no banco e não pode marcar gol`);
-          return;
-        }
-
-        // Validar assistência se fornecida
-        if (assistVal) {
-          const assistPlayer = getPlayerByName(assistVal);
-          
-          if (!assistPlayer) {
-            alert(`Jogador da assistência "${assistVal}" não encontrado no sorteio`);
-            return;
-          }
-
-          if (assistPlayer.team_color !== goalTeam) {
-            alert(`Jogador da assistência "${assistVal}" não pertence ao time ${goalTeam}`);
-            return;
-          }
-
-          if (assistPlayer.is_substitute) {
-            alert(`Jogador da assistência "${assistVal}" está no banco`);
-            return;
-          }
-
-          if (goalAuthor === assistVal) {
-            alert("Jogador não pode dar assistência para si mesmo");
-            return;
-          }
-        }
-      } catch (error) {
-        alert("Erro na validação: " + (error as Error).message);
-        return;
-      }
+    // Validação básica apenas - o modal já filtra jogadores corretos
+    if (goalAuthor === assistVal) {
+      alert("Jogador não pode dar assistência para si mesmo");
+      return;
     }
 
     // Salvar o gol se todas as validações passaram
     try {
       if (goalEditId) {
+        // EDIÇÃO DE GOL - atualizar ranking
+        // Buscar o gol antigo para remover estatísticas
+        const oldGoal = allEvents.find(e => e.id === goalEditId);
+
+        if (oldGoal) {
+          // Remover estatísticas do autor antigo
+          if (oldGoal.author && oldGoal.author !== goalAuthor) {
+            removeGoalFromStats(oldGoal.author);
+          }
+          // Remover estatísticas do assistente antigo
+          if (oldGoal.assist && oldGoal.assist !== assistVal) {
+            removeAssistFromStats(oldGoal.assist);
+          }
+
+          // Adicionar estatísticas do novo autor (se mudou)
+          if (goalAuthor !== oldGoal.author) {
+            addGoalToStats(goalAuthor);
+          }
+          // Adicionar estatísticas do novo assistente (se mudou)
+          if (assistVal && assistVal !== oldGoal.assist) {
+            addAssistToStats(assistVal);
+          }
+        }
+
+        // Salvar a edição
         editGoal(goalEditId, { author: goalAuthor, assist: assistVal ?? null });
       } else {
         addGoal({ team: goalTeam, author: goalAuthor, assist: assistVal ?? null });
+
+        // Registrar no Convex (se houver matchId)
+        if (currentMatchId) {
+          try {
+            await addGoalConvex({
+              matchId: currentMatchId,
+              playerId: goalAuthor,
+              assistPlayerId: assistVal || undefined,
+              team: goalTeam,
+              minute: Math.floor(round.accumulatedSec / 60),
+              roundNumber: round.number,
+              isOwnGoal: false,
+              isPenalty: false
+            });
+          } catch (error) {
+            console.error('Erro ao adicionar gol no Convex:', error);
+          }
+        }
+
+        // Registrar estatísticas do ranking (local)
+        addGoalToStats(goalAuthor);
+        if (assistVal) {
+          addAssistToStats(assistVal);
+        }
       }
       setGoalOpen(false);
       setGoalEditId(null);
@@ -433,6 +493,16 @@ const Match: React.FC = () => {
 
   const confirmDelete = () => {
     if (!confirmTarget) return;
+
+    // Remover estatísticas do ranking
+    if (confirmTarget.author) {
+      removeGoalFromStats(confirmTarget.author);
+    }
+    if (confirmTarget.assist) {
+      removeAssistFromStats(confirmTarget.assist);
+    }
+
+    // Remover gol da partida
     deleteGoal(confirmTarget.id);
     setConfirmOpen(false);
     setConfirmTarget(null);
@@ -458,7 +528,7 @@ const Match: React.FC = () => {
     // Usar todos os gols da partida (allEvents) para estatísticas acumuladas
     const allEventsSafe = Array.isArray(allEvents) ? allEvents : [];
     const sessionStats: Record<string, { g: number; a: number }> = {};
-    
+
     // Contar gols de TODAS as rodadas da partida
     for (const e of allEventsSafe) {
       if (e.author) {
@@ -502,7 +572,7 @@ const Match: React.FC = () => {
         a.pause();
         a.currentTime = 0;
       }
-    } catch {}
+    } catch { }
     reset();
   };
 
@@ -511,17 +581,17 @@ const Match: React.FC = () => {
     const [leftTeam, rightTeam] = round.inPlay;
     const leftScore = round.scores[leftTeam] ?? 0;
     const rightScore = round.scores[rightTeam] ?? 0;
-    
+
     if (leftScore === rightScore) {
       // É empate! Mostrar animação
       console.log('⚽ Empate detectado em openEnd! Iniciando animação...');
       determineTieWinner(leftTeam, rightTeam);
       return; // Não abrir modal de encerrar
     }
-    
+
     // Lógica para selecionar o próximo time automaticamente
     const allTeams: TeamColor[] = ['Preto', 'Verde', 'Cinza', 'Vermelho'];
-    
+
     // Se Cinza não está jogando, selecionar Cinza
     if (leftTeam !== 'Cinza' && rightTeam !== 'Cinza') {
       setNextTeamChoice('Cinza');
@@ -530,7 +600,7 @@ const Match: React.FC = () => {
       const availableTeams = allTeams.filter(team => team !== leftTeam && team !== rightTeam);
       setNextTeamChoice(availableTeams[0] || 'Preto'); // Fallback para Preto se algo der errado
     }
-    
+
     setEndOpen(true);
   };
 
@@ -540,42 +610,42 @@ const Match: React.FC = () => {
       if (savedTieWinner) {
         console.log('🏆 Usando vencedor de empate salvo:', savedTieWinner);
         console.log('⚽ Próximo adversário escolhido:', nextTeamChoice);
-        
+
         // Validar próximo adversário
         const validTeams: TeamColor[] = ['Preto', 'Verde', 'Cinza', 'Vermelho'];
         if (!validTeams.includes(nextTeamChoice as TeamColor)) {
           console.error('❌ Próximo adversário inválido:', nextTeamChoice);
           return;
         }
-        
+
         // Usar o vencedor do empate e o adversário escolhido pelo usuário
         const { round, events } = useMatchStore.getState();
         const [left, right] = round.inPlay;
         const l = round.scores[left] ?? 0;
         const r = round.scores[right] ?? 0;
-        
+
         const historyItem = {
-          round: round.number, 
-          left, 
-          right, 
-          leftScore: l, 
-          rightScore: r, 
-          winner: savedTieWinner, 
+          round: round.number,
+          left,
+          right,
+          leftScore: l,
+          rightScore: r,
+          winner: savedTieWinner,
           ts: Date.now(),
           goals: [...events]
         };
-        
+
         // O vencedor fica, o próximo adversário é o escolhido pelo usuário
         const stay = savedTieWinner;
         const next = nextTeamChoice as TeamColor;
-        
+
         // Atualizar o estado
         useMatchStore.setState({
           history: [...useMatchStore.getState().history, historyItem],
           round: {
             number: round.number + 1,
             inPlay: [stay, next],
-            scores: { Preto:0, Verde:0, Cinza:0, Vermelho:0 },
+            scores: { Preto: 0, Verde: 0, Cinza: 0, Vermelho: 0 },
             running: false,
           },
           events: [], // RESETAR lista de gols da rodada
@@ -583,9 +653,9 @@ const Match: React.FC = () => {
           accumulatedSec: 0,
           runningSince: null,
         });
-        
+
         console.log('✅ Rodada finalizada - Vencedor:', stay, 'Próximo:', next);
-    setEndOpen(false);
+        setEndOpen(false);
         setSavedTieWinner(null); // Limpar o vencedor salvo
       } else {
         // Não é empate, finalizar normalmente com o time selecionado
@@ -630,7 +700,7 @@ const Match: React.FC = () => {
   const getAvailablePlayersForSubstitution = (team: TeamColor) => {
     const allPlayers = getPlayersByTeam(team);
     const activePlayers = getActivePlayersByTeam(team);
-    
+
     return {
       playersOut: activePlayers.map(p => p.name), // Jogadores que podem sair (ativos)
       playersIn: allPlayers
@@ -654,9 +724,21 @@ const Match: React.FC = () => {
         <div className="flex items-center justify-between p-4">
           <div>
             <h1 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Partida ao Vivo</h1>
-            <p className="text-sm text-gray-600 dark:text-zinc-400">Rodada {roundSafe.number}</p>
+            <div className="text-sm text-gray-600 dark:text-zinc-400">Rodada {roundSafe.number}</div>
+            {!isOnline && (
+              <div className="flex items-center gap-1 text-xs text-amber-600 mt-1">
+                <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                Modo Offline
+              </div>
+            )}
+            {isOnline && isSyncing && (
+              <div className="flex items-center gap-1 text-xs text-blue-600 mt-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                Sincronizando...
+              </div>
+            )}
           </div>
-          
+
           <div className="flex items-center space-x-2">
             {user?.role === 'owner' && (
               <Button
@@ -669,16 +751,16 @@ const Match: React.FC = () => {
                 <Crown className="w-4 h-4 text-purple-600 dark:text-purple-400" />
               </Button>
             )}
-            
+
             {user?.role && user.role !== 'owner' && (
               <div className="flex items-center space-x-1 text-sm text-maestros-green dark:text-green-400">
                 {getRoleIcon(user.role)}
                 <span className="hidden sm:inline font-medium">
-                  {user.role === 'admin' ? 'Admin' : 
-                   user.role === 'aux' ? 'Auxiliar' : 
-                   user.role === 'mensalista' ? 'Mensalista' : 
-                   user.role === 'diarista' ? 'Diarista' : 
-                   'Usuário'}
+                  {user.role === 'admin' ? 'Admin' :
+                    user.role === 'aux' ? 'Auxiliar' :
+                      user.role === 'mensalista' ? 'Mensalista' :
+                        user.role === 'diarista' ? 'Diarista' :
+                          'Usuário'}
                 </span>
               </div>
             )}
@@ -781,7 +863,7 @@ const Match: React.FC = () => {
                     className="w-12 h-12 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all duration-200 flex items-center justify-center text-white shadow-md hover:shadow-lg"
                   >
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z"/>
+                      <path d="M8 5v14l11-7z" />
                     </svg>
                   </button>
                 ) : (
@@ -791,7 +873,7 @@ const Match: React.FC = () => {
                     className="w-12 h-12 rounded-full bg-amber-500 hover:bg-amber-600 active:scale-95 transition-all duration-200 flex items-center justify-center text-white shadow-md hover:shadow-lg"
                   >
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
                     </svg>
                   </button>
                 )}
@@ -801,7 +883,7 @@ const Match: React.FC = () => {
                   className="w-12 h-12 rounded-full bg-sky-500 hover:bg-sky-600 active:scale-95 transition-all duration-200 flex items-center justify-center text-white shadow-md hover:shadow-lg"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+                    <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" />
                   </svg>
                 </button>
                 <button
@@ -810,7 +892,7 @@ const Match: React.FC = () => {
                   className="w-12 h-12 rounded-full bg-rose-500 hover:bg-rose-600 active:scale-95 transition-all duration-200 flex items-center justify-center text-white shadow-md hover:shadow-lg"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M6 6h12v12H6z"/>
+                    <path d="M6 6h12v12H6z" />
                   </svg>
                 </button>
               </div>
@@ -875,7 +957,12 @@ const Match: React.FC = () => {
       {/* Gols da partida */}
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800 mb-3">
         <CardContent className="p-4 sm:p-5">
-          <h3 className="text-sm font-semibold mb-2">Gols da partida</h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold">Gols da partida</h3>
+            <div className="text-xs text-zinc-500 dark:text-zinc-400">
+              {eventsSafe.length} {eventsSafe.length === 1 ? 'gol' : 'gols'} nesta partida
+            </div>
+          </div>
           {eventsSafe.length === 0 ? (
             <p className="text-sm text-zinc-500">Nenhum gol registrado ainda.</p>
           ) : (
@@ -963,11 +1050,8 @@ const Match: React.FC = () => {
               <Trophy className="w-4 h-4 text-maestros-green" />
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Estatísticas dos Jogadores</h3>
             </div>
-            <div className="text-xs text-zinc-500 dark:text-zinc-400">
-              {eventsSafe.length} {eventsSafe.length === 1 ? 'gol' : 'gols'} nesta partida
-            </div>
           </div>
-          
+
           {stats.length === 0 ? (
             <div className="text-center py-8">
               <div className="w-12 h-12 mx-auto mb-3 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center">
@@ -982,11 +1066,10 @@ const Match: React.FC = () => {
               {stats.slice(0, 3).map((player, index) => (
                 <div key={player.name} className="flex items-center justify-between p-3 bg-gradient-to-r from-zinc-50 to-zinc-100 dark:from-zinc-800/50 dark:to-zinc-700/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                      index === 0 ? 'bg-yellow-500' : 
-                      index === 1 ? 'bg-gray-400' : 
-                      'bg-amber-600'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${index === 0 ? 'bg-yellow-500' :
+                      index === 1 ? 'bg-gray-400' :
+                        'bg-amber-600'
+                      }`}>
                       {index + 1}
                     </div>
                     <div>
@@ -1008,7 +1091,7 @@ const Match: React.FC = () => {
                   </div>
                 </div>
               ))}
-              
+
               {/* Demais Jogadores */}
               {stats.length > 3 && (
                 <div className="space-y-2">
@@ -1031,7 +1114,7 @@ const Match: React.FC = () => {
               )}
             </div>
           )}
-          
+
           {/* Informação sobre as estatísticas persistentes */}
           {stats.length > 0 && (
             <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
@@ -1048,20 +1131,20 @@ const Match: React.FC = () => {
       <div className="mb-3">
         <Tabs value={historyFilter} onValueChange={(v) => setHistoryFilter(v as FilterRange)}>
           <TabsList className="grid grid-cols-3 w-full h-12 p-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 items-center justify-center">
-            <TabsTrigger 
-              value="week" 
+            <TabsTrigger
+              value="week"
               className="flex items-center justify-center h-6 px-1.5 rounded text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-zinc-700 dark:data-[state=active]:text-zinc-100 text-zinc-600 dark:text-zinc-300"
             >
               Semana
             </TabsTrigger>
-            <TabsTrigger 
-              value="month" 
+            <TabsTrigger
+              value="month"
               className="flex items-center justify-center h-6 px-1.5 rounded text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-zinc-700 dark:data-[state=active]:text-zinc-100 text-zinc-600 dark:text-zinc-300"
             >
               Mês
             </TabsTrigger>
-            <TabsTrigger 
-              value="all" 
+            <TabsTrigger
+              value="all"
               className="flex items-center justify-center h-6 px-1.5 rounded text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-zinc-700 dark:data-[state=active]:text-zinc-100 text-zinc-600 dark:text-zinc-300"
             >
               Todos
@@ -1074,7 +1157,7 @@ const Match: React.FC = () => {
       <Card className="rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800">
         <CardContent className="p-5 sm:p-7">
           <h3 className="text-base sm:text-lg font-semibold mb-4">Histórico de Partidas</h3>
-          
+
           {/* Estatísticas Resumo */}
           {filteredHistory.length > 0 && (
             <div className="mb-6 p-4 bg-gradient-to-r from-zinc-50 to-zinc-100 dark:from-zinc-800/30 dark:to-zinc-700/30 rounded-lg border border-zinc-200/50 dark:border-zinc-700/50">
@@ -1084,10 +1167,10 @@ const Match: React.FC = () => {
                   const teamStats = filteredHistory.reduce((acc, h) => {
                     const isParticipant = h.left === team || h.right === team;
                     if (!isParticipant) return acc;
-                    
+
                     const isWinner = h.winner === team;
                     const isDraw = h.winner === 'Empate';
-                    
+
                     return {
                       games: acc.games + 1,
                       wins: acc.wins + (isWinner ? 1 : 0),
@@ -1135,7 +1218,7 @@ const Match: React.FC = () => {
               <div className="w-16 h-16 mx-auto mb-4 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center">
                 <Trophy className="w-8 h-8 text-zinc-400" />
               </div>
-            <p className="text-sm text-zinc-500">Sem registros ainda.</p>
+              <p className="text-sm text-zinc-500">Sem registros ainda.</p>
               <p className="text-xs text-zinc-400 mt-1">As partidas aparecerão aqui após serem finalizadas</p>
             </div>
           ) : (
@@ -1144,10 +1227,10 @@ const Match: React.FC = () => {
                 const isWinner = (team: TeamColor) => h.winner === team;
                 const isEmpate = h.winner === 'Empate';
                 const matchDate = new Date(h.ts);
-                
+
                 return (
-                  <button 
-                    key={h.round + "-" + h.ts} 
+                  <button
+                    key={h.round + "-" + h.ts}
                     onClick={() => openRoundGoalsModal(h)}
                     className="w-full bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4 border border-zinc-200/50 dark:border-zinc-700/50 hover:shadow-md hover:bg-zinc-100 dark:hover:bg-zinc-700/50 hover:border-maestros-green/30 transition-all duration-200 cursor-pointer group text-left"
                     title="Clique para ver os gols da partida"
@@ -1171,7 +1254,7 @@ const Match: React.FC = () => {
                         <div className="text-xs text-zinc-400 dark:text-zinc-500">
                           {matchDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </div>
-                        
+
                         {/* Indicador de clique */}
                         <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <div className="w-2 h-2 bg-maestros-green rounded-full animate-pulse"></div>
@@ -1241,18 +1324,21 @@ const Match: React.FC = () => {
             <DialogTitle>{goalEditId ? "Editar Gol" : "Registrar Gol"}</DialogTitle>
             <DialogDescription>
               Autor pré-selecionado; assistência é opcional. Autoassistência não é permitida.
-              {getAvailableTeams().length > 0 ? (
-                <div className="mt-2 text-green-600 text-xs flex items-center gap-1">
-                  <Star className="w-3 h-3" />
-                  Usando jogadores do sorteio oficial
-                </div>
-              ) : (
-                <div className="mt-2 text-amber-600 text-xs flex items-center gap-1">
-                  <User className="w-3 h-3" />
-                  Usando jogadores de exemplo (carregue o sorteio)
-                </div>
-              )}
             </DialogDescription>
+            {getAvailableTeams().length > 0 ? (
+              <div className="mt-2 text-green-600 text-xs flex items-center gap-1">
+                <Star className="w-3 h-3" />
+                Usando jogadores do sorteio oficial
+              </div>
+            ) : (
+              <div className="mt-2 text-amber-600 text-xs flex items-center gap-1">
+                <User className="w-3 h-3" />
+                Usando jogadores de exemplo (carregue o sorteio)
+              </div>
+            )}
+            <div className="mt-2 text-xs text-gray-500">
+              Debug: Autor atual = "{goalAuthor}" | Jogadores disponíveis = {playerOptions(goalTeam).length}
+            </div>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -1286,8 +1372,8 @@ const Match: React.FC = () => {
 
             <div className="grid gap-2">
               <Label htmlFor="goal-assist">Assistência (opcional)</Label>
-              <Select 
-                value={goalAssist} 
+              <Select
+                value={goalAssist}
                 onValueChange={(v) => {
                   console.log("Selecionando assistência:", v);
                   setGoalAssist(v);
@@ -1316,217 +1402,28 @@ const Match: React.FC = () => {
             </div>
             <div className="flex gap-2">
               <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  setGoalOpen(false);
-                  setGoalEditId(null);
-                }}
+                type='button'
+                variant='default'
+                onClick={saveGoal}
+                className='bg-green-600 hover:bg-green-700 text-white'
+              >
+                <Zap className='w-4 h-4 mr-2' />
+                Salvar Gol
+              </Button>
+              <Button
+                type='button'
+                variant='secondary'
+                onClick={() => setGoalOpen(false)}
               >
                 Cancelar
-              </Button>
-              <Button type="button" onClick={saveGoal}>
-                {goalEditId ? "Salvar alterações" : "Salvar Gol"}
               </Button>
             </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Exportar PDF - Apenas para Owner */}
-      {user?.role === 'owner' && (
-        <Card className="rounded-2xl border border-emerald-200 shadow-sm dark:border-emerald-800 mb-3">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-emerald-600" />
-                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Exportar Relatório</h3>
-              </div>
-              <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                PDF completo
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-800/30 rounded-lg">
-                  <Trophy className="w-4 h-4 text-yellow-500" />
-                  <span className="text-zinc-700 dark:text-zinc-300">
-                    {stats.length} jogadores
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-800/30 rounded-lg">
-                  <Calendar className="w-4 h-4 text-blue-500" />
-                  <span className="text-zinc-700 dark:text-zinc-300">
-                    {historySafe.length} partidas
-                  </span>
-                </div>
-              </div>
-              
-              <Button 
-                onClick={async () => {
-                  try {
-                    // Importação dinâmica do jsPDF
-                    const { default: jsPDF } = await import('jspdf');
-                    const doc = new jsPDF();
-                    const pageWidth = doc.internal.pageSize.getWidth();
-                    const pageHeight = doc.internal.pageSize.getHeight();
-                    let yPosition = 20;
-
-                    // Cabeçalho
-                    doc.setFontSize(20);
-                    doc.setFont('helvetica', 'bold');
-                    doc.text('MAESTROS FC - RELATÓRIO DE PARTIDA', pageWidth / 2, yPosition, { align: 'center' });
-                    yPosition += 10;
-
-                    doc.setFontSize(12);
-                    doc.setFont('helvetica', 'normal');
-                    const currentDate = new Date().toLocaleDateString('pt-BR');
-                    doc.text(`Data: ${currentDate}`, pageWidth / 2, yPosition, { align: 'center' });
-                    yPosition += 20;
-
-                    // Estatísticas dos Jogadores
-                    doc.setFontSize(16);
-                    doc.setFont('helvetica', 'bold');
-                    doc.text('ESTATÍSTICAS DOS JOGADORES', 20, yPosition);
-                    yPosition += 15;
-
-                    if (stats.length > 0) {
-                      // Cabeçalho da tabela
-                      doc.setFontSize(10);
-                      doc.setFont('helvetica', 'bold');
-                      doc.text('Posição', 20, yPosition);
-                      doc.text('Jogador', 40, yPosition);
-                      doc.text('Gols', 120, yPosition);
-                      doc.text('Assistências', 140, yPosition);
-                      doc.text('Total', 170, yPosition);
-                      yPosition += 8;
-
-                      // Linha separadora
-                      doc.line(20, yPosition, 190, yPosition);
-                      yPosition += 5;
-
-                      // Dados dos jogadores
-                      doc.setFont('helvetica', 'normal');
-                      stats.forEach((player, index) => {
-                        if (yPosition > pageHeight - 30) {
-                          doc.addPage();
-                          yPosition = 20;
-                        }
-
-                        const safeName = player?.name || 'Jogador Desconhecido';
-                        const safeGoals = player?.g || 0;
-                        const safeAssists = player?.a || 0;
-                        const total = safeGoals + safeAssists;
-                        
-                        doc.text(`${index + 1}º`, 20, yPosition);
-                        doc.text(safeName, 40, yPosition);
-                        doc.text(safeGoals.toString(), 120, yPosition);
-                        doc.text(safeAssists.toString(), 140, yPosition);
-                        doc.text(total.toString(), 170, yPosition);
-                        yPosition += 8;
-                      });
-                    } else {
-                      doc.setFontSize(10);
-                      doc.setFont('helvetica', 'italic');
-                      doc.text('Nenhuma estatística registrada', 20, yPosition);
-                      yPosition += 10;
-                    }
-
-                    yPosition += 10;
-
-                    // Histórico de Partidas
-                    doc.setFontSize(16);
-                    doc.setFont('helvetica', 'bold');
-                    doc.text('HISTÓRICO DE PARTIDAS', 20, yPosition);
-                    yPosition += 15;
-
-                    if (historySafe.length > 0) {
-                      doc.setFontSize(10);
-                      doc.setFont('helvetica', 'bold');
-                      doc.text('Rodada', 20, yPosition);
-                      doc.text('Partida', 40, yPosition);
-                      doc.text('Placar', 120, yPosition);
-                      doc.text('Vencedor', 140, yPosition);
-                      doc.text('Data/Hora', 170, yPosition);
-                      yPosition += 8;
-
-                      // Linha separadora
-                      doc.line(20, yPosition, 190, yPosition);
-                      yPosition += 5;
-
-                      doc.setFont('helvetica', 'normal');
-                      historySafe.forEach((match) => {
-                        if (yPosition > pageHeight - 30) {
-                          doc.addPage();
-                          yPosition = 20;
-                        }
-
-                        const safeTs = match?.ts || Date.now();
-                        const safeRound = match?.round || 0;
-                        const safeLeft = match?.left || 'Time A';
-                        const safeRight = match?.right || 'Time B';
-                        const safeLeftScore = match?.leftScore || 0;
-                        const safeRightScore = match?.rightScore || 0;
-                        const safeWinner = match?.winner || 'Empate';
-                        
-                        const matchDate = new Date(safeTs).toLocaleString('pt-BR');
-                        const score = `${safeLeftScore} x ${safeRightScore}`;
-                        const matchTeams = `${safeLeft} vs ${safeRight}`;
-                        
-                        doc.text(`#${safeRound}`, 20, yPosition);
-                        doc.text(matchTeams, 40, yPosition);
-                        doc.text(score, 120, yPosition);
-                        doc.text(safeWinner, 140, yPosition);
-                        doc.text(matchDate, 170, yPosition);
-                        yPosition += 8;
-                      });
-                    } else {
-                      doc.setFontSize(10);
-                      doc.setFont('helvetica', 'italic');
-                      doc.text('Nenhuma partida registrada', 20, yPosition);
-                    }
-
-                    // Rodapé
-                    const footerY = pageHeight - 20;
-                    doc.setFontSize(8);
-                    doc.setFont('helvetica', 'italic');
-                    doc.text('Relatório gerado automaticamente pelo sistema Maestros FC', pageWidth / 2, footerY, { align: 'center' });
-
-                    // Salvar o PDF
-                    const fileName = `maestros-fc-relatorio-${currentDate.replace(/\//g, '-')}.pdf`;
-                    doc.save(fileName);
-                  } catch (error) {
-                    console.error('❌ Erro ao gerar PDF:', error);
-                    alert('Erro ao gerar PDF: ' + (error as Error).message);
-                  }
-                }}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Exportar PDF
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <TestControls
-        clearEvents={clearEvents}
-        clearHistory={clearHistory}
-        clearAll={clearAll}
-        resetToInitialState={resetToInitialState}
-        canControlMatch={canControlMatch()}
-      />
-
-      {/* Modal de confirmação de exclusão */}
-      <Dialog
-        open={confirmOpen}
-        onOpenChange={(o) => {
-          setConfirmOpen(o);
-          if (!o) setConfirmTarget(null);
-        }}
-      >
+      {/* Modal de Confirmação de Exclusão */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Excluir gol?</DialogTitle>
@@ -1620,7 +1517,7 @@ const Match: React.FC = () => {
               {isAnimating ? 'Determinando Vencedor...' : 'Empate! Vencedor Sorteado'}
             </DialogTitle>
             <DialogDescription>
-              {isAnimating 
+              {isAnimating
                 ? 'As cores dos times estão competindo para determinar o vencedor!'
                 : 'O vencedor foi determinado por sorteio justo!'
               }
@@ -1634,18 +1531,18 @@ const Match: React.FC = () => {
                 const isWinner = !isAnimating && tieWinner === team;
                 const teamColors = {
                   'Preto': 'bg-zinc-800',
-                  'Verde': 'bg-green-500', 
+                  'Verde': 'bg-green-500',
                   'Cinza': 'bg-gray-500',
                   'Vermelho': 'bg-red-500'
                 };
-                
+
                 return (
                   <div
                     key={team}
                     className={`
                       w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg
                       ${teamColors[team]}
-                      ${isAnimating ? 'animate-pulse animate-bounce' : ''}
+                      ${isAnimating ? 'animate-bounce' : ''}
                       ${isWinner ? 'ring-4 ring-yellow-400 scale-110' : ''}
                       transition-all duration-500
                     `}
@@ -1687,7 +1584,7 @@ const Match: React.FC = () => {
 
           <DialogFooter>
             {!isAnimating && (
-              <Button 
+              <Button
                 onClick={confirmTieWinner}
                 className="w-full bg-amber-600 hover:bg-amber-700 text-white"
               >
@@ -1777,8 +1674,8 @@ const Match: React.FC = () => {
             >
               Cancelar
             </Button>
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               onClick={saveSubstitution}
               disabled={!playerOut || !playerIn}
             >
@@ -1798,12 +1695,7 @@ const Match: React.FC = () => {
             </DialogTitle>
             <DialogDescription>
               {selectedRoundHistory && (
-                <>
-                  <span className="font-medium">{selectedRoundHistory.left}</span> vs <span className="font-medium">{selectedRoundHistory.right}</span>
-                  <span className="ml-2 text-sm">
-                    ({selectedRoundHistory.leftScore}-{selectedRoundHistory.rightScore})
-                  </span>
-                </>
+                `${selectedRoundHistory.left} vs ${selectedRoundHistory.right} (${selectedRoundHistory.leftScore}-${selectedRoundHistory.rightScore})`
               )}
             </DialogDescription>
           </DialogHeader>
@@ -1815,8 +1707,8 @@ const Match: React.FC = () => {
                   .slice()
                   .sort((a, b) => a.ts - b.ts) // Ordenar por tempo
                   .map((goal, index) => (
-                    <div 
-                      key={goal.id} 
+                    <div
+                      key={goal.id}
                       className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200/50 dark:border-zinc-700/50"
                     >
                       <div className="flex items-center gap-2">
@@ -1825,7 +1717,7 @@ const Match: React.FC = () => {
                         </span>
                         <TeamBadge color={goal.team} />
                       </div>
-                      
+
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-sm text-zinc-900 dark:text-zinc-100">
@@ -1844,8 +1736,8 @@ const Match: React.FC = () => {
 
                       <div className="text-right">
                         <div className="text-xs text-zinc-400 dark:text-zinc-500">
-                          {new Date(goal.ts).toLocaleTimeString('pt-BR', { 
-                            hour: '2-digit', 
+                          {new Date(goal.ts).toLocaleTimeString('pt-BR', {
+                            hour: '2-digit',
                             minute: '2-digit',
                             second: '2-digit'
                           })}
@@ -1866,8 +1758,8 @@ const Match: React.FC = () => {
           </div>
 
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setRoundGoalsOpen(false)}
               className="w-full"
             >
@@ -1876,12 +1768,17 @@ const Match: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <TestControls
+        clearEvents={clearEvents}
+        clearHistory={clearHistory}
+        clearAll={clearAll}
+        resetToInitialState={resetToInitialState}
+        canControlMatch={canControlMatch()}
+      />
     </div>
   );
 };
-
-export default Match;
-export { Match };
 
 /* Controles de Teste (apenas para desenvolvimento) */
 function TestControls({ clearEvents, clearHistory, clearAll, resetToInitialState, canControlMatch }) {
@@ -1930,9 +1827,9 @@ function TestControls({ clearEvents, clearHistory, clearAll, resetToInitialState
 
           <Button
             onClick={() => {
-              // Zerar tudo da página
+              // Zerar apenas a partida (NÃO zera o ranking)
               resetToInitialState();
-              alert('Página resetada completamente! Estatísticas zeradas!');
+              alert('Partida resetada! Ranking mantido.');
             }}
             variant="outline"
             size="sm"
@@ -1950,3 +1847,7 @@ function TestControls({ clearEvents, clearHistory, clearAll, resetToInitialState
     </Card>
   );
 }
+
+export default Match;
+export { Match };
+

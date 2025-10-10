@@ -1,15 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Shield, ChevronRight, Globe } from 'lucide-react';
 import { useAuth } from '@/auth/OfflineAuthProvider';
+import { AnimatedBackground } from '@/components/AnimatedBackground';
+import { NetworkAccessNotice } from '@/components/NetworkAccessNotice';
+import { Card, CardContent } from '@/components/ui/card';
+import { useGoogleAuth } from '@/hooks/useGoogleAuth';
+import { motion } from 'framer-motion';
+import { CheckCircle2, ChevronRight, Globe, Loader2, Shield, Sparkles, Trophy, Users } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-// Componente simplificado sem dependências externas
 export default function Login() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { handleGoogleSignIn, createOrUpdateProfile } = useGoogleAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  
+
   console.log('Login page rendered'); // Debug log
 
   // Se já está logado, redireciona para home
@@ -42,76 +47,43 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     setMessage('🔄 Conectando com o Google...');
-    
-    try {
-      // Importar supabase de forma dinâmica
-      const { supabase } = await import('@/lib/supabase');
-      
-      console.log('🔍 Supabase URL:', window.location.origin);
-      console.log('🔍 Redirect target:', `${window.location.origin}/home`);
-      console.log('🔍 Supabase client loaded:', !!supabase);
 
-      // OAuth redirect URL
-      const redirectUrl = `${window.location.origin}/home`;
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        }
-      });
-      
-      console.log('🔍 OAuth Response:', { data, error });
-      
-      if (error) {
-        console.error('❌ Supabase OAuth Error:', error);
-        
-        // Detect specific error types 
-        const errorMsg = error?.message || '';
-        const status = error?.status;
-        
-        console.log(`OAuth Error - Status: ${status}, Message: ${errorMsg}`);
-        
-        if (status === 403 || errorMsg.includes('403') || errorMsg.toLowerCase().includes('forbidden')) {
-          setMessage(`❌ **ERRO 403 - Google OAuth não configurado**\n\n🔧 **PASSO A PASSO PARA CONFIGURAR:**\n\n1️⃣ **Google Cloud Console:**\n   • https://console.cloud.google.com → Credentials\n   • Create OAuth 2.0 Client ID → Web Application\n   • Authorized domains: ${window.location.origin}\n   • Redirect URIs: https://autxxmhtadimwvprfsov.supabase.co/auth/v1/callback\n\n2️⃣ **Supabase Dashboard:**\n   • Authentication → Providers → Google\n   • Enable ✓ | Insert Google Client ID & Secret\n\nError: [${status}] ${errorMsg}`);
-        } else if (errorMsg.toLowerCase().includes('invalid_client') || errorMsg.toLowerCase().includes('client_id')) {
-          setMessage(`❌ **Client inválido**\n\n🔄 **Configurar Google OAuth:**\n1. Google Console → Criar OAuth credentials\n2. Copiar dados para Supabase\n3. Verificar URLs no Supabase\n\nDetalhes: ${errorMsg}`);
-        } else {
-          setMessage(`❌ **Google Login falhou**\n\nStatus: ${status || 'desconhecido'}\nMensagem: ${errorMsg}\n\nConfigurar: (A) Google OAuth (B) Supabase Auth (C) URLs corretos`);
-        }
-      } else if (data) {
-        console.log('✅ Google OAuth success:', data);
-        setMessage('🔄 Aguarde... Redirecionando para Google...');
-        // Keep loading while redirecting
-        return; // Don't set loading false
+    try {
+      console.log('🔄 Iniciando Google OAuth...');
+
+      // Usar o hook do Google OAuth
+      await handleGoogleSignIn();
+
+      setMessage('✅ Redirecionando para Google...');
+
+      // O redirecionamento será feito automaticamente pelo Convex Auth
+      // Não precisamos fazer nada aqui, o usuário será redirecionado
+
+    } catch (error: any) {
+      console.error('❌ Erro no Google Login:', error);
+
+      const errorMsg = error?.message || 'Erro desconhecido';
+
+      if (errorMsg.includes('AUTH_GOOGLE_ID') || errorMsg.includes('AUTH_GOOGLE_SECRET')) {
+        setMessage(`❌ **Google OAuth não configurado**\n\n🔧 **PASSO A PASSO:**\n\n1️⃣ **Google Cloud Console:**\n   • https://console.cloud.google.com → Credentials\n   • Create OAuth 2.0 Client ID → Web Application\n   • Authorized domains: ${window.location.origin}\n   • Redirect URIs: https://expert-eagle-519.convex.site/api/auth/callback/google\n\n2️⃣ **Convex Environment:**\n   • npx convex env set AUTH_GOOGLE_ID seu_client_id\n   • npx convex env set AUTH_GOOGLE_SECRET seu_client_secret\n   • npx convex deploy\n\nError: ${errorMsg}`);
+      } else {
+        setMessage(`❌ **Google Login falhou**\n\nMensagem: ${errorMsg}\n\nVerifique a configuração do Google OAuth.`);
       }
-    } catch (catchErr: any) {
-      console.error('❌ HttpClient/Catch Error:', catchErr);
-      const errorStr = catchErr?.message || catchErr?.toString() || 'Unknown error';
-      
-      setMessage(`❌ **Erro de Conexão**\n\nDetalhes: ${errorStr}\n\n**Diagnóstico:** 1. Chamada OAuth failed 2. Supabase/URL issues. Setup check: (A) Supabase keys OK, (B) Google OAuth configured, (C) Network ok`);
-    }
-    
-    // Only stop loading on error or timeout
-    setTimeout(() => {
+
       setLoading(false);
-    }, 2000);
+    }
   };
 
   // Função para login offline como usuário de teste
   const handleOfflineLogin = (role: 'owner' | 'admin') => {
     setLoading(true);
     setMessage(`🔄 Entrando como ${role} teste...`);
-    
+
     try {
       // Limpar dados de teste antigos primeiro
       localStorage.removeItem('offline_user');
       localStorage.removeItem('user_data');
-      
+
       // Criar usuário de teste baseado no role
       const testUser = {
         id: role === 'owner' ? 'owner-test-' + Date.now() : 'admin-test-' + Date.now(),
@@ -120,19 +92,19 @@ export default function Login() {
         role: role,
         group_id: `group_${Date.now()}`
       };
-      
+
       // Salvar no localStorage para auth system
       localStorage.setItem('offline_user', JSON.stringify(testUser));
-      
+
       console.log(`✅ Usuário de teste ${role} criado:`, testUser);
       setMessage(`✅ Conectado como ${testUser.name}!`);
-      
+
       // Redirecionar depois de um pequeno delay para mostrar feedback
       setTimeout(() => {
         setMessage('');
         navigate('/home');
       }, 1000);
-      
+
     } catch (error) {
       console.error('❌ Erro no login offline:', error);
       setMessage(`❌ Erro ao fazer login offline: ${error}`);
@@ -143,6 +115,11 @@ export default function Login() {
     }
   };
 
+  // Função para redirecionar para localhost
+  const handleUseLocalhost = () => {
+    window.location.href = 'http://localhost:5173';
+  };
+
   // Debug - timeout seguro para evitar crash
   React.useEffect(() => {
     console.log('🔍 Login component mounted');
@@ -150,174 +127,248 @@ export default function Login() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-emerald-100 dark:from-zinc-900 dark:via-zinc-800 dark:to-zinc-900 flex items-center justify-center p-4">
-      {/* Background Pattern - Simplificado para evitar problemas de parsing */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="w-full h-full bg-gradient-to-br from-green-100/20 to-blue-100/20 dark:from-green-900/10 dark:to-blue-900/10"></div>
-      </div>
-      
-      {/* Floating Elements */}
-      <div className="absolute top-10 left-10 w-3 h-3 bg-green-400 rounded-full animate-pulse opacity-60"></div>
-      <div className="absolute top-32 right-20 w-2 h-2 bg-blue-400 rounded-full animate-pulse delay-1000 opacity-60"></div>
-      <div className="absolute bottom-20 left-1/4 w-4 h-4 bg-emerald-400 rounded-full animate-pulse delay-2000 opacity-60"></div>
+    <div className="relative min-h-[100dvh] overflow-hidden flex items-center justify-center p-4">
+      {/* Fundo animado */}
+      <AnimatedBackground />
 
-      {/* Main Container */}
-      <div className="relative z-10 w-full max-w-md">
-        {/* Branding Header */}
-        <div className="text-center mb-8">
-          {/* App Logo */}
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-full mb-4 shadow-lg">
-            <Globe className="w-10 h-10 text-white" />
-          </div>
-          
-          {/* Title */}
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">
-            Maestros FC
-          </h1>
-          <p className="text-zinc-600 dark:text-zinc-400">
-            Entre na sua conta para jogar
-          </p>
-        </div>
+      {/* Container principal - Responsivo */}
+      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center relative z-10">
 
-        {/* Login Card */}
-        <div className="shadow-2xl border-0 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-lg rounded-2xl border border-white/20 dark:border-zinc-800/50">
-          <div className="text-center pb-6 pt-8 px-8">
-            <div className="text-xl font-semibold text-zinc-800 dark:text-zinc-200 flex items-center justify-center gap-2 mb-2">
-              <Shield className="w-5 h-5 text-green-600" />
-              Bem-vindo de volta!
-            </div>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Faça login com sua conta Google para continuar
-            </p>
-          </div>
-          
-          <div className="space-y-6 px-8 pb-8">
-            {/* Google Login Button */}
-            <button 
-              onClick={handleGoogleLogin} 
-              disabled={loading}
-              className="w-full h-14 bg-white hover:bg-zinc-50 text-zinc-900 border-2 border-zinc-200 hover:border-zinc-300 hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-4 rounded-xl font-medium text-base disabled:opacity-50"
-            >
-              {loading ? (
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="font-medium">Conectando...</span>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center justify-center bg-white rounded-lg p-1">
-                    <svg className="w-6 h-6" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
-                  </div>
-                  <span className="font-semibold">Continuar com Google</span>
-                  <ChevronRight className="w-5 h-5 ml-auto" />
-                </>
-              )}
-            </button>
-
-            {/* Trust signals */}
-            <div className="text-center space-y-3">
-              <div className="flex items-center justify-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                <Shield className="w-4 h-4 text-green-600" />
-                <span>Login protegido e seguro</span>
-              </div>
-              
-              <div className="text-xs text-zinc-500 dark:text-zinc-500">
-                Ao continuar, você concorda com nossos termos de uso
-              </div>
-            </div>
-
-            {/* Message Display */}
-            {message && (
-              <div className={`p-4 rounded-xl ${
-                message.includes('❌') 
-                  ? 'bg-red-50 border border-red-200 dark:bg-red-900/20 dark:border-red-800' 
-                  : 'bg-green-50 border border-green-200 dark:bg-green-900/20 dark:border-green-800'
-              }`}>
-                <p className={`text-sm font-medium text-center whitespace-pre-line ${
-                  message.includes('❌') 
-                    ? 'text-red-800 dark:text-red-300' 
-                    : 'text-green-800 dark:text-green-300'
-                }`}>{message}</p>
-              </div>
-            )}
-
-            {/* Create Owner Link */}
-            <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
-              <button 
-                onClick={() => navigate('/create-owner-google')}
-                className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded-lg text-white font-medium text-sm transition-colors duration-200 text-center flex items-center justify-center gap-2"
+        {/* Coluna Esquerda: Login Card */}
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          className="w-full"
+        >
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-white/20 dark:border-slate-700/50 shadow-2xl">
+            <CardContent className="p-6 sm:p-8 space-y-6">
+              {/* Logo e título com gradiente */}
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                className="text-center space-y-3"
               >
-                <Shield className="w-4 h-4 text-purple-200" />
-                👑 Criar Conta Owner com Google
-              </button>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center mt-2">
-                Primeira vez? Crie sua conta como proprietário
-              </p>
-            </div>
-          </div>
-        </div>
+                <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg transform hover:scale-110 transition-transform">
+                  <span className="text-3xl font-bold text-white">M</span>
+                </div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 dark:from-emerald-400 dark:via-blue-400 dark:to-purple-400">
+                  Maestros FC
+                </h1>
+                <p className="text-muted-foreground flex items-center justify-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  Sistema de Gerenciamento Profissional
+                </p>
+              </motion.div>
 
-        {/* Modo Offline Section */}
-        <div className="mt-6 space-y-3">
-          <div className="text-center">
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-              Ou faça login offline para testes
+              {/* Notificação de acesso via rede local */}
+              <NetworkAccessNotice onUseLocalhost={handleUseLocalhost} />
+
+              {/* Mensagem de status */}
+              {message && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-card border rounded-lg p-4"
+                >
+                  <pre className="text-sm whitespace-pre-wrap">{message}</pre>
+                </motion.div>
+              )}
+
+              {/* Botões de login */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className="space-y-3"
+              >
+                {/* Google Login - Destaque */}
+                <motion.button
+                  onClick={handleGoogleLogin}
+                  disabled={loading}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full group relative flex items-center justify-center space-x-3 bg-gradient-to-r from-white to-gray-50 dark:from-slate-800 dark:to-slate-700 border-2 border-gray-200 dark:border-slate-600 rounded-xl px-6 py-4 text-gray-900 dark:text-slate-100 hover:border-emerald-500 dark:hover:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-blue-500/0 to-purple-500/0 group-hover:from-emerald-500/10 group-hover:via-blue-500/10 group-hover:to-purple-500/10 rounded-xl transition-all duration-300" />
+                  {loading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  )}
+                  <span className="font-semibold">{loading ? 'Conectando...' : 'Entrar com Google'}</span>
+                  <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </motion.button>
+
+                {/* Divisor */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-3 bg-card text-muted-foreground">
+                      ou modo offline
+                    </span>
+                  </div>
+                </div>
+
+                {/* Login Offline - Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <motion.button
+                    onClick={() => handleOfflineLogin('owner')}
+                    disabled={loading}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex items-center justify-center space-x-2 bg-gradient-to-br from-purple-600 to-purple-700 dark:from-purple-500 dark:to-purple-600 text-white rounded-lg px-4 py-3 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    <Shield className="h-4 w-4" />
+                    <span className="text-sm font-medium">Owner</span>
+                  </motion.button>
+
+                  <motion.button
+                    onClick={() => handleOfflineLogin('admin')}
+                    disabled={loading}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex items-center justify-center space-x-2 bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white rounded-lg px-4 py-3 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    <Shield className="h-4 w-4" />
+                    <span className="text-sm font-medium">Admin</span>
+                  </motion.button>
+                </div>
+              </motion.div>
+
+              {/* Informações adicionais com ícones */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+                className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4"
+              >
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <Shield className="h-4 w-4 text-emerald-500" />
+                  <span>Seguro</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <Globe className="h-4 w-4 text-blue-500" />
+                  <span>Multi-device</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <Sparkles className="h-4 w-4 text-purple-500" />
+                  <span>Tempo real</span>
+                </div>
+              </motion.div>
+
+              {/* Debug info */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="text-xs text-muted-foreground text-center pt-2 border-t">
+                  <p>Debug: {window.location.hostname}:{window.location.port}</p>
+                  <p>User: {user ? `${user.name} (${user.role})` : 'Não logado'}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Coluna Direita: Testimonials/Stats (Desktop only) */}
+        <motion.div
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4, duration: 0.6, ease: 'easeOut' }}
+          className="hidden lg:block space-y-6"
+        >
+          {/* Hero Text */}
+          <div className="space-y-4">
+            <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-500 dark:from-emerald-300 dark:to-blue-400">
+              Gerencie seu time como um profissional
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Organização completa de jogadores, partidas, finanças e ranking em um só lugar.
             </p>
           </div>
-          
-          <div className="space-y-2">
-            <button 
-              onClick={() => handleOfflineLogin('owner')}
-              disabled={loading}
-              className="w-full py-3 px-4 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 rounded-lg text-white font-medium text-sm transition-colors duration-200 text-center flex items-center justify-center gap-2"
+
+          {/* Stats Cards */}
+          <div className="space-y-3">
+            <motion.div
+              whileHover={{ x: 5 }}
+              transition={{ type: 'spring', stiffness: 300 }}
             >
-              <Shield className="w-4 h-4 text-yellow-400" />
-              Entrar como Owner Teste (Offline)
-            </button>
-            
-            <button 
-              onClick={() => handleOfflineLogin('admin')}
-              disabled={loading}
-              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-lg text-white font-medium text-sm transition-colors duration-200 text-center flex items-center justify-center gap-2"
+              <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border-white/20 dark:border-slate-700/50">
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">120+</p>
+                    <p className="text-sm text-muted-foreground">Jogadores ativos</p>
+                  </div>
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500 ml-auto" />
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ x: 5 }}
+              transition={{ type: 'spring', stiffness: 300 }}
             >
-              <Shield className="w-4 h-4 text-blue-200" />
-              Entrar como Admin Teste (Offline)
-            </button>
+              <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border-white/20 dark:border-slate-700/50">
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                    <Trophy className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">50+</p>
+                    <p className="text-sm text-muted-foreground">Partidas organizadas</p>
+                  </div>
+                  <CheckCircle2 className="h-5 w-5 text-blue-500 ml-auto" />
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ x: 5 }}
+              transition={{ type: 'spring', stiffness: 300 }}
+            >
+              <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border-white/20 dark:border-slate-700/50">
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+                    <Sparkles className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">100%</p>
+                    <p className="text-sm text-muted-foreground">Sincronização em tempo real</p>
+                  </div>
+                  <CheckCircle2 className="h-5 w-5 text-purple-500 ml-auto" />
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="text-center mt-8 space-y-2">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Não tem conta Google? {' '}
-            <a 
-              href="https://accounts.google.com/signup" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-500 font-medium underline decoration-1 underline-offset-2"
-            >
-              Criar uma grátis
-            </a>
-          </p>
-          
-          <p className="text-xs text-zinc-400 dark:text-zinc-500">
-            Suporte técnico disponível 24/7
-          </p>
-        </div>
-      </div>
-
-      {/* Floating Soccer Ball */}
-      <div className="fixed bottom-4 right-4 w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full shadow-lg animate-bounce opacity-80">
-        <div className="flex items-center justify-center w-full h-full">
-          <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-          </svg>
-        </div>
+          {/* Depoimento */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8, duration: 0.5 }}
+          >
+            <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border-white/20 dark:border-slate-700/50">
+              <CardContent className="p-6">
+                <p className="text-sm italic text-muted-foreground mb-3">
+                  "O Maestros FC transformou a forma como organizamos nosso time. Simples, rápido e profissional!"
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                    MC
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Michell Costa</p>
+                    <p className="text-xs text-muted-foreground">Owner · Maestros FC</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </motion.div>
       </div>
     </div>
   );

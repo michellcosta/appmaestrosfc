@@ -1,4 +1,4 @@
-import { supabase } from '@/config/supabase';
+
 
 export interface IdempotencyOptions {
   eventId?: string;
@@ -19,7 +19,7 @@ export async function checkIdempotency(
 ): Promise<boolean> {
   try {
     const { eventId, idempotencyKey, ttlMinutes = 60 } = options;
-    
+
     // Verificar se já existe um evento com este ID
     if (eventId) {
       const { data: existingEvent } = await supabase
@@ -27,12 +27,12 @@ export async function checkIdempotency(
         .select('id')
         .eq('id', eventId)
         .single();
-        
+
       if (existingEvent) {
         throw new IdempotencyError(`Event ${eventId} already exists`);
       }
     }
-    
+
     // Verificar idempotency key no header
     if (idempotencyKey) {
       const { data: existingPayment } = await supabase
@@ -40,12 +40,12 @@ export async function checkIdempotency(
         .select('id')
         .eq('external_ref', idempotencyKey)
         .single();
-        
+
       if (existingPayment) {
         throw new IdempotencyError(`Payment ${idempotencyKey} already exists`);
       }
     }
-    
+
     return true;
   } catch (error) {
     if (error instanceof IdempotencyError) {

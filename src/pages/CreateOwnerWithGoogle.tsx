@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/auth/OfflineAuthProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Crown, CheckCircle, AlertCircle, ArrowLeft, Shield, Settings } from 'lucide-react';
-import { useAuth } from '@/auth/OfflineAuthProvider';
+import { isMainOwner } from '@/utils/ownerProtection';
+import { AlertCircle, ArrowLeft, CheckCircle, Crown, Settings, Shield } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { canCreateOwner, getMainOwnerId, PROTECTION_MESSAGES } from '@/utils/ownerProtection';
 
 export default function CreateOwnerWithGoogle() {
   const { signInWithGoogle, user, loading } = useAuth();
@@ -13,39 +13,38 @@ export default function CreateOwnerWithGoogle() {
   const [isBlocked, setIsBlocked] = useState(false);
 
   useEffect(() => {
-    // Verificar se já existe um owner principal
-    const mainOwnerId = getMainOwnerId();
-    if (mainOwnerId && user?.id !== mainOwnerId) {
-      setIsBlocked(true);
-      setError(PROTECTION_MESSAGES.CANNOT_CREATE_OWNER);
+    // Verificar se o usuário atual é o owner principal
+    if (user && isMainOwner(user.email)) {
+      setIsBlocked(false);
+      setError(null);
     }
   }, [user]);
 
   const handleCreateOwnerWithGoogle = async () => {
-    if (!canCreateOwner(user?.id)) {
-      setError(PROTECTION_MESSAGES.CANNOT_CREATE_OWNER);
+    if (user && !isMainOwner(user.email)) {
+      setError('Apenas o owner principal pode executar esta ação.');
       return;
     }
 
     try {
       setIsCreating(true);
       setError(null);
-      
+
       console.log('🔍 Iniciando Google OAuth...');
-      
+
       await signInWithGoogle();
-      
+
       console.log('✅ Google OAuth concluído');
-      
+
       // O FixedAuthProvider já cria automaticamente um usuário com role 'owner'
       // quando alguém faz login com Google pela primeira vez
-      
+
     } catch (error: any) {
       console.error('❌ Erro ao criar owner com Google:', error);
-      
+
       // Mensagens de erro mais específicas
       let errorMessage = 'Erro desconhecido ao fazer login com Google';
-      
+
       if (error.message?.includes('popup_closed')) {
         errorMessage = 'Janela do Google foi fechada. Tente novamente.';
       } else if (error.message?.includes('access_denied')) {
@@ -55,7 +54,7 @@ export default function CreateOwnerWithGoogle() {
       } else {
         errorMessage = error.message || 'Erro ao conectar com Google';
       }
-      
+
       setError(errorMessage);
     } finally {
       setIsCreating(false);
@@ -78,7 +77,7 @@ export default function CreateOwnerWithGoogle() {
               Sua conta owner foi criada e você já está logado
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent className="space-y-4">
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
@@ -95,8 +94,8 @@ export default function CreateOwnerWithGoogle() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h4 className="font-semibold text-blue-800 mb-2">✅ Agora você pode:</h4>
               <ul className="text-sm text-blue-700 space-y-1">
-                <li>• Acessar a carteira digital com saldo real</li>
-                <li>• Fazer transações PIX</li>
+                {/* <li>• Acessar a carteira digital com saldo real</li> */} {/* DESABILITADO - Sistema financeiro removido */}
+                {/* <li>• Fazer transações PIX</li> */} {/* DESABILITADO - Sistema financeiro removido */}
                 <li>• Gerenciar todos os usuários</li>
                 <li>• Acessar todas as funcionalidades do sistema</li>
                 <li>• Configurar permissões e acessos</li>
@@ -109,11 +108,11 @@ export default function CreateOwnerWithGoogle() {
                   Ir para Dashboard
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="flex-1">
+              {/* <Button asChild variant="outline" className="flex-1">
                 <Link to="/finance">
                   Ver Carteira Digital
                 </Link>
-              </Button>
+              </Button> */} {/* DESABILITADO - Sistema financeiro removido */}
             </div>
           </CardContent>
         </Card>
@@ -137,7 +136,7 @@ export default function CreateOwnerWithGoogle() {
               A criação de novos owners está protegida
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent className="space-y-4">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
@@ -187,7 +186,7 @@ export default function CreateOwnerWithGoogle() {
             Faça login com sua conta Google para criar automaticamente uma conta owner
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent className="space-y-6">
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-2">
@@ -237,7 +236,7 @@ export default function CreateOwnerWithGoogle() {
             </ul>
           </div>
 
-          <Button 
+          <Button
             onClick={handleCreateOwnerWithGoogle}
             disabled={isCreating || loading}
             className="w-full"

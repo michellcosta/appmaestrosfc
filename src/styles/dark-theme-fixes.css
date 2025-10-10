@@ -1,0 +1,213 @@
+/* Correções para contrastes e cores no tema escuro - Versão Conservadora */
+
+/* ===== CORES DE FUNDO E CONTRASTES ===== */
+
+/* Apenas melhorar o contraste do fundo principal */
+.dark {
+  background-color: #111827 !important; /* gray-900 ligeiramente mais escuro */
+}
+
+/* Cards com melhor contraste mas mantendo estrutura */
+.dark .card {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #374151 !important; /* gray-700 */
+}
+
+/* ===== TEXTOS E LEGIBILIDADE ===== */
+
+/* Melhorar contraste de textos sem quebrar layout */
+.dark [class*="text-gray-600"] {
+  color: #d1d5db !important; /* gray-300 - mais claro */
+}
+
+.dark [class*="text-zinc-600"] {
+  color: #d1d5db !important; /* gray-300 - mais claro */
+}
+
+.dark [class*="text-gray-500"] {
+  color: #9ca3af !important; /* gray-400 - mais claro */
+}
+
+.dark [class*="text-zinc-500"] {
+  color: #9ca3af !important; /* gray-400 - mais claro */
+}
+
+/* ===== BOTÕES E ELEMENTOS INTERATIVOS ===== */
+
+/* Melhorar contraste de botões sem quebrar funcionalidade */
+.dark .bg-gray-100 {
+  background-color: #374151 !important; /* gray-700 */
+  color: #f9fafb !important; /* gray-50 */
+}
+
+.dark .bg-zinc-100 {
+  background-color: #374151 !important; /* gray-700 */
+  color: #f9fafb !important; /* gray-50 */
+}
+
+.dark .bg-gray-100:hover,
+.dark .bg-zinc-100:hover {
+  background-color: #4b5563 !important; /* gray-600 */
+}
+
+/* ===== INPUTS E FORMULÁRIOS ===== */
+
+/* Melhorar visibilidade de inputs */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #374151 !important; /* gray-700 */
+  color: #f9fafb !important; /* gray-50 */
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: #3b82f6 !important; /* blue-500 */
+  box-shadow: 0 0 0 1px #3b82f6 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+/* ===== BADGES E LABELS ===== */
+
+/* Melhorar contraste de badges específicos */
+.dark .bg-purple-100 {
+  background-color: #6b21a8 !important; /* purple-800 */
+  color: #e9d5ff !important; /* purple-200 */
+}
+
+.dark .bg-purple-900\/30 {
+  background-color: #6b21a8 !important; /* purple-800 */
+  color: #e9d5ff !important; /* purple-200 */
+}
+
+/* ===== MODAIS E DIALOGS ===== */
+
+/* Melhorar contraste de modais */
+.dark .dialog-content {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #374151 !important; /* gray-700 */
+}
+
+/* ===== NAVEGAÇÃO E TABS ===== */
+
+/* Garantir que as tabs sejam sempre visíveis */
+.tabs-list {
+  display: flex !important;
+  width: 100% !important;
+  background-color: #f9fafb !important; /* gray-50 */
+  border: 1px solid #e5e7eb !important; /* gray-200 */
+}
+
+.tabs-trigger {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0.5rem 1rem !important;
+  color: #6b7280 !important; /* gray-500 */
+  background-color: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.tabs-trigger[data-state="active"] {
+  background-color: #ffffff !important;
+  color: #111827 !important; /* gray-900 */
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1) !important;
+}
+
+.tabs-trigger:hover {
+  background-color: #f3f4f6 !important; /* gray-100 */
+  color: #374151 !important; /* gray-700 */
+}
+
+/* Tema escuro específico */
+.dark .tabs-list {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #374151 !important; /* gray-700 */
+}
+
+.dark .tabs-trigger {
+  color: #9ca3af !important; /* gray-400 */
+  background-color: transparent !important;
+}
+
+.dark .tabs-trigger[data-state="active"] {
+  background-color: #374151 !important; /* gray-700 */
+  color: #ffffff !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .tabs-trigger:hover {
+  background-color: #374151 !important; /* gray-700 */
+  color: #ffffff !important;
+}
+
+/* ===== ÍCONES E ELEMENTOS VISUAIS ===== */
+
+/* Melhorar contraste de ícones específicos */
+.dark .text-blue-500 {
+  color: #60a5fa !important; /* blue-400 - mais claro */
+}
+
+.dark .text-green-500 {
+  color: #4ade80 !important; /* green-400 - mais claro */
+}
+
+.dark .text-red-500 {
+  color: #f87171 !important; /* red-400 - mais claro */
+}
+
+.dark .text-yellow-500 {
+  color: #facc15 !important; /* yellow-400 - mais claro */
+}
+
+.dark .text-purple-500 {
+  color: #a78bfa !important; /* purple-400 - mais claro */
+}
+
+/* ===== SCROLLBARS CUSTOMIZADAS ===== */
+
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+/* ===== RESPONSIVIDADE ===== */
+
+@media (max-width: 768px) {
+  .dark .dashboard-container {
+    padding: 0.5rem;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .dark .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1025px) {
+  .dark .grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+}

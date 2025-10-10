@@ -1,5 +1,4 @@
-import { useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
 export interface WhatsAppConfig {
@@ -244,7 +243,7 @@ export function useWhatsAppIntegration() {
   }, [config]);
 
   // Enviar mensagem interativa
-  const sendInteractiveMessage = useCallback(async (to: string, message: string, buttons: Array<{id: string, title: string}>) => {
+  const sendInteractiveMessage = useCallback(async (to: string, message: string, buttons: Array<{ id: string, title: string }>) => {
     if (!config) {
       toast.error('WhatsApp não configurado');
       return false;
@@ -406,20 +405,20 @@ ${inviteData.name ? `Olá ${inviteData.name}! ` : 'Olá! '}Você foi convidado p
     templates,
     loading,
     error,
-    
+
     // Configuração
     loadConfig,
     saveConfig,
-    
+
     // Mensagens
     sendTextMessage,
     sendTemplateMessage,
     sendInteractiveMessage,
-    
+
     // Convites
     sendInviteMessage,
     sendInteractiveInvite,
-    
+
     // Utilitários
     generateWhatsAppLink,
     validatePhoneNumber,

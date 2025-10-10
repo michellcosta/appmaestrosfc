@@ -1,21 +1,18 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useAuth } from '@/auth/OfflineAuthProvider';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Shield, 
-  UserPlus, 
-  UserMinus, 
-  Mail, 
-  CheckCircle, 
-  XCircle,
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { useToastHelpers } from '@/components/ui/toast';
+import { PROTECTION_MESSAGES, canRemoveUser, isMainOwner } from '@/utils/ownerProtection';
+import {
   Crown,
+  Shield,
+  UserMinus,
+  UserPlus,
   Users
 } from 'lucide-react';
-import { useToastHelpers } from '@/components/ui/toast';
-import { useAuth } from '@/auth/OfflineAuthProvider';
-import { canDeleteUser, isMainOwner, PROTECTION_MESSAGES } from '@/utils/ownerProtection';
+import React, { useState } from 'react';
 
 export default function ManageAdmins() {
   const [searchEmail, setSearchEmail] = useState('');
@@ -34,7 +31,7 @@ export default function ManageAdmins() {
       addedDate: '2024-01-15'
     },
     {
-      id: '2', 
+      id: '2',
       name: 'Maria Santos',
       email: 'maria@exemplo.com',
       role: 'aux',
@@ -53,7 +50,7 @@ export default function ManageAdmins() {
     try {
       // Simular API call
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       const newAdmin = {
         id: Date.now().toString(),
         name: searchEmail.split('@')[0],
@@ -74,9 +71,16 @@ export default function ManageAdmins() {
   };
 
   const handleRemoveAdmin = async (adminId: string) => {
+    // Encontrar o admin pelo ID
+    const admin = admins.find(a => a.id === adminId);
+    if (!admin) {
+      error('Admin não encontrado', 'O administrador não foi encontrado');
+      return;
+    }
+
     // Verificar se pode excluir o usuário
-    if (!canDeleteUser(adminId, user?.id)) {
-      error('Acesso negado', PROTECTION_MESSAGES.CANNOT_DELETE_MAIN_OWNER);
+    if (!canRemoveUser(admin.email)) {
+      error('Acesso negado', PROTECTION_MESSAGES.CANNOT_REMOVE_OWNER);
       return;
     }
 
@@ -119,7 +123,7 @@ export default function ManageAdmins() {
               onChange={(e) => setSearchEmail(e.target.value)}
               className="flex-1 dark:bg-zinc-700 dark:border-zinc-600 dark:text-zinc-100 dark:placeholder-zinc-400"
             />
-            <Button 
+            <Button
               onClick={handleAddAdmin}
               disabled={loading || !searchEmail}
               className="bg-gradient-primary hover:opacity-90 dark:bg-blue-600 dark:hover:bg-blue-700"
@@ -144,7 +148,7 @@ export default function ManageAdmins() {
         <CardContent>
           <div className="space-y-3">
             {admins.map((admin, index) => (
-              <div 
+              <div
                 key={admin.id}
                 className="flex items-center justify-between p-4 border dark:border-zinc-700 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors"
                 style={{ animationDelay: `${index * 100}ms` }}
@@ -157,20 +161,20 @@ export default function ManageAdmins() {
                     <h3 className="font-semibold dark:text-zinc-100">{admin.name}</h3>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">{admin.email}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge 
+                      <Badge
                         variant={admin.role === 'admin' ? 'default' : 'secondary'}
                         className="text-xs dark:border-zinc-600"
                       >
                         {admin.role === 'admin' ? '🛡️ Admin' : '⚡ Auxiliar'}
                       </Badge>
-                      <Badge 
+                      <Badge
                         variant={admin.status === 'active' ? 'default' : 'outline'}
                         className="text-xs dark:border-zinc-600"
                       >
                         {admin.status === 'active' ? '✅ Ativo' : '⏳ Pendente'}
                       </Badge>
                       {isMainOwner(admin.id) && (
-                        <Badge 
+                        <Badge
                           variant="destructive"
                           className="text-xs bg-gradient-to-r from-purple-600 to-blue-600 text-white dark:from-purple-700 dark:to-blue-700"
                         >
@@ -180,7 +184,7 @@ export default function ManageAdmins() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-zinc-400 dark:text-zinc-500">
                     Adicionado em {new Date(admin.addedDate).toLocaleDateString('pt-BR')}
@@ -189,15 +193,15 @@ export default function ManageAdmins() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleRemoveAdmin(admin.id)}
-                    disabled={loading || !canDeleteUser(admin.id, user?.id)}
+                    disabled={loading || !canRemoveUser(admin.email)}
                     className={
-                      !canDeleteUser(admin.id, user?.id) 
-                        ? "text-gray-400 cursor-not-allowed dark:text-zinc-600 dark:border-zinc-700" 
+                      !canRemoveUser(admin.email)
+                        ? "text-gray-400 cursor-not-allowed dark:text-zinc-600 dark:border-zinc-700"
                         : "text-red-600 hover:bg-red-50 hover:border-red-200 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:border-red-800 dark:border-zinc-600"
                     }
                     title={
-                      !canDeleteUser(admin.id, user?.id) 
-                        ? "O owner principal não pode ser removido" 
+                      !canRemoveUser(admin.email)
+                        ? "O owner principal não pode ser removido"
                         : "Remover administrador"
                     }
                   >

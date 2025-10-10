@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { DiaristRequest, DiaristRequestStatus } from '@/types';
+import { useEffect, useState } from 'react';
 import { useSessionProfile } from './useSessionProfile';
 
 export function useDiaristRequests() {
@@ -84,7 +83,7 @@ export function useDiaristRequests() {
     try {
       const { error } = await supabase
         .from('diarist_requests')
-        .update({ 
+        .update({
           status: 'cancelled',
           updated_at: new Date().toISOString()
         })
@@ -94,9 +93,9 @@ export function useDiaristRequests() {
       if (error) throw error;
 
       // Atualizar lista local
-      setRequests(prev => 
-        prev.map(req => 
-          req.id === requestId 
+      setRequests(prev =>
+        prev.map(req =>
+          req.id === requestId
             ? { ...req, status: 'cancelled' as DiaristRequestStatus }
             : req
         )
@@ -108,7 +107,7 @@ export function useDiaristRequests() {
 
   // Aprovar/rejeitar solicitação (para staff)
   const reviewRequest = async (
-    requestId: string, 
+    requestId: string,
     status: 'approved' | 'rejected',
     notes?: string
   ) => {
@@ -131,16 +130,16 @@ export function useDiaristRequests() {
       if (error) throw error;
 
       // Atualizar lista local
-      setRequests(prev => 
-        prev.map(req => 
-          req.id === requestId 
-            ? { 
-                ...req, 
-                status,
-                reviewed_at: new Date().toISOString(),
-                reviewed_by: profile.id,
-                notes
-              }
+      setRequests(prev =>
+        prev.map(req =>
+          req.id === requestId
+            ? {
+              ...req,
+              status,
+              reviewed_at: new Date().toISOString(),
+              reviewed_by: profile.id,
+              notes
+            }
             : req
         )
       );
@@ -151,16 +150,16 @@ export function useDiaristRequests() {
 
   // Verificar se já existe solicitação para uma partida
   const hasRequestForMatch = (matchId: string) => {
-    return requests.some(req => 
-      req.match_id === matchId && 
+    return requests.some(req =>
+      req.match_id === matchId &&
       req.status === 'pending'
     );
   };
 
   // Buscar solicitação específica para uma partida
   const getRequestForMatch = (matchId: string) => {
-    return requests.find(req => 
-      req.match_id === matchId && 
+    return requests.find(req =>
+      req.match_id === matchId &&
       req.status === 'pending'
     );
   };
@@ -186,8 +185,8 @@ export function useDiaristRequests() {
     reviewRequest,
     hasRequestForMatch,
     getRequestForMatch,
-    refetch: profile?.role && ['owner', 'admin', 'aux'].includes(profile.role) 
-      ? fetchAllRequests 
+    refetch: profile?.role && ['owner', 'admin', 'aux'].includes(profile.role)
+      ? fetchAllRequests
       : fetchUserRequests
   };
 }

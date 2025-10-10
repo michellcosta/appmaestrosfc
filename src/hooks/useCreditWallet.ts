@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 export interface CreditWallet {
@@ -46,7 +45,7 @@ export function useCreditWallet(userId: string, groupId?: string) {
   const fetchWallet = async () => {
     try {
       setLoading(true);
-      
+
       let query = supabase
         .from('credit_wallets')
         .select(`
@@ -187,7 +186,7 @@ export function useCreditWallet(userId: string, groupId?: string) {
           balance: data.wallet.balance,
           total_spent: data.wallet.total_spent
         } : null);
-        
+
         setTransactions(data.recentTransactions);
         toast.success(`${option.name} resgatado com sucesso!`);
       }
@@ -221,7 +220,7 @@ export function useCreditWallet(userId: string, groupId?: string) {
           balance: data.wallet.balance,
           total_earned: data.wallet.total_earned
         } : null);
-        
+
         setTransactions(data.recentTransactions);
         toast.success(`+${amount} créditos adicionados!`);
       }
@@ -255,7 +254,7 @@ export function useCreditWallet(userId: string, groupId?: string) {
           balance: data.wallet.balance,
           total_earned: data.wallet.total_earned
         } : null);
-        
+
         setTransactions(data.recentTransactions);
         toast.success(`Bônus de ${amount} créditos adicionado!`);
       }
@@ -289,7 +288,7 @@ export function useCreditWallet(userId: string, groupId?: string) {
           balance: data.wallet.balance,
           total_spent: data.wallet.total_spent
         } : null);
-        
+
         setTransactions(data.recentTransactions);
         toast.info(`Penalidade de ${amount} créditos aplicada`);
       }

@@ -1,0 +1,94 @@
+# Maestros FC - Cursor Rules
+# Configuração avançada para desenvolvimento eficiente
+
+## Contexto do Projeto
+- App: Maestros FC - Sistema de gerenciamento de time de futebol
+- Stack: React 18 + TypeScript + Vite + Tailwind + shadcn/ui + Zustand + Supabase
+- Objetivo: Sistema completo para gerenciar jogadores, partidas, finanças e ranking
+
+## Regras de Desenvolvimento
+
+### 1. Análise de Código
+- SEMPRE analise o contexto completo antes de fazer mudanças
+- Identifique dependências e impactos em outras partes do sistema
+- Mantenha consistência com padrões existentes
+- Priorize performance e UX
+
+### 2. Banco de Dados (Supabase)
+- Respeite as políticas RLS (Row Level Security)
+- Use transações para operações críticas
+- Implemente validações tanto no frontend quanto no backend
+- Documente mudanças no schema
+
+### 3. Estado e Dados
+- Use Zustand para estado global
+- Implemente cache inteligente
+- Sincronize dados entre localStorage e Supabase
+- Trate cenários offline
+
+### 4. Componentes e UI
+- Use shadcn/ui como base
+- Mantenha design system consistente
+- Implemente loading states e error boundaries
+- Otimize para mobile-first
+
+### 5. Autenticação e Permissões
+- Implemente sistema de roles robusto
+- Valide permissões em todas as ações críticas
+- Mantenha fallbacks para cenários de erro
+
+## Tarefas Prioritárias
+
+### Críticas (Resolver PRIMEIRO)
+1. Sistema de persistência de jogadores (RLS issues)
+2. Autenticação offline funcional
+3. Navegação e rotas protegidas
+4. Validação de dados em tempo real
+
+### Importantes (Implementar DEPOIS)
+1. Sistema de notificações
+2. Backup automático de dados
+3. Relatórios e analytics
+4. Otimizações de performance
+
+### Desejáveis (Futuro)
+1. PWA completo
+2. Integrações externas
+3. Sistema de convites avançado
+4. Dashboard administrativo
+
+## Padrões de Código
+
+### TypeScript
+- Use tipos explícitos, evite `any`
+- Implemente interfaces para dados complexos
+- Use enums para constantes
+
+### React
+- Use hooks customizados para lógica complexa
+- Implemente lazy loading para páginas
+- Use React.memo para otimização
+
+### Styling
+- Use Tailwind CSS classes
+- Mantenha design tokens consistentes
+- Implemente dark mode
+
+## Comandos Úteis
+- `npm run dev` - Desenvolvimento
+- `npm run build` - Build para produção
+- `npm run preview` - Preview da build
+
+## Arquivos Críticos
+- `src/auth/OfflineAuthProvider.tsx` - Autenticação
+- `src/pages/ManagePlayersSimple.tsx` - Gerenciamento de jogadores
+- `src/lib/supabase.ts` - Configuração Supabase
+- `supabase/schema_app.sql` - Schema do banco
+
+## Objetivo Final
+Criar um sistema completo, estável e pronto para produção que permita:
+- Gerenciar jogadores completamente
+- Organizar partidas e times
+- Controlar finanças do time
+- Manter ranking e estatísticas
+- Funcionar offline quando necessário

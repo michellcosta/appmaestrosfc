@@ -1,3 +1,6 @@
+/* Importar correções para tema escuro */
+@import './styles/dark-theme-fixes.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -156,6 +159,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -167,6 +171,7 @@
     opacity: 0;
     transform: translateX(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -178,6 +183,7 @@
     opacity: 0;
     transform: translateX(20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -189,6 +195,7 @@
     opacity: 0;
     transform: scale(0.9);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -196,18 +203,24 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
 }
 
 @keyframes bounce {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-10px);
   }
@@ -414,74 +427,74 @@ All colors MUST be HSL.
     /* Core Colors - Maestros FC Theme */
     --background: 0 0% 98%;
     --foreground: 215 25% 8%;
-    
+
     --card: 0 0% 100%;
     --card-foreground: 215 25% 8%;
-    
+
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 8%;
-    
+
     /* Primary - Professional Dark Blue */
     --primary: 222 84% 5%;
     --primary-foreground: 0 0% 100%;
     --primary-hover: 222 84% 8%;
     --primary-glow: 222 84% 12%;
-    
+
     /* Secondary - Modern Gray */
     --secondary: 215 16% 47%;
     --secondary-foreground: 0 0% 100%;
-    
+
     /* Muted - Light Gray */
     --muted: 210 14% 96%;
     --muted-foreground: 215 14% 44%;
-    
+
     /* Accent - Maestros Green (usado com moderação) */
     --accent: 142 71% 45%;
     --accent-foreground: 0 0% 100%;
-    
+
     /* Destructive - Red */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    
+
     /* Warning - Orange */
     --warning: 33 91% 50%;
     --warning-foreground: 0 0% 100%;
-    
+
     /* Success - Green */
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
-    
+
     /* Borders & Input */
     --border: 210 14% 90%;
     --input: 210 14% 90%;
     --ring: 142 71% 45%;
-    
+
     /* Radius */
     --radius: 0.75rem;
-    
+
     /* Team Colors */
     --team-black: 0 0% 10%;
     --team-green: 142 71% 45%;
     --team-gray: 215 14% 44%;
     --team-red: 0 84% 50%;
-    
+
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
     --gradient-card: linear-gradient(180deg, hsl(var(--card)), hsl(var(--muted)));
     --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(142 71% 55%));
-    
+
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 hsl(215 25% 8% / 0.05);
     --shadow-md: 0 4px 6px -1px hsl(215 25% 8% / 0.1);
     --shadow-lg: 0 10px 15px -3px hsl(215 25% 8% / 0.1);
     --shadow-xl: 0 20px 25px -5px hsl(215 25% 8% / 0.1);
     --shadow-glow: 0 0 20px hsl(var(--primary-glow) / 0.3);
-    
+
     /* Animations */
     --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-base: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    
+
     /* Tab Bar */
     --tabbar-height: 72px;
     --tabbar-background: 0 0% 100%;
@@ -490,74 +503,81 @@ All colors MUST be HSL.
   }
 
   .dark {
-    /* Dark Mode Colors */
-    --background: 222 12% 5%;
-    --foreground: 210 20% 95%;
-    
-    --card: 222 12% 6%;
-    --card-foreground: 210 20% 95%;
-    
-    --popover: 222 12% 8%;
-    --popover-foreground: 210 20% 95%;
-    
+    /* Dark Mode Colors - Melhor contraste */
+    --background: 20 15% 4%;
+    /* quase preto */
+    --foreground: 210 20% 92%;
+    /* texto claro */
+
+    --card: 24 10% 9%;
+    /* cards escuros */
+    --card-foreground: 210 18% 90%;
+    /* texto em cards */
+
+    --popover: 24 10% 9%;
+    --popover-foreground: 210 18% 90%;
+
     /* Primary - Green (same in dark) */
     --primary: 142 71% 45%;
     --primary-foreground: 0 0% 100%;
     --primary-hover: 142 71% 55%;
     --primary-glow: 142 71% 35%;
-    
+
     /* Secondary - Dark Gray */
     --secondary: 222 12% 14%;
     --secondary-foreground: 210 20% 95%;
-    
-    /* Muted - Gray */
-    --muted: 222 12% 14%;
-    --muted-foreground: 215 15% 55%;
-    
+
+    /* Muted - Gray com mais contraste */
+    --muted: 210 16% 18%;
+    /* fundo muted */
+    --muted-foreground: 210 16% 70%;
+    /* texto muted */
+
     /* Accent - Green Dark */
     --accent: 142 30% 15%;
     --accent-foreground: 142 71% 55%;
-    
+
     /* Destructive - Red */
     --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 100%;
-    
+
     /* Warning - Orange */
     --warning: 33 91% 50%;
     --warning-foreground: 0 0% 100%;
-    
+
     /* Success - Green */
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
-    
-    /* Borders & Input */
-    --border: 222 12% 25%;
-    --input: 222 12% 25%;
+
+    /* Borders & Input com mais contraste */
+    --border: 210 16% 28%;
+    /* bordas visíveis */
+    --input: 210 16% 28%;
     --ring: 142 71% 45%;
-    
+
     /* Team Colors (adjusted for dark) */
     --team-black: 0 0% 95%;
     --team-green: 142 71% 55%;
     --team-gray: 215 15% 70%;
     --team-red: 0 84% 60%;
-    
+
     /* Gradients (dark) */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-hover)));
     --gradient-card: linear-gradient(180deg, hsl(var(--card)), hsl(222 12% 6%));
     --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(142 71% 60%));
-    
+
     /* Shadows (dark) */
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.1);
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.2);
     --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.3);
     --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.4);
     --shadow-glow: 0 0 30px hsl(var(--primary) / 0.4);
-    
+
     /* Tab Bar (dark) */
     --tabbar-background: 222 12% 8%;
     --tabbar-foreground: 215 15% 60%;
     --tabbar-active: 142 71% 55%;
-    
+
     /* Placeholder specific for dark mode */
     --placeholder-foreground: 215 15% 50%;
   }
@@ -580,7 +600,9 @@ All colors MUST be HSL.
   }
 
   /* Prevent zoom on input focus for iOS */
-  input, select, textarea {
+  input,
+  select,
+  textarea {
     font-size: 16px;
   }
 
@@ -591,7 +613,8 @@ All colors MUST be HSL.
   }
 
   /* Improve button touch targets */
-  button, [role="button"] {
+  button,
+  [role="button"] {
     min-height: 44px;
     min-width: 44px;
   }
@@ -630,39 +653,85 @@ All colors MUST be HSL.
 
 /* Micro-interações e Animações Personalizadas */
 @keyframes gentle-bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-2px);
+  }
 }
 
 @keyframes subtle-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.8; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
 }
 
 @keyframes smooth-fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes card-hover {
-  from { transform: translateY(0) scale(1); }
-  to { transform: translateY(-2px) scale(1.01); }
+  from {
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    transform: translateY(-2px) scale(1.01);
+  }
 }
 
 @keyframes button-press {
-  0% { transform: scale(1); }
-  50% { transform: scale(0.98); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(0.98);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 @keyframes ripple {
-  0% { transform: scale(0); opacity: 1; }
-  100% { transform: scale(4); opacity: 0; }
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
 }
 
 /* Classes utilitárias para micro-interações */
@@ -741,8 +810,15 @@ All colors MUST be HSL.
 }
 
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .input-focus-glow {
@@ -772,9 +848,20 @@ All colors MUST be HSL.
 }
 
 @keyframes loading-dots {
-  0%, 20% { content: '.'; }
-  40% { content: '..'; }
-  60%, 100% { content: '...'; }
+
+  0%,
+  20% {
+    content: '.';
+  }
+
+  40% {
+    content: '..';
+  }
+
+  60%,
+  100% {
+    content: '...';
+  }
 }
 
 /* Efeitos de hover para navegação */
@@ -900,6 +987,7 @@ All colors MUST be HSL.
 
 /* Respeitar preferências de movimento reduzido */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -912,6 +1000,7 @@ All colors MUST be HSL.
 
 /* Melhor contraste para alto contraste */
 @media (prefers-contrast: high) {
+
   .bg-gradient-to-r,
   .bg-gradient-to-br,
   .bg-gradient-to-l,
@@ -920,13 +1009,13 @@ All colors MUST be HSL.
     background: #000000 !important;
     color: #fff !important;
   }
-  
+
   .text-gray-600,
   .text-gray-500,
   .text-gray-400 {
     color: #000 !important;
   }
-  
+
   .border-gray-200,
   .border-gray-300 {
     border-color: #000 !important;
@@ -961,6 +1050,7 @@ input:disabled {
 
 /* Melhor espaçamento para touch */
 @media (pointer: coarse) {
+
   button,
   [role="button"],
   a,
@@ -983,6 +1073,7 @@ input:disabled {
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
@@ -1113,9 +1204,20 @@ input:disabled {
 }
 
 @keyframes loading-dots {
-  0%, 20% { content: '.'; }
-  40% { content: '..'; }
-  60%, 100% { content: '...'; }
+
+  0%,
+  20% {
+    content: '.';
+  }
+
+  40% {
+    content: '..';
+  }
+
+  60%,
+  100% {
+    content: '...';
+  }
 }
 
 /* Efeitos de hover para navegação */

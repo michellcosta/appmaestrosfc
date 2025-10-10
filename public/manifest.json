@@ -1,15 +1,18 @@
 {
-  "name": "Nexus Play",
-  "short_name": "Nexus",
+  "name": "Maestros FC",
+  "short_name": "Maestros",
   "description": "Sistema de gestão de peladas do Maestros FC",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#009600",
+  "theme_color": "#009600",
   "orientation": "portrait",
   "scope": "/",
   "lang": "pt-BR",
-  "categories": ["sports", "lifestyle"],
+  "categories": [
+    "sports",
+    "lifestyle"
+  ],
   "icons": [
     {
       "src": "/icon-192.png",

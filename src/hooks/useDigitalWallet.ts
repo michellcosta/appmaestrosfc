@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 export interface DigitalWallet {
@@ -70,10 +69,10 @@ export function useDigitalWallet(userId: string, groupId?: string) {
       console.log('🔍 [DEBUG] Iniciando fetchWallet...');
       console.log('🔍 [DEBUG] userId:', userId);
       console.log('🔍 [DEBUG] groupId:', groupId);
-      
+
       setLoading(true);
       setError(null);
-      
+
       let query = supabase
         .from('digital_wallets')
         .select('*')
@@ -247,7 +246,7 @@ export function useDigitalWallet(userId: string, groupId?: string) {
       const newBalance = wallet.balance_brl + amount;
       const { error: walletError } = await supabase
         .from('digital_wallets')
-        .update({ 
+        .update({
           balance_brl: newBalance,
           total_received_brl: wallet.total_received_brl + amount,
           updated_at: new Date().toISOString()
@@ -256,12 +255,12 @@ export function useDigitalWallet(userId: string, groupId?: string) {
 
       if (walletError) throw walletError;
 
-      setWallet(prev => prev ? { 
-        ...prev, 
+      setWallet(prev => prev ? {
+        ...prev,
         balance_brl: newBalance,
         total_received_brl: prev.total_received_brl + amount
       } : null);
-      
+
       await fetchTransactions();
       toast.success(`R$ ${amount.toFixed(2)} adicionados à carteira!`);
       return true;
@@ -319,7 +318,7 @@ export function useDigitalWallet(userId: string, groupId?: string) {
       const newBalance = wallet.balance_brl - totalAmount;
       const { error: updateError } = await supabase
         .from('digital_wallets')
-        .update({ 
+        .update({
           balance_brl: newBalance,
           total_paid_brl: wallet.total_paid_brl + totalAmount,
           updated_at: new Date().toISOString()
@@ -329,12 +328,12 @@ export function useDigitalWallet(userId: string, groupId?: string) {
       if (updateError) throw updateError;
 
       // Atualizar estado local
-      setWallet(prev => prev ? { 
-        ...prev, 
+      setWallet(prev => prev ? {
+        ...prev,
         balance_brl: newBalance,
         total_paid_brl: prev.total_paid_brl + totalAmount
       } : null);
-      
+
       await fetchTransactions();
       toast.success(`Pagamento de R$ ${totalAmount.toFixed(2)} realizado!`);
       return true;
@@ -375,7 +374,7 @@ export function useDigitalWallet(userId: string, groupId?: string) {
       const newBalance = wallet.balance_brl - amount;
       const { error: walletError } = await supabase
         .from('digital_wallets')
-        .update({ 
+        .update({
           balance_brl: newBalance,
           total_paid_brl: wallet.total_paid_brl + amount,
           updated_at: new Date().toISOString()
@@ -384,12 +383,12 @@ export function useDigitalWallet(userId: string, groupId?: string) {
 
       if (walletError) throw walletError;
 
-      setWallet(prev => prev ? { 
-        ...prev, 
+      setWallet(prev => prev ? {
+        ...prev,
         balance_brl: newBalance,
         total_paid_brl: prev.total_paid_brl + amount
       } : null);
-      
+
       await fetchTransactions();
       toast.success(`Pagamento de R$ ${amount.toFixed(2)} realizado!`);
     } catch (err) {
@@ -401,11 +400,11 @@ export function useDigitalWallet(userId: string, groupId?: string) {
   // Solicitar saque - Implementação direta no banco
   const requestWithdrawal = async (amount: number, pixKey: string) => {
     // Detectar tipo da chave PIX automaticamente
-    const pixKeyType: 'cpf' | 'cnpj' | 'email' | 'phone' | 'random' = 
+    const pixKeyType: 'cpf' | 'cnpj' | 'email' | 'phone' | 'random' =
       /^\d{11}$/.test(pixKey) ? 'cpf' :
-      /^\d{14}$/.test(pixKey) ? 'cnpj' :
-      /@/.test(pixKey) ? 'email' :
-      /^\d{10,11}$/.test(pixKey) ? 'phone' : 'random';
+        /^\d{14}$/.test(pixKey) ? 'cnpj' :
+          /@/.test(pixKey) ? 'email' :
+            /^\d{10,11}$/.test(pixKey) ? 'phone' : 'random';
     if (!wallet) return false;
 
     try {
@@ -501,7 +500,7 @@ export function useDigitalWallet(userId: string, groupId?: string) {
       const newBalance = wallet.balance_brl - amount;
       const { error: updateCurrentError } = await supabase
         .from('digital_wallets')
-        .update({ 
+        .update({
           balance_brl: newBalance,
           updated_at: new Date().toISOString()
         })
@@ -512,7 +511,7 @@ export function useDigitalWallet(userId: string, groupId?: string) {
       // Atualizar saldo da carteira de destino
       const { error: updateTargetError } = await supabase
         .from('digital_wallets')
-        .update({ 
+        .update({
           balance_brl: targetWallet.balance_brl + amount,
           total_received_brl: targetWallet.total_received_brl + amount,
           updated_at: new Date().toISOString()

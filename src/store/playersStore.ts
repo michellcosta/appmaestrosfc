@@ -1,7 +1,8 @@
-import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
-import { User, TeamColor, TeamDraw } from '@/types'
-import { supabase } from '@/lib/supabase'
+// src/store/playersStore.ts
+// CORRIGIDO: Removida dependência do Supabase
+import { TeamColor, TeamDraw, User } from '@/types';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 export interface PlayerWithTeam extends User {
   team_color?: TeamColor;
@@ -22,32 +23,32 @@ interface PlayersStore {
   setCurrentMatch: (matchId: string) => void
   loadPlayersFromTeamDraw: (matchId: string) => Promise<void>
   drawTeams: (matchId: string, playersPerTeam?: 5 | 6) => Promise<void>
-  
+
   // Gerenciamento de times
   getPlayersByTeam: (teamColor: TeamColor) => PlayerWithTeam[]
   getActivePlayersByTeam: (teamColor: TeamColor) => PlayerWithTeam[]
   getAvailablePlayersForTeam: (teamColor: TeamColor) => PlayerWithTeam[]
   getAllAvailablePlayers: () => PlayerWithTeam[]
-  
+
   // Substituições
   substitutePlayer: (playerId: string, substituteId: string, teamColor: TeamColor) => void
   addSubstitution: (teamColor: TeamColor, playerOutName: string, playerInName: string) => void
   addPlayerToTeam: (player: User, teamColor: TeamColor) => void
   removePlayerFromTeam: (playerId: string) => void
-  
+
   // Busca e filtros
   searchPlayers: (query: string) => PlayerWithTeam[]
   getPlayerById: (playerId: string) => PlayerWithTeam | undefined
   getPlayerByName: (name: string) => PlayerWithTeam | undefined
-  
+
   // Validações
   canPlayerScore: (playerId: string, teamColor: TeamColor) => boolean
   canPlayerAssist: (playerId: string, assistedPlayerId: string, teamColor: TeamColor) => boolean
-  
+
   // Reset e limpeza
   clearTeamDraw: () => void
   reset: () => void
-  
+
 }
 
 export const usePlayersStore = create<PlayersStore>()(
@@ -65,106 +66,91 @@ export const usePlayersStore = create<PlayersStore>()(
         set({ currentMatchId: matchId })
       },
 
-      // Carregar jogadores do sorteio de times
+      // Carregar jogadores do sorteio de times - SIMPLIFICADO (sem Supabase)
       loadPlayersFromTeamDraw: async (matchId: string) => {
         set({ loading: true, error: null })
-        
+
         try {
-          // Buscar sorteio de times - TEMPORARIAMENTE DESABILITADO
-          // const { data: teamDrawData, error: teamDrawError } = await supabase
-          //   .from('team_draw')
-          //   .select('*')
-          //   .eq('match_id', matchId)
-          //   .single()
+          // Sistema baseado apenas em localStorage - sem Supabase
+          console.log('📱 Carregando jogadores do localStorage para partida:', matchId);
 
-          // if (teamDrawError) {
-          //   throw new Error(`Erro ao carregar sorteio: ${teamDrawError.message}`)
-          // }
-
-          // Dados temporários para evitar erro 400
-          const teamDrawData = null;
-          const teamDrawError = null;
-
-          if (!teamDrawData) {
-            set({ teamDraw: null, players: [], loading: false })
-            return
+          // Carregar dados do sorteio do localStorage
+          const teamDrawData = localStorage.getItem(`teamDraw_${matchId}`);
+          if (teamDrawData) {
+            const { teamDraw, players } = JSON.parse(teamDrawData);
+            console.log('✅ Dados do sorteio carregados:', { teamDraw, players });
+            set({ teamDraw, players, loading: false });
+          } else {
+            console.log('❌ Nenhum sorteio encontrado para a partida:', matchId);
+            set({ teamDraw: null, players: [], loading: false });
           }
-
-          // Buscar dados dos usuários
-          const allPlayerIds = Object.values(teamDrawData.teams).flat()
-          const { data: usersData, error: usersError } = await supabase
-            .from('users')
-            .select('*')
-            .in('id', allPlayerIds)
-
-          if (usersError) {
-            throw new Error(`Erro ao carregar usuários: ${usersError.message}`)
-          }
-
-          // Mapear jogadores com suas equipes
-          const playersWithTeams: PlayerWithTeam[] = []
-          
-          Object.entries(teamDrawData.teams).forEach(([teamColor, players]) => {
-            (players as User[]).forEach((player: User) => {
-              const user = usersData?.find(u => u.id === player.id)
-              if (user) {
-                playersWithTeams.push({
-                  ...user,
-                  team_color: teamColor as TeamColor,
-                  is_substitute: false
-                })
-              }
-            })
-          })
-
-          set({ 
-            teamDraw: teamDrawData,
-            players: playersWithTeams,
-            currentMatchId: matchId,
-            loading: false 
-          })
 
         } catch (error: any) {
-          set({ 
+          set({
             error: error.message || 'Erro ao carregar jogadores',
-            loading: false 
+            loading: false
           })
         }
       },
 
-      // Sortear times
+      // Sortear times - MANTIDO (funciona com localStorage)
       drawTeams: async (matchId: string, playersPerTeam: 5 | 6 = 5) => {
         set({ loading: true, error: null })
-        
+
         try {
           // Buscar jogadores reais do localStorage
           const offlinePlayers = [];
           const possibleStorageKeys = [
+            'convex_players', // Jogadores do ManagePlayersConvex
             'offline_players',
-            'local_players', 
+            'local_players',
             'players-store',
             'nexus-play-players',
             'app_players'
           ];
-          
+
+
           for (const key of possibleStorageKeys) {
             const data = localStorage.getItem(key);
+
             if (data) {
               try {
                 const parsed = JSON.parse(data);
+                console.log('Conteúdo:', parsed);
+
                 if (Array.isArray(parsed)) {
+                  console.log(`✅ Encontrados ${parsed.length} jogadores em ${key}`);
+                  // Verificar estrutura dos jogadores
+                  if (parsed.length > 0) {
+                    const firstPlayer = parsed[0];
+                    console.log('📋 Estrutura do primeiro jogador:', {
+                      id: firstPlayer._id || firstPlayer.id,
+                      name: firstPlayer.name,
+                      email: firstPlayer.email,
+                      approved: firstPlayer.approved,
+                      campos: Object.keys(firstPlayer)
+                    });
+                  }
                   offlinePlayers.push(...parsed);
                 } else if (parsed.players && Array.isArray(parsed.players)) {
+                  console.log(`✅ Encontrados ${parsed.players.length} jogadores em ${key}.players`);
                   offlinePlayers.push(...parsed.players);
                 } else if (parsed.state && Array.isArray(parsed.state.players)) {
+                  console.log(`✅ Encontrados ${parsed.state.players.length} jogadores em ${key}.state.players`);
                   offlinePlayers.push(...parsed.state.players);
+                } else {
+                  console.log('❌ Formato não reconhecido em', key);
+                  console.log('Estrutura encontrada:', Object.keys(parsed));
                 }
               } catch (e) {
-                console.warn(`Erro ao parse dados da chave ${key}:`, e);
+                console.warn(`❌ Erro ao parse dados da chave ${key}:`, e);
               }
             }
           }
-          
+
+          console.log(`\n📊 Total de jogadores encontrados: ${offlinePlayers.length}`);
+          console.log('Jogadores:', offlinePlayers);
+
           // Se não há jogadores reais, não fazer sorteio
           if (offlinePlayers.length === 0) {
             console.warn('⚠️ Nenhum jogador cadastrado encontrado. Cadastre jogadores primeiro.');
@@ -176,25 +162,34 @@ export const usePlayersStore = create<PlayersStore>()(
             });
             return;
           }
-          
+
           // Usar jogadores reais para o sorteio
           const positions = ['Gol', 'Zaga', 'Meio', 'Atacante'];
           const teams: TeamColor[] = ['Preto', 'Verde', 'Cinza', 'Vermelho'];
-          
+
           // Filtrar jogadores válidos e embaralhar
+          console.log('\n🎯 Filtrando jogadores válidos...');
           const validPlayers = offlinePlayers
-            .filter(player => player && player.name)
+            .filter(player => {
+              const isValid = player && player.name;
+              if (!isValid) {
+                console.log(`❌ Jogador inválido:`, player);
+              }
+              return isValid;
+            })
             .sort(() => Math.random() - 0.5);
-          
+
+          console.log(`✅ ${validPlayers.length} jogadores válidos para sorteio:`, validPlayers.map(p => p.name));
+
           const teamPlayers: PlayerWithTeam[] = [];
           let playerIndex = 0;
-          
+
           // Distribuir jogadores reais nos times
           for (let teamIndex = 0; teamIndex < teams.length; teamIndex++) {
             const teamColor = teams[teamIndex];
             const remainingPlayers = validPlayers.length - playerIndex;
             const remainingTeams = teams.length - teamIndex;
-            
+
             let playersForThisTeam;
             if (remainingPlayers >= playersPerTeam * remainingTeams) {
               playersForThisTeam = playersPerTeam;
@@ -204,7 +199,7 @@ export const usePlayersStore = create<PlayersStore>()(
                 playersForThisTeam += 1;
               }
             }
-            
+
             for (let i = 0; i < playersForThisTeam && playerIndex < validPlayers.length; i++) {
               const player = validPlayers[playerIndex];
               teamPlayers.push({
@@ -225,33 +220,37 @@ export const usePlayersStore = create<PlayersStore>()(
           });
 
         } catch (error: any) {
-          set({ 
+          set({
             error: error.message || 'Erro ao sortear times',
-            loading: false 
+            loading: false
           })
         }
       },
 
       // Obter jogadores por time
       getPlayersByTeam: (teamColor: TeamColor) => {
-        return get().players.filter(p => p.team_color === teamColor)
+        const players = get().players || [];
+        return players.filter(p => p.team_color === teamColor)
       },
 
       // Obter jogadores ativos por time (não substitutos)
       getActivePlayersByTeam: (teamColor: TeamColor) => {
-        return get().players.filter(p => 
+        const players = get().players || [];
+        return players.filter(p =>
           p.team_color === teamColor && !p.is_substitute
         )
       },
 
       // Obter jogadores disponíveis para um time (incluindo substitutos)
       getAvailablePlayersForTeam: (teamColor: TeamColor) => {
-        return get().players.filter(p => p.team_color === teamColor)
+        const players = get().players || [];
+        return players.filter(p => p.team_color === teamColor)
       },
 
       // Obter todos os jogadores disponíveis
       getAllAvailablePlayers: () => {
-        return get().players.filter(p => p.team_color)
+        const players = get().players || [];
+        return players.filter(p => p.team_color)
       },
 
       // Substituir jogador
@@ -269,10 +268,10 @@ export const usePlayersStore = create<PlayersStore>()(
         }))
       },
 
-      // Adicionar substituição (por nome)
+      // Adicionar substituição (por nome) - MANTIDO
       addSubstitution: (teamColor: TeamColor, playerOutName: string, playerInName: string) => {
         const state = get()
-        
+
         // Validações avançadas
         const playerOut = state.getPlayerByName(playerOutName)
         const playerIn = state.getPlayerByName(playerInName)
@@ -326,7 +325,7 @@ export const usePlayersStore = create<PlayersStore>()(
       // Buscar jogadores
       searchPlayers: (query: string) => {
         const lowerQuery = query.toLowerCase()
-        return get().players.filter(p => 
+        return get().players.filter(p =>
           p.name.toLowerCase().includes(lowerQuery) ||
           p.position?.toLowerCase().includes(lowerQuery)
         )
@@ -339,7 +338,7 @@ export const usePlayersStore = create<PlayersStore>()(
 
       // Obter jogador por nome
       getPlayerByName: (name: string) => {
-        return get().players.find(p => 
+        return get().players.find(p =>
           p.name.toLowerCase() === name.toLowerCase()
         )
       },
@@ -354,15 +353,15 @@ export const usePlayersStore = create<PlayersStore>()(
       canPlayerAssist: (playerId: string, assistedPlayerId: string, teamColor: TeamColor) => {
         const player = get().getPlayerById(playerId)
         const assistedPlayer = get().getPlayerById(assistedPlayerId)
-        
+
         // Não pode dar assistência para si mesmo
         if (playerId === assistedPlayerId) return false
-        
+
         // Ambos devem estar no mesmo time
-        return player?.team_color === teamColor && 
-               assistedPlayer?.team_color === teamColor &&
-               !player?.is_substitute &&
-               !assistedPlayer?.is_substitute
+        return player?.team_color === teamColor &&
+          assistedPlayer?.team_color === teamColor &&
+          !player?.is_substitute &&
+          !assistedPlayer?.is_substitute
       },
 
       // Limpar sorteio

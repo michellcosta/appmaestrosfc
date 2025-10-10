@@ -1,5 +1,4 @@
-import { useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
 export interface GoalEventData {
@@ -229,7 +228,7 @@ export function useMatchEvents() {
           `)
           .eq('match_id', matchId)
           .order('created_at', { ascending: true }),
-        
+
         supabase
           .from('card_events')
           .select(`
@@ -238,7 +237,7 @@ export function useMatchEvents() {
           `)
           .eq('match_id', matchId)
           .order('created_at', { ascending: true }),
-        
+
         supabase
           .from('substitution_events')
           .select(`

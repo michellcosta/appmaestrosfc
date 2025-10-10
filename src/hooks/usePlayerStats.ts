@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useEffect, useState } from 'react';
 
 export interface PlayerStats {
   totalGoals: number;
@@ -88,33 +87,21 @@ export function usePlayerStats(userId: string) {
 
         console.log(`🔍 Buscando estatísticas REAIS para jogador: ${userId}`);
 
-        // Buscar estatísticas agregadas da tabela player_statistics
-        const { data: aggregatedStats, error: statsError } = await supabase
-          .from('player_statistics')
-          .select('*')
-          .eq('player_id', userId)
-          .single();
+        // MOCK TEMPORÁRIO - Substituir por dados do Convex quando disponível
+        const aggregatedStats = null;
+        const statsError = null;
 
-        // Buscar eventos de gol
-        const { data: goalsData, error: goalsError } = await supabase
-          .from('goal_events')
-          .select('*')
-          .eq('player_id', userId)
-          .order('created_at', { ascending: false });
+        // MOCK TEMPORÁRIO - Substituir por dados do Convex quando disponível  
+        const goalsData = [];
+        const goalsError = null;
 
-        // Buscar eventos de assistência
-        const { data: assistsData, error: assistsError } = await supabase
-          .from('goal_events')
-          .select('*')
-          .eq('assist_player_id', userId)
-          .order('created_at', { ascending: false });
+        // MOCK TEMPORÁRIO - Substituir por dados do Convex quando disponível
+        const assistsData = [];
+        const assistsError = null;
 
-        // Buscar participação em partidas
-        const { data: matchesData, error: matchesError } = await supabase
-          .from('player_matches')
-          .select('*')
-          .eq('player_id', userId)
-          .order('created_at', { ascending: false });
+        // MOCK TEMPORÁRIO - Substituir por dados do Convex quando disponível
+        const matchesData = [];
+        const matchesError = null;
 
         if (statsError && statsError.code !== 'PGRST116') {
           console.warn('⚠️ Erro ao buscar estatísticas agregadas:', statsError);
@@ -183,7 +170,7 @@ export function usePlayerStats(userId: string) {
       } catch (err) {
         console.error('❌ Erro ao buscar estatísticas do jogador:', err);
         setError('Erro ao carregar estatísticas em tempo real');
-        
+
         // Fallback para dados zerados
         setStats({
           totalGoals: 0,
@@ -216,7 +203,7 @@ export function usePlayerStats(userId: string) {
     const intervalId = setInterval(() => {
       fetchPlayerStats();
     }, 30000); // Verificar a cada 30 segundos
-    
+
     // Subscription via WebSocket/Supabase Real Time - TEMPORARIAMENTE DESABILITADA
     // const channel = supabase
     //   .channel(`player_stats_${userId}`)
@@ -238,24 +225,12 @@ export function usePlayerStats(userId: string) {
 
   }, [userId]);
 
-  // Função para adicionar um gol
+  // Função para adicionar um gol - MOCK TEMPORÁRIO
   const addGoal = async (matchId: string, playerId: string, assistPlayerId?: string, teamColor: string = 'Preto', minute: number = 0, roundNumber: number = 1, isOwnGoal: boolean = false, isPenalty: boolean = false) => {
     try {
-      const { data, error } = await supabase
-        .from('goal_events')
-        .insert({
-          match_id: matchId,
-          player_id: playerId,
-          assist_player_id: assistPlayerId,
-          team_color: teamColor,
-          minute,
-          round_number: roundNumber,
-          is_own_goal: isOwnGoal,
-          is_penalty: isPenalty,
-          created_by: userId
-        })
-        .select()
-        .single();
+      // MOCK TEMPORÁRIO - Substituir por Convex quando disponível
+      const data = { id: `goal_${Date.now()}` };
+      const error = null;
 
       if (error) throw error;
 
@@ -268,7 +243,7 @@ export function usePlayerStats(userId: string) {
 
       // Recarregar estatísticas completas
       await fetchPlayerStats();
-      
+
       return data;
     } catch (err) {
       console.error('❌ Erro ao adicionar gol:', err);
@@ -276,26 +251,12 @@ export function usePlayerStats(userId: string) {
     }
   };
 
-  // Função para adicionar participação em partida
+  // Função para adicionar participação em partida - MOCK TEMPORÁRIO
   const addPlayerMatch = async (matchId: string, playerId: string, teamColor: string, position: string = 'field', minutesPlayed: number = 90) => {
     try {
-      const { data, error } = await supabase
-        .from('player_matches')
-        .insert({
-          player_id: playerId,
-          match_id: matchId,
-          team_color: teamColor,
-          position,
-          minutes_played: minutesPlayed,
-          goals_scored: 0,
-          assists: 0,
-          yellow_cards: 0,
-          red_cards: 0,
-          rating: 0.0,
-          is_man_of_match: false
-        })
-        .select()
-        .single();
+      // MOCK TEMPORÁRIO - Substituir por Convex quando disponível
+      const data = { id: `match_${Date.now()}` };
+      const error = null;
 
       if (error) throw error;
 
@@ -308,7 +269,7 @@ export function usePlayerStats(userId: string) {
 
       // Recarregar estatísticas completas
       await fetchPlayerStats();
-      
+
       return data;
     } catch (err) {
       console.error('❌ Erro ao adicionar participação em partida:', err);
@@ -321,11 +282,11 @@ export function usePlayerStats(userId: string) {
     await fetchPlayerStats();
   };
 
-  return { 
-    stats, 
-    loading, 
-    error, 
-    goalEvents, 
+  return {
+    stats,
+    loading,
+    error,
+    goalEvents,
     playerMatches,
     addGoal,
     addPlayerMatch,

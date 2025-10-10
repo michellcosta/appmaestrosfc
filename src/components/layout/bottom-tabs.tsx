@@ -1,8 +1,8 @@
-import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Calendar, Trophy, DollarSign, BarChart3, MessageCircle, User } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { pt } from '@/i18n/pt';
+import { cn } from '@/lib/utils';
+import { BarChart3, Calendar, MessageCircle, Trophy, User } from 'lucide-react';
+import React from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface TabItem {
   id: string;
@@ -28,12 +28,12 @@ export const BottomTabs: React.FC = () => {
       icon: <Trophy className="w-5 h-5" />,
       path: '/match',
     },
-    {
-      id: 'financial',
-      label: pt.navigation.financial,
-      icon: <DollarSign className="w-5 h-5" />,
-      path: '/financial',
-    },
+    // {
+    //   id: 'financial',
+    //   label: pt.navigation.financial,
+    //   icon: <DollarSign className="w-5 h-5" />,
+    //   path: '/financial',
+    // }, // DESABILITADO - Sistema financeiro removido
     {
       id: 'ranking',
       label: pt.navigation.ranking,

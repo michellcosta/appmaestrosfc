@@ -1,95 +1,103 @@
 /**
- * Sistema de Proteção do Owner Principal
- * Garante que apenas o owner principal possa criar novos owners e não possa ser excluído
+ * Sistema de proteção para o owner principal (Michell Oliveira)
+ * Impede alterações no cargo e remoção do sistema
  */
 
-// ID do owner principal - será definido automaticamente no primeiro login
-let MAIN_OWNER_ID: string | null = null;
+export const MAIN_OWNER_EMAIL = 'michell.oliveira@gmail.com';
+export const MAIN_OWNER_NAME = 'Michell Oliveira';
 
 /**
- * Define o ID do owner principal
- * Deve ser chamado apenas uma vez, no primeiro login
+ * Verifica se o usuário é o owner principal protegido
  */
-export function setMainOwnerId(userId: string): void {
-  if (!MAIN_OWNER_ID) {
-    MAIN_OWNER_ID = userId;
-    localStorage.setItem('main_owner_id', userId);
-    console.log('🔒 Owner principal definido:', userId);
-  }
+export function isMainOwner(email: string, name?: string): boolean {
+  return email === MAIN_OWNER_EMAIL || name === MAIN_OWNER_NAME;
 }
 
 /**
- * Obtém o ID do owner principal
+ * Verifica se pode alterar o role de um usuário
  */
-export function getMainOwnerId(): string | null {
-  if (!MAIN_OWNER_ID) {
-    MAIN_OWNER_ID = localStorage.getItem('main_owner_id');
-  }
-  return MAIN_OWNER_ID;
-}
-
-/**
- * Verifica se o usuário atual é o owner principal
- */
-export function isMainOwner(userId: string | undefined): boolean {
-  if (!userId) return false;
-  const mainOwnerId = getMainOwnerId();
-  return mainOwnerId === userId;
-}
-
-/**
- * Verifica se é permitido criar novos owners
- * Apenas o owner principal pode criar novos owners
- */
-export function canCreateOwner(currentUserId: string | undefined): boolean {
-  // Verificar se já existe um owner principal
-  const mainOwnerId = getMainOwnerId();
-  
-  // Se não há owner principal definido, permite criar
-  if (!mainOwnerId) {
-    return true;
-  }
-  
-  // Apenas o owner principal pode criar novos owners
-  return isMainOwner(currentUserId);
-}
-
-/**
- * Verifica se é permitido excluir um usuário
- * O owner principal não pode ser excluído
- */
-export function canDeleteUser(targetUserId: string, currentUserId: string | undefined): boolean {
-  const mainOwnerId = getMainOwnerId();
-  
-  // Não pode excluir o owner principal
-  if (targetUserId === mainOwnerId) {
+export function canChangeUserRole(userEmail: string, userRole: string, newRole: string): boolean {
+  // Se é o owner principal, não pode alterar o próprio role
+  if (isMainOwner(userEmail) && userRole === 'owner') {
     return false;
   }
-  
-  // Apenas o owner principal pode excluir outros usuários
-  return isMainOwner(currentUserId);
-}
 
-/**
- * Inicializa o sistema de proteção
- * Deve ser chamado no início da aplicação
- */
-export function initializeOwnerProtection(currentUser: any): void {
-  if (currentUser?.role === 'owner' && currentUser?.id) {
-    // Se não há owner principal definido, define o usuário atual
-    if (!getMainOwnerId()) {
-      setMainOwnerId(currentUser.id);
-    }
+  // Se está tentando alterar o owner principal, não pode
+  if (isMainOwner(userEmail) && newRole !== 'owner') {
+    return false;
   }
+
+  return true;
 }
 
 /**
- * Mensagens de erro para proteções
+ * Verifica se pode remover um usuário
+ */
+export function canRemoveUser(userEmail: string): boolean {
+  // Owner principal não pode ser removido
+  return !isMainOwner(userEmail);
+}
+
+/**
+ * Verifica se pode desativar um usuário
+ */
+export function canDeactivateUser(userEmail: string): boolean {
+  // Owner principal não pode ser desativado
+  return !isMainOwner(userEmail);
+}
+
+/**
+ * Mensagens de erro para proteção
  */
 export const PROTECTION_MESSAGES = {
-  CANNOT_CREATE_OWNER: '🚫 Apenas o owner principal pode criar novos owners.',
-  CANNOT_DELETE_MAIN_OWNER: '🚫 O owner principal não pode ser excluído.',
-  ONLY_MAIN_OWNER_CAN_DELETE: '🚫 Apenas o owner principal pode excluir usuários.',
-  ACCESS_DENIED: '🚫 Acesso negado. Você não tem permissão para esta ação.',
-  CANNOT_LOGOUT_MAIN_OWNER: '🚫 O owner principal não pode fazer logout.'
-};
+  CANNOT_CHANGE_OWNER_ROLE: '❌ Não é possível alterar o cargo do owner principal do sistema.',
+  CANNOT_REMOVE_OWNER: '❌ Não é possível remover o owner principal do sistema.',
+  CANNOT_DEACTIVATE_OWNER: '❌ Não é possível desativar o owner principal do sistema.',
+  OWNER_PROTECTION: '🛡️ Este usuário possui proteção especial como owner principal.'
+} as const;
+
+/**
+ * Validação completa para operações em usuários
+ */
+export function validateUserOperation(
+  operation: 'update' | 'remove' | 'deactivate',
+  userEmail: string,
+  userRole: string,
+  newRole?: string
+): { allowed: boolean; message?: string } {
+
+  if (!isMainOwner(userEmail)) {
+    return { allowed: true };
+  }
+
+  switch (operation) {
+    case 'update':
+      if (newRole && !canChangeUserRole(userEmail, userRole, newRole)) {
+        return {
+          allowed: false,
+          message: PROTECTION_MESSAGES.CANNOT_CHANGE_OWNER_ROLE
+        };
+      }
+      break;
+
+    case 'remove':
+      if (!canRemoveUser(userEmail)) {
+        return {
+          allowed: false,
+          message: PROTECTION_MESSAGES.CANNOT_REMOVE_OWNER
+        };
+      }
+      break;
+
+    case 'deactivate':
+      if (!canDeactivateUser(userEmail)) {
+        return {
+          allowed: false,
+          message: PROTECTION_MESSAGES.CANNOT_DEACTIVATE_OWNER
+        };
+      }
+      break;
+  }
+
+  return { allowed: true };
+}

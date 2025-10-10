@@ -1,7 +1,6 @@
-import { useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
 import { PaymentConflict } from '@/types';
+import { useCallback, useState } from 'react';
+import { toast } from 'sonner';
 
 export interface MatchCapacity {
   match_id: string;
@@ -66,7 +65,7 @@ export function usePaymentConflicts() {
   ): Promise<PaymentConflict | null> => {
     try {
       const capacity = await checkMatchCapacity(matchId);
-      
+
       // Se a partida está cheia, criar conflito
       if (capacity.is_full) {
         const conflict: Omit<PaymentConflict, 'id' | 'created_at'> = {
@@ -114,7 +113,7 @@ export function usePaymentConflicts() {
       // Simular processamento de estorno
       // Em produção, aqui seria feita a integração com o gateway de pagamento
       const refundId = `refund_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       // Simular delay do processamento
       await new Promise(resolve => setTimeout(resolve, 2000));
 

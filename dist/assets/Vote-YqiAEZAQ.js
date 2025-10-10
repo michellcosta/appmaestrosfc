@@ -1,0 +1,1 @@
+import{j as r}from"./vendor-ui-Cg0qxSES.js";import{N as o}from"./vendor-router-VFXGavtY.js";import"./vendor-react-CyD6OLG_.js";function e(){return r.jsx(o,{to:"/ranking",replace:!0})}export{e as default};
